@@ -1,7 +1,3 @@
-"""
-Vercel serverless entrypoint for Flask app
-Handles WSGI path normalization so that Vercel rewrites do not cause Flask 404 errors.
-"""
 import os
 import sys
 
@@ -14,27 +10,25 @@ from app import app as flask_app
 
 class VercelPathFixer:
     """
-    WSGI Middleware to fix PATH_INFO on Vercel.
-    When Vercel rewrites /(.*) to /api/index.py, PATH_INFO might become /api/index.py.
-    This middleware restores the original requested path from HTTP_X_MATCHED_PATH or strips the prefix.
+    Normalizes PATH_INFO so that Vercel /api/index.py/$1 rewrites
+    map directly to Flask routes.
     """
     def __init__(self, wsgi_app):
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        # 1. Check if Vercel set the real matched path
-        matched_path = environ.get('HTTP_X_MATCHED_PATH') or environ.get('HTTP_X_NOW_ROUTE_MATCHES')
-        if matched_path:
-            environ['PATH_INFO'] = matched_path
-        else:
-            path = environ.get('PATH_INFO', '')
-            if path == '/api/index.py' or path == '/api/index' or path == '/api':
-                environ['PATH_INFO'] = '/'
-            elif path.startswith('/api/index.py/'):
-                environ['PATH_INFO'] = path[len('/api/index.py'):]
-            elif path.startswith('/api/index/'):
-                environ['PATH_INFO'] = path[len('/api/index'):]
+        path = environ.get('PATH_INFO', '')
+        if path.startswith('/api/index.py/'):
+            path = path[len('/api/index.py'):]
+        elif path.startswith('/api/index/'):
+            path = path[len('/api/index'):]
+        elif path in ['/api/index.py', '/api/index', '/api', '']:
+            path = '/'
 
+        if not path.startswith('/'):
+            path = '/' + path
+
+        environ['PATH_INFO'] = path
         return self.wsgi_app(environ, start_response)
 
 # Export app for Vercel
