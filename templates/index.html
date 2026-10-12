@@ -1016,9 +1016,17 @@
                 <!-- Camera viewfinder -->
                 <div id="qr-reader" class="w-full rounded-2xl overflow-hidden border-2 border-emerald-500/50 bg-black min-h-[260px]"></div>
 
+                <!-- Fallback quick selection if camera denied or no webcam -->
+                <div class="border-t border-slate-800 pt-3">
+                    <p class="text-xs font-bold text-slate-300 mb-2">¿Sin cámara? Toca la máquina para reportar:</p>
+                    <div id="scanner-machine-quick-list" class="flex flex-wrap gap-2 justify-center">
+                        <!-- Populated with quick buttons -->
+                    </div>
+                </div>
+
                 <div class="flex justify-center gap-2 pt-2">
                     <button onclick="closeCameraScannerModal()" class="px-5 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700">
-                        Cerrar Escáner
+                        Cerrar
                     </button>
                 </div>
             </div>

@@ -628,6 +628,34 @@ def pause_repair_timer(order_id):
         "is_timer_running": False
     })
 
+@app.route('/api/orders/<int:order_id>/progress', methods=['POST', 'PUT'])
+def save_order_progress(order_id):
+    """Save technician notes, diagnosis and spare parts without closing the order"""
+    data = request.json or {}
+    conn = get_db_connection()
+    order = conn.execute("SELECT * FROM maintenance_orders WHERE id = ?", (order_id,)).fetchone()
+    if not order:
+        conn.close()
+        return jsonify({"error": "Orden no encontrada"}), 404
+
+    diagnosis = data.get('diagnosis', order['diagnosis'] or '').strip()
+    solution_notes = data.get('solution_notes', order['solution_notes'] or '').strip()
+    spare_parts_notes = data.get('spare_parts_notes', order['spare_parts_notes'] or '').strip()
+    technician_id = data.get('technician_id') or order['technician_id']
+
+    conn.execute("""
+        UPDATE maintenance_orders
+        SET diagnosis = ?,
+            solution_notes = ?,
+            spare_parts_notes = ?,
+            technician_id = ?,
+            updated_at = ?
+        WHERE id = ?
+    """, (diagnosis, solution_notes, spare_parts_notes, technician_id, datetime.now().isoformat(), order_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "Avance guardado exitosamente"})
+
 @app.route('/api/orders/<int:order_id>/finish', methods=['POST'])
 def finish_order(order_id):
     data = request.json or {}
