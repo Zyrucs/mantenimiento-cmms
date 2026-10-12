@@ -1,0 +1,84 @@
+/* SistMaint - Custom CSS Styles & Print Sheet */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.font-mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Animations */
+@keyframes pulseSlow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(0.995); }
+}
+
+.pulse-timer {
+    animation: pulseSlow 2s infinite ease-in-out;
+}
+
+/* Print Styles for QR Sticker Labels */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    
+    /* When printing a single QR card */
+    #printable-qr-card, #printable-qr-card * {
+        visibility: visible;
+    }
+    #printable-qr-card {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: none !important;
+        border: 3px solid #000 !important;
+        page-break-inside: avoid;
+    }
+
+    /* When printing all QR labels */
+    #print-sheet-container, #print-sheet-container * {
+        visibility: visible;
+    }
+    #print-sheet-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+        padding: 10mm;
+    }
+    #all-qr-cards-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 15mm !important;
+    }
+    .print-qr-sticker {
+        visibility: visible !important;
+        border: 2px solid #000 !important;
+        page-break-inside: avoid !important;
+        background: white !important;
+        color: black !important;
+    }
+}
