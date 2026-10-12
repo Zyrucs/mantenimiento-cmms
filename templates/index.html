@@ -655,15 +655,6 @@
                 </div>
             </div>
 
-            <!-- Information note about Tuesday's names -->
-            <div class="bg-blue-950/40 border border-blue-800/60 rounded-2xl p-4 flex items-start gap-3">
-                <i class="fa-solid fa-circle-info text-blue-400 text-xl mt-0.5"></i>
-                <div class="text-xs sm:text-sm text-blue-200">
-                    <p class="font-bold">Nombres Genéricos Activos:</p>
-                    <p class="text-blue-300/90 mt-0.5">Actualmente están configuradas <strong>Máquina 1, Máquina 2, Máquina 3, etc.</strong> Puedes editar cualquier máquina para cambiarle el nombre cuando tengas la lista definitiva el martes, o agregar las que necesites.</p>
-                </div>
-            </div>
-
             <!-- Machines Grid -->
             <div id="machines-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Dynamically populated -->
@@ -912,7 +903,7 @@
 
     <!-- ========================================== -->
     <!-- MODAL 3: CREAR / EDITAR MÁQUINA           -->
-    <!-- (Para cambiar nombres genéricos el martes) -->
+    <!-- (Editar o agregar máquinas)                 -->
     <!-- ========================================== -->
     <div id="machine-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden">
@@ -934,7 +925,6 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nombre de la Máquina <span class="text-rose-400">*</span></label>
                     <input type="text" id="machine-name-input" required placeholder="Ej: Máquina 1, Torno CNC Haas, Envasadora TetraPak" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm outline-none focus:border-blue-500">
-                    <p class="text-[11px] text-slate-400 mt-1">El martes podrás cambiar el nombre genérico por el nombre real aquí sin perder el historial.</p>
                 </div>
 
                 <div>

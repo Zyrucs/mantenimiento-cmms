@@ -65,11 +65,10 @@ Sistema web integral para el control de mantenimientos **Correctivo, Preventivo 
 
 ---
 
-## 🏭 Personalización de Nombres de Máquinas (Para el Martes)
+## 🏭 Personalización de Nombres de Máquinas
 
-Como solicitaste nombres genéricos provisionales:
 - Están configuradas inicialmente: `Máquina 1`, `Máquina 2`, `Máquina 3`, `Máquina 4`, `Máquina 5`.
-- **El martes**, para colocar los nombres reales:
+- Para personalizar o colocar los nombres definitivos:
   1. Ve a la pestaña **"Máquinas & Códigos QR"**.
   2. Haz clic en **"Editar Nombre"** en cualquier máquina.
   3. Cambia el nombre (ejemplo: "Torno CNC Haas", "Envasadora TetraPak", "Compresor Schulz", etc.) y ubicación.
