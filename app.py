@@ -42,12 +42,37 @@ def get_local_ip():
 # ----------------- WEB PAGES & STATIC ROUTES -----------------
 
 @app.route('/')
+@app.route('/api/index.py')
+@app.route('/api/index')
 def index():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception:
+        html_file = os.path.join(TEMPLATE_DIR, 'index.html')
+        with open(html_file, 'r', encoding='utf-8') as f:
+            return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 @app.route('/static/<path:filename>')
+@app.route('/api/index.py/static/<path:filename>')
+@app.route('/api/index/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory(STATIC_DIR, filename)
+
+@app.errorhandler(404)
+def fallback_404(e):
+    path = request.path or ''
+    if 'static/' in path:
+        filename = path.split('static/', 1)[1]
+        try:
+            return send_from_directory(STATIC_DIR, filename)
+        except Exception:
+            pass
+    try:
+        return render_template('index.html'), 200, {'Content-Type': 'text/html; charset=utf-8'}
+    except Exception:
+        html_file = os.path.join(TEMPLATE_DIR, 'index.html')
+        with open(html_file, 'r', encoding='utf-8') as f:
+            return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 @app.route('/health')
 def health():

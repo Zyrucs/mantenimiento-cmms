@@ -1,10 +1,4 @@
 {
-  "version": 2,
-  "functions": {
-    "api/index.py": {
-      "includeFiles": "{templates/**,static/**,maintenance.db}"
-    }
-  },
   "rewrites": [
     {
       "source": "/(.*)",
