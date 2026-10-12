@@ -45,6 +45,12 @@ def get_local_ip():
 @app.route('/api/index.py')
 @app.route('/api/index')
 def index():
+    if request.args.get('debug') == '1':
+        return jsonify({
+            'PATH_INFO': request.environ.get('PATH_INFO'),
+            'SCRIPT_NAME': request.environ.get('SCRIPT_NAME'),
+            'headers': {k: v for k, v in request.headers.items()}
+        })
     try:
         return render_template('index.html')
     except Exception:
