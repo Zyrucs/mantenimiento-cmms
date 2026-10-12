@@ -1,0 +1,8 @@
+{
+  "name": "sistmaint-cmms",
+  "version": "1.0.0",
+  "description": "Sistema de Control de Mantenimiento Industrial",
+  "scripts": {
+    "deploy": "vercel --prod"
+  }
+}

@@ -14,6 +14,7 @@ IS_VERCEL = bool(os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION
 if IS_VERCEL:
     DB_PATH = '/tmp/maintenance.db'
     bundled_db = os.path.join(BASE_DIR, 'maintenance.db')
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     if not os.path.exists(DB_PATH) and os.path.exists(bundled_db):
         try:
             shutil.copy2(bundled_db, DB_PATH)
