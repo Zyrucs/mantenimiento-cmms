@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SistMaint CMMS 2.0 | Control de Mantenimiento, Hojas de Vida & Plan 2027</title>
+    <title>SistMaint CMMS 2.0 | Codeforge × Toggl Track Edition</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,12 +13,16 @@
             theme: {
                 extend: {
                     colors: {
-                        obsidian: '#09090b',
-                        surface: '#101014',
-                        elevated: '#16161d',
+                        obsidian: '#07080a',
+                        surface: '#0b0d11',
+                        elevated: '#11151d',
+                        togglPlum: '#160d1f',
+                        togglOrchid: '#e57cd8',
+                        cfCyan: '#2CD5FF',
+                        cfBlue: '#2C30FF',
                     },
                     fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
                     }
                 }
@@ -41,107 +45,310 @@
     <!-- INLINE_CSS_START -->
     <style>
 /* ==========================================================================
-   SistMaint CMMS 2.0 - MagicUI Codeforge + Toggl Track Web Aesthetic
+   SistMaint CMMS 2.0 — Authentic MagicUI Codeforge + Toggl Track Web UI/UX
+   - Codeforge: Architectural 1px blueprint grid, corner crosshairs (+),
+     #2CD5FF / #2C30FF radial glow, flush grid tabs, Geist typography
+   - Toggl Track: Grouped sidebar (TRACK / ANALYZE / MANAGE), Top Live Timer
+     Bar with circular Play/Stop button, #e57cd8 orchid & project dot pills,
+     grouped time-entry rows
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-    --bg-obsidian: #09090b;
-    --bg-surface: #101014;
-    --bg-elevated: #16161d;
-    --border-subtle: rgba(255, 255, 255, 0.07);
-    --border-glow: rgba(139, 92, 246, 0.35);
-    --toggl-purple: #a855f7;
-    --toggl-pink: #ec4899;
-    --codeforge-indigo: #6366f1;
+    --cf-bg: #07080a;
+    --cf-surface: #0b0d11;
+    --cf-card: #0f1218;
+    --cf-border: rgba(255, 255, 255, 0.085);
+    --cf-border-strong: rgba(255, 255, 255, 0.15);
+    --cf-cyan: #2CD5FF;
+    --cf-blue: #2C30FF;
+    --toggl-plum: #160d1f;
+    --toggl-orchid: #e57cd8;
+    --toggl-mint: #4ade80;
+}
+
+html.light {
+    --cf-bg: #fafafa;
+    --cf-surface: #ffffff;
+    --cf-card: #f4f4f5;
+    --cf-border: rgba(0, 0, 0, 0.09);
+    --cf-border-strong: rgba(0, 0, 0, 0.16);
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: var(--bg-obsidian);
-    color: #e4e4e7;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--cf-bg);
+    color: #f4f4f5;
     overflow-x: hidden;
+    letter-spacing: -0.01em;
 }
 
 .font-mono {
     font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -0.02em;
 }
 
-/* Codeforge Ambient Background Grid & Radial Spotlight */
-.codeforge-bg {
-    background-color: #09090b;
-    background-image: 
-        radial-gradient(ellipse 80% 50% at 50% -15%, rgba(124, 58, 237, 0.14), transparent),
-        radial-gradient(ellipse 50% 40% at 90% 10%, rgba(59, 130, 246, 0.08), transparent),
-        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+/* ==========================================================================
+   CODEFORGE ARCHITECTURAL GRID & CROSSHAIRS (+)
+   ========================================================================== */
+
+/* Codeforge Radial Cyan/Blue Spotlight */
+.cf-hero-glow {
+    position: relative;
+    overflow: hidden;
+}
+.cf-hero-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: 
+        radial-gradient(circle at 45% 0%, rgba(44, 213, 255, 0.16) 0%, rgba(44, 48, 255, 0.06) 42%, transparent 72%),
+        radial-gradient(circle at 85% 20%, rgba(229, 124, 216, 0.10) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
 }
 
-/* Codeforge Bento Card */
-.cf-card {
-    background: linear-gradient(180deg, rgba(24, 24, 30, 0.85) 0%, rgba(15, 15, 20, 0.92) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.075);
-    box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+/* Architectural 1px Blueprint Section with Corner Crosshairs (+) */
+.cf-section-box {
+    position: relative;
+    border: 1px solid var(--cf-border);
+    background-color: rgba(11, 13, 17, 0.82);
     backdrop-filter: blur(12px);
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.cf-card:hover {
-    border-color: rgba(255, 255, 255, 0.13);
+/* Corner Crosshair (+) Markers exactly like codeforge-magicui.vercel.app */
+.cf-crosshair-tl::before,
+.cf-crosshair-br::after {
+    content: "+";
+    position: absolute;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.32);
+    pointer-events: none;
+    z-index: 20;
+}
+.cf-crosshair-tl::before {
+    top: -7px;
+    left: -5px;
+}
+.cf-crosshair-br::after {
+    bottom: -7px;
+    right: -5px;
 }
 
-.cf-card-interactive:hover {
-    border-color: rgba(139, 92, 246, 0.4);
-    box-shadow: 0 8px 30px -4px rgba(139, 92, 246, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+/* Flush 1px Grid Container (Codeforge Bento Grid) */
+.cf-bento-grid {
+    display: grid;
+    background-color: var(--cf-border);
+    gap: 1px;
+    border: 1px solid var(--cf-border);
+}
+.cf-bento-cell {
+    background-color: var(--cf-surface);
+    position: relative;
+    transition: background-color 0.2s ease;
+}
+.cf-bento-cell:hover {
+    background-color: #11151d;
 }
 
-/* Toggl Track Style Sidebar Navigation Item */
+/* Codeforge Top Laser Line on Active Cell/Tab */
+.cf-laser-top {
+    position: relative;
+}
+.cf-laser-top::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #2CD5FF 0%, #e57cd8 50%, #2C30FF 100%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.cf-laser-top.active::before,
+.cf-laser-top:hover::before {
+    opacity: 1;
+}
+.cf-laser-top.active {
+    background: linear-gradient(180deg, rgba(44, 213, 255, 0.08) 0%, rgba(11, 13, 17, 0.95) 100%);
+}
+
+/* Codeforge Pill Badge */
+.cf-pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.28rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   TOGGL TRACK WEB SIDEBAR, TOP TIMER BAR & ENTRY ROWS
+   ========================================================================== */
+
+/* Toggl Track Dark Plum/Obsidian Sidebar */
+.toggl-sidebar {
+    background: linear-gradient(180deg, #130b1c 0%, #0b0910 65%, #08090c 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.toggl-section-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8c7a9b;
+    padding: 0.75rem 0.75rem 0.35rem;
+}
+
 .toggl-nav-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 0.85rem;
-    border-radius: 0.65rem;
-    font-size: 0.8125rem;
+    gap: 0.7rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
     font-weight: 500;
-    color: #a1a1aa;
+    color: #b8a8c4;
     transition: all 0.15s ease;
-    border: 1px solid transparent;
     width: 100%;
     text-align: left;
+    position: relative;
 }
 
 .toggl-nav-item:hover {
-    color: #f4f4f5;
-    background: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
+    background: rgba(229, 124, 216, 0.08);
 }
 
 .toggl-nav-item.active {
     color: #ffffff;
-    background: linear-gradient(90deg, rgba(139, 92, 246, 0.18) 0%, rgba(99, 102, 241, 0.06) 100%);
-    border-color: rgba(139, 92, 246, 0.32);
+    background: rgba(229, 124, 216, 0.15);
     font-weight: 600;
 }
 
+.toggl-nav-item.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--toggl-orchid);
+}
+
 .toggl-nav-item.active i {
-    color: #c084fc;
+    color: var(--toggl-orchid);
 }
 
-/* Toggl Track Live Timer Bar Glow */
-.toggl-timer-active {
-    background: linear-gradient(90deg, rgba(24, 16, 40, 0.95) 0%, rgba(17, 24, 39, 0.95) 50%, rgba(16, 32, 28, 0.95) 100%);
-    border-bottom: 1px solid rgba(168, 85, 247, 0.35);
+/* Toggl Track Top Timer Bar */
+.toggl-top-bar {
+    background: #0d0e13;
+    border-bottom: 1px solid var(--cf-border);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
 }
 
-/* Scrollbar customization */
+.toggl-top-bar.timer-running {
+    background: linear-gradient(90deg, #170e21 0%, #0d121c 60%, #0d1a16 100%);
+    border-bottom: 1px solid rgba(229, 124, 216, 0.35);
+}
+
+/* Toggl Play / Stop Circular Button */
+.toggl-play-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--toggl-orchid);
+    color: #160b1e;
+    font-size: 0.85rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    box-shadow: 0 0 18px rgba(229, 124, 216, 0.35);
+}
+.toggl-play-btn:hover {
+    transform: scale(1.06);
+    background: #f09be5;
+}
+
+.toggl-stop-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f43f5e;
+    color: #ffffff;
+    font-size: 0.85rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 0 18px rgba(244, 63, 94, 0.4);
+}
+.toggl-stop-btn:hover {
+    transform: scale(1.06);
+}
+
+/* Toggl Track Time Entry Row */
+.toggl-entry-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1.25rem;
+    background-color: var(--cf-surface);
+    border-bottom: 1px solid var(--cf-border);
+    transition: background-color 0.15s ease;
+}
+.toggl-entry-row:hover {
+    background-color: #13161f;
+}
+.toggl-entry-row.running-row {
+    background: linear-gradient(90deg, rgba(229, 124, 216, 0.08) 0%, rgba(44, 213, 255, 0.04) 100%);
+    border-left: 3px solid var(--toggl-orchid);
+}
+
+/* Project / Machine Dot Pill (Toggl Style) */
+.toggl-project-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.375rem;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Legacy compatibility card class mapped to Codeforge architectural style */
+.cf-card {
+    position: relative;
+    background-color: var(--cf-surface);
+    border: 1px solid var(--cf-border);
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.cf-card:hover {
+    border-color: var(--cf-border-strong);
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
 }
 ::-webkit-scrollbar-track {
-    background: #09090b;
+    background: #07080a;
 }
 ::-webkit-scrollbar-thumb {
     background: #27272a;
@@ -153,16 +360,14 @@ body {
 
 /* Pulsing Status Indicator */
 @keyframes pulse-ring {
-    0% { transform: scale(0.85); opacity: 0.85; }
-    50% { transform: scale(1.2); opacity: 0.35; }
-    100% { transform: scale(0.85); opacity: 0.85; }
+    0% { transform: scale(0.85); opacity: 0.9; }
+    50% { transform: scale(1.25); opacity: 0.35; }
+    100% { transform: scale(0.85); opacity: 0.9; }
 }
-
 .timer-pulse {
-    animation: pulse-ring 1.6s infinite ease-in-out;
+    animation: pulse-ring 1.5s infinite ease-in-out;
 }
 
-/* 2027 Matrix Month Cell */
 .month-cell {
     transition: all 0.15s ease;
     user-select: none;
@@ -171,16 +376,14 @@ body {
     transform: translateY(-1px);
 }
 
-/* QR Code Container Styling */
 .qr-container canvas,
 .qr-container img {
     margin: 0 auto;
-    border-radius: 8px;
-    padding: 8px;
+    border-radius: 6px;
+    padding: 6px;
     background: #ffffff;
 }
 
-/* Print Styles for QR Codes Sheet & Hoja de Vida */
 @media print {
     body {
         background: #ffffff !important;
@@ -218,25 +421,25 @@ body {
     </style>
     <!-- INLINE_CSS_END -->
 </head>
-<body class="h-full flex bg-obsidian codeforge-bg font-sans antialiased text-zinc-200 selection:bg-purple-500/30 selection:text-purple-200">
+<body class="h-full flex bg-obsidian font-sans antialiased text-zinc-100 selection:bg-[#e57cd8]/30 selection:text-white">
 
     <!-- ===================================================================== -->
-    <!-- LEFT SIDEBAR NAVIGATION (TOGGL TRACK + CODEFORGE STYLE)               -->
+    <!-- TOGGL TRACK LEFT SIDEBAR (GROUPED: TRACK / ANALYZE / MANAGE)          -->
     <!-- ===================================================================== -->
-    <aside id="app-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#0c0c10]/95 backdrop-blur-xl border-r border-white/[0.07] flex flex-col transform -translate-x-full lg:translate-x-0 lg:static lg:inset-auto transition-transform duration-200 ease-in-out no-print">
+    <aside id="app-sidebar" class="fixed inset-y-0 left-0 z-40 w-60 toggl-sidebar flex flex-col transform -translate-x-full lg:translate-x-0 lg:static lg:inset-auto transition-transform duration-200 ease-in-out no-print">
         
-        <!-- Brand Header -->
-        <div class="h-16 px-4 flex items-center justify-between border-b border-white/[0.07]">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="handleLogoClick()">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20 border border-white/15">
-                    <i class="fa-solid fa-bolt-lightning text-sm"></i>
+        <!-- Brand Header (Toggl + Codeforge hybrid) -->
+        <div class="h-16 px-4 flex items-center justify-between border-b border-white/[0.08]">
+            <div class="flex items-center gap-2.5 cursor-pointer" onclick="handleLogoClick()">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#e57cd8] via-[#9333ea] to-[#2CD5FF] flex items-center justify-center text-[#130b1c] font-black shadow-lg shadow-[#e57cd8]/20">
+                    <i class="fa-solid fa-power-off text-sm"></i>
                 </div>
                 <div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-extrabold text-base tracking-tight text-white">SistMaint</span>
-                        <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-300 font-mono font-semibold border border-purple-500/30">v2.0</span>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-extrabold text-sm tracking-tight text-white">SistMaint</span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-[#e57cd8]/15 text-[#e57cd8] font-mono font-bold border border-[#e57cd8]/30">TRACK</span>
                     </div>
-                    <p class="text-[10px] text-zinc-500 font-medium">CMMS & Plan 2027</p>
+                    <p class="text-[10px] text-[#9c89b0] font-medium">CMMS 4.0 • Planta</p>
                 </div>
             </div>
             <button onclick="toggleMobileSidebar()" class="lg:hidden text-zinc-400 hover:text-white p-1.5">
@@ -244,61 +447,63 @@ body {
             </button>
         </div>
 
-        <!-- Active Role Status Banner -->
-        <div class="px-3 pt-3 pb-2">
-            <div id="sidebar-role-card" class="p-2.5 rounded-xl bg-zinc-900/90 border border-white/[0.07] flex items-center justify-between gap-2">
+        <!-- Workspace / Active Role Pill -->
+        <div class="px-3 pt-3 pb-1">
+            <div id="sidebar-role-card" class="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5 min-w-0">
-                    <div id="role-avatar-icon" class="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center flex-shrink-0 text-xs">
+                    <div id="role-avatar-icon" class="w-7 h-7 rounded-md bg-[#e57cd8]/15 border border-[#e57cd8]/30 text-[#e57cd8] flex items-center justify-center flex-shrink-0 text-xs">
                         <i class="fa-solid fa-helmet-safety"></i>
                     </div>
                     <div class="truncate">
-                        <p class="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Modo Activo</p>
+                        <p class="text-[9px] uppercase tracking-widest text-[#9c89b0] font-bold">Vista Activa</p>
                         <p id="sidebar-role-title" class="text-xs font-bold text-white truncate">Operario (QR)</p>
                     </div>
                 </div>
-                <span id="sidebar-role-dot" class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span>
+                <span id="sidebar-role-dot" class="w-2 h-2 rounded-full bg-[#2CD5FF] flex-shrink-0 shadow-[0_0_8px_#2CD5FF]"></span>
             </div>
         </div>
 
-        <!-- Navigation Menu Links -->
-        <nav class="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-            <p class="px-2 pt-1 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500">Módulos</p>
+        <!-- Toggl Track Grouped Navigation -->
+        <nav class="flex-1 px-2.5 py-2 space-y-0.5 overflow-y-auto">
+            
+            <!-- GROUP 1: TRACK -->
+            <div class="toggl-section-label">Track</div>
 
-            <!-- Reportar Falla QR (All Roles) -->
             <button onclick="navigateTo('report')" id="nav-report" class="toggl-nav-item">
                 <i class="fa-solid fa-qrcode w-4 text-center"></i>
                 <span>Reportar Falla (QR)</span>
             </button>
 
-            <!-- Órdenes & Máquinas Dañadas (Técnico & Jefe) -->
             <button onclick="navigateTo('orders')" id="nav-orders" class="toggl-nav-item">
                 <i class="fa-solid fa-stopwatch w-4 text-center"></i>
-                <span class="flex-1">Máquinas Dañadas / OT</span>
-                <span id="badge-active-orders" class="px-1.5 py-0.5 text-[10px] font-mono rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">0</span>
+                <span class="flex-1">Timer & Dañadas</span>
+                <span id="badge-active-orders" class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-[#e57cd8]/20 text-[#e57cd8] font-bold">0</span>
             </button>
 
-            <!-- Máquinas & Hojas de Vida (Técnico & Jefe) -->
+            <!-- GROUP 2: ANALYZE & ASSETS -->
+            <div id="sidebar-analyze-label" class="toggl-section-label">Activos & Planes</div>
+
             <button onclick="navigateTo('machines')" id="nav-machines" class="toggl-nav-item">
                 <i class="fa-solid fa-book-medical w-4 text-center"></i>
                 <span>Hojas de Vida & QR</span>
             </button>
 
-            <!-- Planes & Preventivo 2027 (Técnico & Jefe) -->
             <button onclick="navigateTo('plans')" id="nav-plans" class="toggl-nav-item">
-                <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+                <i class="fa-solid fa-calendar-days w-4 text-center"></i>
                 <span class="flex-1">Plan Preventivo 2027</span>
-                <span class="px-1.5 py-0.5 text-[9px] font-mono rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">2027</span>
+                <span class="px-1.5 py-0.5 text-[9px] font-mono rounded bg-[#2CD5FF]/15 text-[#2CD5FF] border border-[#2CD5FF]/30">2027</span>
             </button>
 
-            <!-- Jefe Exclusive Section -->
-            <div id="sidebar-boss-section" class="pt-3 space-y-1 hidden">
-                <p class="px-2 pt-1 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-purple-400/90 flex items-center gap-1.5">
-                    <i class="fa-solid fa-crown text-[9px]"></i> Administración Jefe
-                </p>
+            <!-- GROUP 3: MANAGE (EXCLUSIVO JEFE) -->
+            <div id="sidebar-boss-section" class="pt-1 space-y-0.5 hidden">
+                <div class="toggl-section-label flex items-center justify-between">
+                    <span>Manage (Jefe)</span>
+                    <i class="fa-solid fa-crown text-[9px] text-[#e57cd8]"></i>
+                </div>
 
                 <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="toggl-nav-item">
-                    <i class="fa-solid fa-chart-pie w-4 text-center"></i>
-                    <span>Dashboard & KPIs</span>
+                    <i class="fa-solid fa-chart-column w-4 text-center"></i>
+                    <span>Insights & Dashboard</span>
                 </button>
 
                 <button onclick="navigateTo('categories')" id="nav-categories" class="toggl-nav-item">
@@ -307,37 +512,38 @@ body {
                 </button>
 
                 <button onclick="navigateTo('technicians')" id="nav-technicians" class="toggl-nav-item">
-                    <i class="fa-solid fa-users-gear w-4 text-center"></i>
+                    <i class="fa-solid fa-user-gear w-4 text-center"></i>
                     <span>Equipo Técnico</span>
                 </button>
             </div>
         </nav>
 
-        <!-- Role / Mode Switcher Footer in Sidebar -->
-        <div class="p-3 border-t border-white/[0.07] bg-[#09090d]/90 space-y-2">
-            <div class="flex items-center justify-between px-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Cambiar Vista / Rol</span>
-                <button onclick="syncWithCloud(true)" title="Sincronizar Base de Datos en Nube" class="text-[10px] text-purple-400 hover:text-purple-300 flex items-center gap-1">
-                    <i id="cloud-sync-icon" class="fa-solid fa-cloud-arrow-down"></i> Sync
+        <!-- Role Switcher Footer in Sidebar -->
+        <div class="p-3 border-t border-white/[0.08] bg-black/40 space-y-2">
+            <div class="flex items-center justify-between px-0.5">
+                <span class="text-[9px] font-extrabold uppercase tracking-widest text-[#9c89b0]">Simular Rol</span>
+                <button onclick="syncWithCloud(true)" class="text-[10px] text-[#2CD5FF] hover:underline flex items-center gap-1 font-mono">
+                    <i id="cloud-sync-icon" class="fa-solid fa-rotate"></i> Cloud Sync
                 </button>
             </div>
 
-            <div class="grid grid-cols-3 gap-1.5">
-                <button onclick="switchRole('OPERARIO')" id="role-btn-OPERARIO" class="py-2 px-1.5 rounded-lg text-[11px] font-semibold border transition-all flex flex-col items-center gap-1">
+            <div class="grid grid-cols-3 gap-1">
+                <button onclick="switchRole('OPERARIO')" id="role-btn-OPERARIO" class="py-1.5 px-1 rounded text-[10px] font-semibold border transition-all flex flex-col items-center gap-0.5">
                     <i class="fa-solid fa-helmet-safety text-xs"></i>
                     <span>Operario</span>
                 </button>
-                <button onclick="switchRole('TECNICO')" id="role-btn-TECNICO" class="py-2 px-1.5 rounded-lg text-[11px] font-semibold border transition-all flex flex-col items-center gap-1">
+                <button onclick="switchRole('TECNICO')" id="role-btn-TECNICO" class="py-1.5 px-1 rounded text-[10px] font-semibold border transition-all flex flex-col items-center gap-0.5">
                     <i class="fa-solid fa-wrench text-xs"></i>
                     <span>Técnico</span>
                 </button>
-                <button onclick="switchRole('JEFE')" id="role-btn-JEFE" class="py-2 px-1.5 rounded-lg text-[11px] font-semibold border transition-all flex flex-col items-center gap-1">
-                    <i class="fa-solid fa-user-shield text-xs"></i>
+                <button onclick="switchRole('JEFE')" id="role-btn-JEFE" class="py-1.5 px-1 rounded text-[10px] font-semibold border transition-all flex flex-col items-center gap-0.5">
+                    <i class="fa-solid fa-crown text-xs"></i>
                     <span>Jefe</span>
                 </button>
             </div>
-            <button id="logout-boss-btn" onclick="logoutBoss()" class="hidden w-full py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-[11px] font-semibold transition-all">
-                <i class="fa-solid fa-right-from-bracket mr-1"></i> Cerrar Sesión Jefe
+
+            <button id="logout-boss-btn" onclick="logoutBoss()" class="hidden w-full py-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-[10px] font-bold transition-all">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i> Salir de Modo Jefe
             </button>
         </div>
     </aside>
@@ -345,566 +551,579 @@ body {
     <!-- Mobile Backdrop -->
     <div id="sidebar-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm hidden lg:hidden no-print"></div>
 
+
     <!-- ===================================================================== -->
-    <!-- MAIN WORKSPACE AREA (TOP TIMER BAR + VIEWS + FOOTER)                  -->
+    <!-- MAIN WORKSPACE: TOGGL TOP TIMER BAR + CODEFORGE BLUEPRINT GRID        -->
     <!-- ===================================================================== -->
     <div class="flex-1 flex flex-col min-w-0 min-h-screen">
 
-        <!-- TOP STICKY BAR: TOGGL TRACK LIVE TIMER + NOTIFICATIONS -->
-        <header id="top-header-bar" class="sticky top-0 z-30 h-16 bg-[#0c0c10]/90 backdrop-blur-xl border-b border-white/[0.07] px-4 sm:px-6 flex items-center justify-between gap-3 no-print">
+        <!-- TOGGL TRACK ICONIC TOP TIMER / ACTION BAR -->
+        <header id="top-header-bar" class="sticky top-0 z-30 h-16 toggl-top-bar px-4 lg:px-6 flex items-center justify-between gap-3 no-print">
             
-            <!-- Left: Mobile Menu & Active Section Label -->
-            <div class="flex items-center gap-3 min-w-0">
-                <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-lg bg-zinc-900 border border-white/10 text-zinc-300 hover:text-white">
+            <!-- Left: Mobile Menu + Toggl "What are you working on?" / Active Order Bar -->
+            <div class="flex items-center gap-3 flex-1 min-w-0">
+                <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-300 hover:text-white">
                     <i class="fa-solid fa-bars"></i>
                 </button>
-                <div class="truncate">
-                    <h1 id="header-view-title" class="text-sm sm:text-base font-bold text-white truncate">Reportar Falla de Máquina</h1>
-                    <p id="header-view-subtitle" class="text-[11px] text-zinc-400 hidden sm:block truncate">Escanea el código QR de la máquina para registrar el reporte</p>
+
+                <!-- Toggl Track Interactive Timer Bar (For Técnico & Jefe) -->
+                <div id="toggl-live-timer-widget" class="hidden md:flex items-center justify-between flex-1 max-w-2xl bg-[#12141c] border border-white/[0.08] rounded-xl px-3.5 py-1.5 gap-3">
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span id="toggl-bar-dot" class="w-2.5 h-2.5 rounded-full bg-zinc-600 flex-shrink-0"></span>
+                        <span id="toggl-bar-label" class="text-xs font-medium text-zinc-300 truncate">
+                            Sin orden en cronómetro — Haz clic en ▶ en cualquier orden para iniciar tiempo
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <span id="toggl-bar-clock" class="font-mono text-base font-extrabold text-white tracking-tight">00:00:00</span>
+                        <button id="toggl-bar-action-btn" onclick="openRunningOrderFromBar()" class="toggl-play-btn" title="Ver o gestionar cronómetro activo">
+                            <i id="toggl-bar-btn-icon" class="fa-solid fa-play text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Fallback Title on Mobile / Operario -->
+                <div class="md:hidden truncate">
+                    <h1 id="header-view-title" class="text-sm font-bold text-white truncate">SistMaint CMMS</h1>
+                    <p id="header-view-subtitle" class="text-[10px] text-zinc-400 truncate">Control de Planta</p>
                 </div>
             </div>
 
-            <!-- Center: TOGGL TRACK LIVE RUNNING TIMER WIDGET (Visible for Técnico & Jefe) -->
-            <div id="toggl-live-timer-widget" class="hidden md:flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-zinc-900/90 border border-white/[0.08] shadow-inner">
-                <div class="flex items-center gap-2">
-                    <span id="toggl-bar-dot" class="w-2.5 h-2.5 rounded-full bg-zinc-600"></span>
-                    <span id="toggl-bar-label" class="text-xs font-medium text-zinc-400 truncate max-w-[200px]">Sin reparación activa</span>
-                </div>
-                <div class="h-4 w-[1px] bg-white/10"></div>
-                <span id="toggl-bar-clock" class="font-mono text-sm font-bold text-zinc-300 tracking-wider">00:00:00</span>
-                <button id="toggl-bar-action-btn" onclick="openRunningOrderFromBar()" class="hidden px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold transition-all">
-                    Ver OT
-                </button>
-            </div>
-
-            <!-- Right: Cloud Badge + Notifications Bell + Quick Role Action -->
-            <div class="flex items-center gap-2.5">
-                <!-- Cloud DB Status Pill -->
-                <button onclick="syncWithCloud(true)" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium hover:bg-emerald-500/15 transition-all" title="Base de datos sincronizada en la nube">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>Cloud DB</span>
+            <!-- Right: Cloud Sync Pill + Notifications Bell + Boss Login -->
+            <div class="flex items-center gap-2">
+                <button onclick="syncWithCloud(true)" class="hidden sm:inline-flex cf-pill-badge text-[#2CD5FF] hover:border-[#2CD5FF]/40 transition-all" title="Sincronizado en tiempo real con la nube">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#2CD5FF] animate-pulse"></span>
+                    <span class="font-mono text-[11px]">CLOUD SYNC</span>
                 </button>
 
-                <!-- Notifications Bell (Visible for Técnico & Jefe) -->
-                <button id="header-notif-btn" onclick="toggleNotificationDrawer()" class="relative p-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/[0.08] text-zinc-300 hover:text-white transition-all" title="Notificaciones de Hojas de Vida y Planta">
-                    <i class="fa-solid fa-bell text-sm"></i>
-                    <span id="notif-unread-badge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-mono font-bold flex items-center justify-center shadow">0</span>
+                <button id="header-notif-btn" onclick="toggleNotificationDrawer()" class="relative w-9 h-9 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.09] text-zinc-300 hover:text-white flex items-center justify-center transition-all" title="Notificaciones a Jefes y Técnicos">
+                    <i class="fa-solid fa-bell text-xs"></i>
+                    <span id="notif-unread-badge" class="hidden absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-[#e57cd8] text-[#160d1f] text-[10px] font-mono font-extrabold flex items-center justify-center">0</span>
                 </button>
 
-                <!-- Login / Boss Status Button -->
-                <button id="header-login-btn" onclick="openLoginModal()" class="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-purple-500/30 text-purple-300 text-xs font-semibold flex items-center gap-2 transition-all">
-                    <i class="fa-solid fa-lock text-[11px]"></i>
+                <button id="header-login-btn" onclick="openLoginModal()" class="h-9 px-3.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.12] text-white text-xs font-semibold flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-lock text-[#e57cd8] text-[11px]"></i>
                     <span class="hidden sm:inline">Acceso Jefe</span>
                 </button>
             </div>
         </header>
 
-        <!-- MAIN CONTENT CONTAINER -->
-        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-            <!-- ========================================================= -->
-            <!-- VIEW 1: REPORTAR FALLA POR QR (OPERARIO / PLANTA)         -->
-            <!-- (Sin Tipo de Mantenimiento ni Asignar Técnico para Operario)-->
-            <!-- ========================================================= -->
-            <section id="view-report" class="space-y-6">
-                <div class="max-w-3xl mx-auto">
-                    
-                    <!-- Top Scanner Card -->
-                    <div class="cf-card rounded-2xl p-5 mb-5">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div class="flex items-center gap-3.5">
-                                <div class="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 text-xl flex-shrink-0">
-                                    <i class="fa-solid fa-qrcode"></i>
-                                </div>
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <h2 class="text-base sm:text-lg font-bold text-white">Reporte Rápido de Falla en Máquina</h2>
-                                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-semibold">Planta QR</span>
-                                    </div>
-                                    <p class="text-xs text-zinc-400 mt-0.5">Escanea el QR pegado en la máquina o selecciónala abajo para notificar al Jefe y Técnicos.</p>
-                                </div>
-                            </div>
-                            <button type="button" onclick="toggleQrScanner()" id="btn-toggle-scanner" class="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-600/25 transition-all flex-shrink-0">
-                                <i class="fa-solid fa-camera"></i>
-                                <span>Escanear QR con Cámara</span>
+        <!-- ================================================================= -->
+        <!-- CODEFORGE ARCHITECTURAL BLUEPRINT CONTAINER (border-x + divide-y) -->
+        <!-- ================================================================= -->
+        <main class="flex-1 w-full max-w-7xl mx-auto border-x border-white/[0.085] divide-y divide-white/[0.085]">
+
+            <!-- ============================================================= -->
+            <!-- VIEW 1: REPORTAR FALLA POR QR (OPERARIO / PLANTA)             -->
+            <!-- ============================================================= -->
+            <section id="view-report" class="divide-y divide-white/[0.085]">
+                
+                <!-- Codeforge Radial Glow Header Banner with Crosshairs (+) -->
+                <div class="relative cf-hero-glow cf-crosshair-tl cf-crosshair-br px-6 py-8 sm:py-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div class="relative z-10 space-y-2 max-w-2xl">
+                        <div class="cf-pill-badge text-[#2CD5FF]">
+                            <i class="fa-solid fa-qrcode"></i>
+                            <span>TERMINAL DE REPORTE QR • PLANTA INDUSTRIAL</span>
+                        </div>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tighter text-white">
+                            Reportar Avería o Falla de Máquina
+                        </h2>
+                        <p class="text-xs sm:text-sm text-zinc-400">
+                            Escanea el código QR adherido a la máquina o toca el activo correspondiente. El reporte alerta en tiempo real a los Jefes y Técnicos.
+                        </p>
+                    </div>
+                    <div class="relative z-10 flex items-center gap-3">
+                        <button type="button" onclick="toggleQrScanner()" id="btn-toggle-scanner"
+                            class="px-5 py-3 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-[#e57cd8]/25 transition-all">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>Escanear QR con Cámara</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Camera QR Reader Drawer -->
+                <div id="qr-scanner-container" class="hidden p-6 bg-[#0b0d13]">
+                    <div class="max-w-md mx-auto space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono font-bold text-[#2CD5FF] flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                                ESCÁNER ÓPTICO QR ACTIVO
+                            </span>
+                            <button type="button" onclick="stopQrScanner()" class="text-xs text-rose-400 hover:underline font-semibold">
+                                Cerrar cámara &times;
                             </button>
                         </div>
+                        <div id="qr-reader" class="w-full rounded-xl overflow-hidden border border-white/15 bg-black"></div>
+                    </div>
+                </div>
 
-                        <!-- Live Camera Reader Box -->
-                        <div id="qr-scanner-container" class="hidden mt-4 pt-4 border-t border-white/[0.08]">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-semibold text-purple-300 flex items-center gap-1.5">
-                                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-                                    Apunta la cámara al código QR de la máquina
-                                </span>
-                                <button type="button" onclick="stopQrScanner()" class="text-xs text-rose-400 hover:text-rose-300 font-semibold">
-                                    Cerrar cámara &times;
-                                </button>
+                <!-- Main Operator Form inside Codeforge Architectural Grid -->
+                <form id="incident-report-form" onsubmit="submitIncidentReport(event)" class="divide-y divide-white/[0.085] bg-[#090b0f]">
+                    
+                    <!-- Step 1: Machine Selector & Quick 1-Tap Chips -->
+                    <div class="p-6 sm:p-8 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-mono font-bold uppercase tracking-wider text-[#2CD5FF]">
+                                01 // SELECCIONAR MÁQUINA AFECTADA *
+                            </label>
+                            <span class="text-[11px] text-zinc-500 font-mono">QR / Selección Rápida</span>
+                        </div>
+
+                        <div id="quick-machine-chips" class="flex flex-wrap gap-2 pt-1"></div>
+
+                        <select id="form-machine-id" required onchange="onMachineSelectChange(this.value)"
+                            class="w-full bg-[#0f1218] border border-white/[0.1] rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-[#2CD5FF] transition-colors">
+                            <option value="">-- Selecciona o escanea una máquina --</option>
+                        </select>
+
+                        <div id="form-machine-info" class="hidden p-3 rounded-lg bg-[#2CD5FF]/10 border border-[#2CD5FF]/30 flex items-center justify-between gap-2 text-xs text-[#2CD5FF]">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span id="form-machine-info-text" class="font-semibold"></span>
                             </div>
-                            <div id="qr-reader" class="w-full max-w-sm mx-auto rounded-xl overflow-hidden border border-white/15 bg-black"></div>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-[#2CD5FF]/20 font-bold">VINCULADA</span>
                         </div>
                     </div>
 
-                    <!-- Main Operator Report Form -->
-                    <form id="incident-report-form" onsubmit="submitIncidentReport(event)" class="cf-card rounded-2xl p-5 sm:p-7 space-y-6">
-                        
-                        <!-- Machine Selection + Quick Chips -->
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-2">
-                                1. Máquina Afectada <span class="text-rose-400">*</span>
+                    <!-- Step 2: Operator Identification & Timestamp (Flush 3-column Codeforge grid) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.085]">
+                        <div class="p-6 space-y-1.5">
+                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
+                                02 // NOMBRE COMPLETO (OPERARIO) *
                             </label>
-                            <!-- 1-Tap Quick Machine Chips -->
-                            <div id="quick-machine-chips" class="flex flex-wrap gap-2 mb-3"></div>
-
-                            <select id="form-machine-id" required onchange="onMachineSelectChange(this.value)"
-                                class="w-full bg-zinc-950/90 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors">
-                                <option value="">-- Selecciona o escanea una máquina --</option>
-                            </select>
-
-                            <div id="form-machine-info" class="hidden mt-2.5 p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between gap-2 text-xs text-purple-200">
-                                <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-circle-check text-purple-400"></i>
-                                    <span id="form-machine-info-text" class="font-medium"></span>
-                                </div>
-                                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">QR Vinculado</span>
-                            </div>
+                            <input type="text" id="form-operator-name" required placeholder="Ej: Carlos Morales"
+                                class="w-full bg-[#0f1218] border border-white/[0.1] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-[#e57cd8]">
                         </div>
-
-                        <!-- Operator Name, Date & Time -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div class="sm:col-span-1">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                                    2. Nombre Completo (Operario) <span class="text-rose-400">*</span>
-                                </label>
-                                <input type="text" id="form-operator-name" required placeholder="Ej: Juan Pérez"
-                                    class="w-full bg-zinc-950/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                                    Fecha del Reporte <span class="text-rose-400">*</span>
-                                </label>
-                                <input type="date" id="form-date" required
-                                    class="w-full bg-zinc-950/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-purple-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                                    Hora Exacta <span class="text-rose-400">*</span>
-                                </label>
-                                <input type="time" id="form-time" required
-                                    class="w-full bg-zinc-950/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-purple-500">
-                            </div>
-                        </div>
-
-                        <!-- Failure Categorization (Categoría + Subcategoría) -->
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-zinc-300">
-                                    3. Categoría de la Falla <span class="text-rose-400">*</span>
-                                </label>
-                                <span class="text-[11px] text-zinc-500">Selecciona el tipo o "Por Diagnosticar / No sabe"</span>
-                            </div>
-                            <input type="hidden" id="form-failure-type" value="MECANICA">
-                            <div id="form-failure-categories-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                                <!-- Populated dynamically from state.categories -->
-                            </div>
-
-                            <!-- Subcategoría específica -->
-                            <div id="form-subcategory-wrapper" class="pt-2">
-                                <label class="block text-[11px] font-semibold text-zinc-400 mb-1.5">
-                                    Subcategoría / Componente específico (Opcional):
-                                </label>
-                                <div id="form-subcategory-chips" class="flex flex-wrap gap-1.5 mb-2"></div>
-                                <input type="text" id="form-failure-subcategory" placeholder="Selecciona un chip arriba o escribe el componente (ej: Rodamientos, Sensor, Motor...)"
-                                    class="w-full bg-zinc-950/90 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
-                            </div>
-                        </div>
-
-                        <!-- Machine Stopped Question -->
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-2">
-                                4. ¿La máquina quedó detenida / parada? <span class="text-rose-400">*</span>
+                        <div class="p-6 space-y-1.5">
+                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
+                                FECHA DE REPORTE *
                             </label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <input type="date" id="form-date" required
+                                class="w-full bg-[#0f1218] border border-white/[0.1] rounded-lg px-3.5 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-[#e57cd8]">
+                        </div>
+                        <div class="p-6 space-y-1.5">
+                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
+                                HORA EXACTA *
+                            </label>
+                            <input type="time" id="form-time" required
+                                class="w-full bg-[#0f1218] border border-white/[0.1] rounded-lg px-3.5 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-[#e57cd8]">
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Categorización de la Falla (Codeforge Bento Selector + Subcategorías) -->
+                    <div class="p-6 sm:p-8 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <label class="text-xs font-mono font-bold uppercase tracking-wider text-[#e57cd8]">
+                                03 // CATEGORÍA Y COMPONENTE DE LA FALLA *
+                            </label>
+                            <span class="text-[11px] text-zinc-400">Elige la naturaleza del fallo o "Por Diagnosticar / No sabe"</span>
+                        </div>
+
+                        <input type="hidden" id="form-failure-type" value="MECANICA">
+                        <div id="form-failure-categories-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                            <!-- Populated dynamically -->
+                        </div>
+
+                        <div id="form-subcategory-wrapper" class="pt-3 border-t border-white/[0.06]">
+                            <label class="block text-[11px] font-mono uppercase text-zinc-400 mb-2">
+                                Subcategoría / Pieza específica (Toca un chip o escribe):
+                            </label>
+                            <div id="form-subcategory-chips" class="flex flex-wrap gap-1.5 mb-2.5"></div>
+                            <input type="text" id="form-failure-subcategory" placeholder="Ej: Rodamientos, Sensor óptico, Variador VFD, Fuga neumática..."
+                                class="w-full bg-[#0f1218] border border-white/[0.1] rounded-lg px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#e57cd8]">
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Machine Stopped + Symptom Description -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.085]">
+                        <div class="p-6 sm:p-8 space-y-3">
+                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-zinc-300">
+                                04 // ¿LA MÁQUINA QUEDÓ DETENIDA / PARADA? *
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                                 <label class="cursor-pointer">
                                     <input type="radio" name="machine_stopped" value="1" class="peer sr-only" checked>
-                                    <div class="p-3.5 rounded-xl border border-white/10 bg-zinc-950/80 peer-checked:border-rose-500 peer-checked:bg-rose-500/15 transition-all flex items-center gap-3">
-                                        <div class="w-9 h-9 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0">
+                                    <div class="p-4 rounded-lg border border-white/10 bg-[#0f1218] peer-checked:border-rose-500 peer-checked:bg-rose-500/10 transition-all flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-md bg-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0">
                                             <i class="fa-solid fa-octagon-exclamation"></i>
                                         </div>
                                         <div>
-                                            <p class="font-bold text-white text-xs sm:text-sm">SÍ, MÁQUINA PARADA</p>
-                                            <p class="text-[11px] text-zinc-400">Línea detenida — Contabiliza tiempo de paro</p>
+                                            <p class="font-bold text-white text-xs">SÍ, PARADA</p>
+                                            <p class="text-[10px] text-zinc-400">Inicia reloj de paro</p>
                                         </div>
                                     </div>
                                 </label>
                                 <label class="cursor-pointer">
                                     <input type="radio" name="machine_stopped" value="0" class="peer sr-only">
-                                    <div class="p-3.5 rounded-xl border border-white/10 bg-zinc-950/80 peer-checked:border-emerald-500 peer-checked:bg-emerald-500/15 transition-all flex items-center gap-3">
-                                        <div class="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                                    <div class="p-4 rounded-lg border border-white/10 bg-[#0f1218] peer-checked:border-emerald-500 peer-checked:bg-emerald-500/10 transition-all flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
                                             <i class="fa-solid fa-play"></i>
                                         </div>
                                         <div>
-                                            <p class="font-bold text-white text-xs sm:text-sm">NO, SIGUE OPERANDO</p>
-                                            <p class="text-[11px] text-zinc-400">Presenta falla leve pero continúa produciendo</p>
+                                            <p class="font-bold text-white text-xs">NO, OPERANDO</p>
+                                            <p class="text-[10px] text-zinc-400">Falla sin detener línea</p>
                                         </div>
                                     </div>
                                 </label>
                             </div>
                         </div>
 
-                        <!-- Description -->
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                                5. Descripción del Síntoma o Falla <span class="text-rose-400">*</span>
+                        <div class="p-6 sm:p-8 space-y-2">
+                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-zinc-300">
+                                05 // DESCRIPCIÓN DEL SÍNTOMA O AVERÍA *
                             </label>
                             <textarea id="form-description" rows="3" required
-                                placeholder="Describe qué ocurrió, ruidos anormales, alertas en pantalla o pieza afectada..."
-                                class="w-full bg-zinc-950/90 border border-white/10 rounded-xl p-3.5 text-white text-sm focus:outline-none focus:border-purple-500"></textarea>
+                                placeholder="Describe qué ocurrió en la máquina, ruidos, códigos de alarma o pieza dañada..."
+                                class="w-full bg-[#0f1218] border border-white/[0.1] rounded-lg p-3.5 text-white text-sm focus:outline-none focus:border-[#2CD5FF]"></textarea>
                         </div>
+                    </div>
 
-                        <!-- ========================================================= -->
-                        <!-- BOSS EXCLUSIVE FIELDS (HIDDEN FOR OPERARIO & TÉCNICO!)    -->
-                        <!-- ========================================================= -->
-                        <div id="boss-only-report-fields" class="hidden p-4 rounded-2xl bg-purple-950/25 border border-purple-500/30 space-y-4">
-                            <div class="flex items-center justify-between border-b border-purple-500/20 pb-2">
-                                <span class="text-xs font-bold text-purple-300 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-crown text-amber-400"></i>
-                                    Clasificación y Asignación (Exclusivo Jefe de Mantenimiento)
-                                </span>
-                                <span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">Oculto al Operario</span>
+                    <!-- BOSS EXCLUSIVE FIELDS (Strictly hidden from Operario & Técnico!) -->
+                    <div id="boss-only-report-fields" class="hidden p-6 sm:p-8 bg-[#160d1f]/60 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono font-bold text-[#e57cd8] flex items-center gap-2">
+                                <i class="fa-solid fa-crown"></i>
+                                06 // CLASIFICACIÓN Y ASIGNACIÓN (EXCLUSIVO JEFE DE MANTENIMIENTO)
+                            </span>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-[#e57cd8]/20 text-[#e57cd8]">Oculto al Operario</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-bold text-zinc-300 mb-1">Tipo de Mantenimiento</label>
+                                <select id="form-maintenance-type" class="w-full bg-[#0b0d11] border border-white/15 rounded-lg px-3 py-2.5 text-xs text-white">
+                                    <option value="CORRECTIVO">Correctivo (Por Falla)</option>
+                                    <option value="PREVENTIVO">Preventivo (Programado)</option>
+                                    <option value="PREDICTIVO">Predictivo (Basado en Condición)</option>
+                                </select>
                             </div>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div>
-                                    <label class="block text-[11px] font-bold text-zinc-300 mb-1">Tipo de Mantenimiento</label>
-                                    <select id="form-maintenance-type" class="w-full bg-zinc-950 border border-white/15 rounded-xl px-3 py-2 text-xs text-white">
-                                        <option value="CORRECTIVO">Correctivo (Falla)</option>
-                                        <option value="PREVENTIVO">Preventivo (Programado)</option>
-                                        <option value="PREDICTIVO">Predictivo (Monitoreo)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-bold text-zinc-300 mb-1">Asignar Técnico / Ingeniero</label>
-                                    <select id="form-technician-id" class="w-full bg-zinc-950 border border-white/15 rounded-xl px-3 py-2 text-xs text-white">
-                                        <option value="">-- Sin asignar aún --</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-bold text-zinc-300 mb-1">Prioridad</label>
-                                    <select id="form-priority" class="w-full bg-zinc-950 border border-white/15 rounded-xl px-3 py-2 text-xs text-white">
-                                        <option value="MEDIA">Media</option>
-                                        <option value="ALTA">Alta</option>
-                                        <option value="CRITICA">Crítica / Urgente</option>
-                                        <option value="BAJA">Baja</option>
-                                    </select>
-                                </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-zinc-300 mb-1">Asignar Técnico / Ingeniero</label>
+                                <select id="form-technician-id" class="w-full bg-[#0b0d11] border border-white/15 rounded-lg px-3 py-2.5 text-xs text-white">
+                                    <option value="">-- Sin asignar aún --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-zinc-300 mb-1">Prioridad</label>
+                                <select id="form-priority" class="w-full bg-[#0b0d11] border border-white/15 rounded-lg px-3 py-2.5 text-xs text-white">
+                                    <option value="MEDIA">Media</option>
+                                    <option value="ALTA">Alta</option>
+                                    <option value="CRITICA">Crítica / Paro Urgente</option>
+                                    <option value="BAJA">Baja</option>
+                                </select>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Submit Button -->
-                        <div class="pt-2">
-                            <button type="submit" id="btn-submit-report"
-                                class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold text-sm shadow-xl shadow-purple-600/25 flex items-center justify-center gap-2 transition-all">
-                                <i class="fa-solid fa-paper-plane"></i>
-                                <span>Enviar Reporte de Falla y Notificar a Planta</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <!-- Submit Footer -->
+                    <div class="p-6 bg-[#0b0d11] flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <span class="text-xs text-zinc-400 flex items-center gap-2">
+                            <i class="fa-solid fa-bell text-[#e57cd8]"></i>
+                            Al registrar, se envía alerta inmediata a Jefes y Técnicos.
+                        </span>
+                        <button type="submit" id="btn-submit-report"
+                            class="w-full sm:w-auto px-8 py-3.5 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-[#e57cd8]/20 flex items-center justify-center gap-2 transition-all">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>Registrar Orden de Falla</span>
+                        </button>
+                    </div>
+                </form>
             </section>
 
 
-            <!-- ========================================================= -->
-            <!-- VIEW 2: MONITOR DE MÁQUINAS DAÑADAS & ÓRDENES (TÉCNICO/JEFE)-->
-            <!-- ========================================================= -->
-            <section id="view-orders" class="space-y-6 hidden">
+            <!-- ============================================================= -->
+            <!-- VIEW 2: TOGGL TRACK TIMER & MÁQUINAS DAÑADAS (TÉCNICO / JEFE) -->
+            <!-- ============================================================= -->
+            <section id="view-orders" class="divide-y divide-white/[0.085] hidden">
                 
-                <!-- Top Section: Máquinas Dañadas / En Falla Ahora (Key view for Technicians) -->
-                <div class="cf-card rounded-2xl p-5 border-l-4 border-l-rose-500">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                <!-- Codeforge Architectural Header + Damaged Machines Alert Grid -->
+                <div class="p-6 sm:p-8 cf-hero-glow cf-crosshair-tl cf-crosshair-br space-y-5">
+                    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <h2 class="text-base font-bold text-white flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-                                <span>Estado en Planta: Máquinas Dañadas o en Intervención</span>
+                            <div class="cf-pill-badge text-rose-400 mb-2">
+                                <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                                <span>MONITOR EN VIVO DE PLANTA • MODO TÉCNICO & JEFE</span>
+                            </div>
+                            <h2 class="text-2xl font-extrabold tracking-tighter text-white">
+                                Máquinas Dañadas & Control de Tiempos (Timer)
                             </h2>
-                            <p class="text-xs text-zinc-400">Panel rápido para Técnicos: selecciona la máquina dañada para iniciar el cronómetro o consultar su Hoja de Vida</p>
+                            <p class="text-xs text-zinc-400 mt-0.5">
+                                Inicia el cronómetro de reparación al estilo Toggl Track o consulta la Hoja de Vida de la máquina afectada.
+                            </p>
                         </div>
-                        <button onclick="navigateTo('report')" class="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-bold text-white flex items-center gap-2 self-start sm:self-auto">
-                            <i class="fa-solid fa-plus text-purple-400"></i> Nuevo Reporte
+                        <button onclick="navigateTo('report')" class="px-4 py-2.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-bold text-white flex items-center gap-2 self-start sm:self-auto">
+                            <i class="fa-solid fa-plus text-[#e57cd8]"></i> Reportar Falla
                         </button>
                     </div>
-                    <div id="damaged-machines-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Populated via JS -->
-                    </div>
+
+                    <!-- Damaged Machines Cards Grid -->
+                    <div id="damaged-machines-grid" class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </div>
 
-                <!-- Filters Bar -->
-                <div class="cf-card rounded-2xl p-4 flex flex-wrap items-center gap-3">
+                <!-- Toggl Track Filter Bar -->
+                <div class="px-6 py-3.5 bg-[#0b0d11] flex flex-wrap items-center gap-3">
                     <div class="relative flex-1 min-w-[200px]">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-zinc-500 text-xs"></i>
-                        <input type="text" id="filter-search" oninput="loadOrdersList()" placeholder="Buscar OT, máquina, operario o falla..."
-                            class="w-full bg-zinc-950 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-zinc-500 text-xs"></i>
+                        <input type="text" id="filter-search" oninput="loadOrdersList()" placeholder="Filtrar por código OT, máquina, síntoma u operario..."
+                            class="w-full bg-[#07080a] border border-white/[0.09] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#e57cd8]">
                     </div>
 
-                    <select id="filter-status" onchange="loadOrdersList()" class="bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-zinc-300">
-                        <option value="">Todos los Estados</option>
+                    <select id="filter-status" onchange="loadOrdersList()" class="bg-[#07080a] border border-white/[0.09] rounded-lg px-3 py-1.5 text-xs text-zinc-300">
+                        <option value="">Estado: Todos</option>
                         <option value="PENDIENTE">⏳ Pendientes</option>
-                        <option value="EN_PROCESO">⚡ En Reparación (Cronómetro)</option>
+                        <option value="EN_PROCESO">⚡ En Reparación (Timer Activo)</option>
                         <option value="PAUSADO">⏸️ Pausadas</option>
                         <option value="FINALIZADO">✅ Finalizadas</option>
                     </select>
 
-                    <select id="filter-machine" onchange="loadOrdersList()" class="bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-zinc-300">
-                        <option value="">Todas las Máquinas</option>
+                    <select id="filter-machine" onchange="loadOrdersList()" class="bg-[#07080a] border border-white/[0.09] rounded-lg px-3 py-1.5 text-xs text-zinc-300">
+                        <option value="">Máquina: Todas</option>
                     </select>
 
-                    <select id="filter-failure" onchange="loadOrdersList()" class="bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-zinc-300">
-                        <option value="">Todas las Categorías</option>
+                    <select id="filter-failure" onchange="loadOrdersList()" class="bg-[#07080a] border border-white/[0.09] rounded-lg px-3 py-1.5 text-xs text-zinc-300">
+                        <option value="">Categoría: Todas</option>
                     </select>
-
-                    <button onclick="loadOrdersList()" class="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 text-xs" title="Refrescar">
-                        <i class="fa-solid fa-rotate"></i>
-                    </button>
                 </div>
 
-                <!-- Toggl-Style Orders List Table -->
-                <div class="cf-card rounded-2xl overflow-hidden">
-                    <div class="px-5 py-4 border-b border-white/[0.07] flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-list-check text-purple-400"></i>
-                            <h3 class="text-sm font-bold text-white">Registro de Órdenes de Mantenimiento y Tiempos</h3>
-                        </div>
-                        <span class="text-[11px] text-zinc-500">Haz clic en cualquier orden para abrir el cronómetro y repuestos</span>
+                <!-- Toggl Track Style Time-Entries / Orders Table -->
+                <div class="bg-[#090b0f]">
+                    <div class="px-6 py-3 bg-[#0d0f15] border-b border-white/[0.08] flex items-center justify-between text-[11px] font-mono uppercase text-zinc-400">
+                        <span>HISTORIAL DE ÓRDENES DE TRABAJO & CRONÓMETRO</span>
+                        <span>DURACIÓN / TIMER</span>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs text-zinc-300">
-                            <thead class="bg-zinc-950/70 text-[11px] uppercase text-zinc-500 border-b border-white/[0.07]">
+                            <thead class="bg-[#0b0d11] text-[10px] font-mono uppercase text-zinc-500 border-b border-white/[0.07]">
                                 <tr>
-                                    <th class="px-4 py-3">Orden / Fecha</th>
-                                    <th class="px-4 py-3">Máquina</th>
-                                    <th class="px-4 py-3">Categoría de Falla</th>
-                                    <th class="px-4 py-3">Tipo Mant. (Jefe)</th>
-                                    <th class="px-4 py-3">¿Parada?</th>
-                                    <th class="px-4 py-3">Técnico Asignado</th>
-                                    <th class="px-4 py-3">Cronómetro / Tiempo</th>
-                                    <th class="px-4 py-3 text-right">Acción</th>
+                                    <th class="px-5 py-3">Orden & Descripción</th>
+                                    <th class="px-4 py-3">Proyecto / Máquina</th>
+                                    <th class="px-4 py-3">Categoría Falla</th>
+                                    <th class="px-4 py-3">Tipo (Jefe)</th>
+                                    <th class="px-4 py-3">Estado Línea</th>
+                                    <th class="px-4 py-3">Técnico</th>
+                                    <th class="px-4 py-3">Timer / Estado</th>
+                                    <th class="px-5 py-3 text-right">Control</th>
                                 </tr>
                             </thead>
-                            <tbody id="all-orders-tbody" class="divide-y divide-white/[0.05]"></tbody>
+                            <tbody id="all-orders-tbody" class="divide-y divide-white/[0.06]"></tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
 
-            <!-- ========================================================= -->
-            <!-- VIEW 3: HOJAS DE VIDA DE MÁQUINAS & CÓDIGOS QR            -->
-            <!-- ========================================================= -->
-            <section id="view-machines" class="space-y-6 hidden">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
-                    <div>
-                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-book-medical text-purple-400"></i>
-                            <span>Hojas de Vida de Máquinas & Stickers QR</span>
-                        </h2>
-                        <p class="text-xs text-zinc-400">Expediente técnico de cada equipo, historial de reparaciones, alertas a Jefes/Técnicos y códigos QR de planta.</p>
+            <!-- ============================================================= -->
+            <!-- VIEW 3: HOJAS DE VIDA DE MÁQUINAS & CÓDIGOS QR                -->
+            <!-- ============================================================= -->
+            <section id="view-machines" class="divide-y divide-white/[0.085] hidden">
+                <div class="p-6 sm:p-8 cf-hero-glow cf-crosshair-tl cf-crosshair-br flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
+                    <div class="relative z-10">
+                        <div class="cf-pill-badge text-[#2CD5FF] mb-2">
+                            <i class="fa-solid fa-book-medical"></i>
+                            <span>EXPEDIENTE TÉCNICO DE ACTIVOS & ALERTAS</span>
+                        </div>
+                        <h2 class="text-2xl font-extrabold tracking-tighter text-white">Hojas de Vida de Máquinas & Códigos QR</h2>
+                        <p class="text-xs text-zinc-400 mt-0.5">Consulta especificaciones, repuestos críticos, MTTR, planes 2027 y emite notificaciones a Jefes y Técnicos.</p>
                     </div>
-                    <div class="flex flex-wrap items-center gap-2.5">
-                        <button onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-xs font-semibold flex items-center gap-2">
-                            <i class="fa-solid fa-print text-purple-400"></i> Imprimir QR
+                    <div class="relative z-10 flex flex-wrap items-center gap-2.5">
+                        <button onclick="window.print()" class="px-3.5 py-2.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-zinc-200 text-xs font-semibold flex items-center gap-2">
+                            <i class="fa-solid fa-print text-[#2CD5FF]"></i> Imprimir Stickers QR
                         </button>
-                        <button id="btn-new-machine" onclick="openMachineModal()" class="hidden px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-purple-600/20">
+                        <button id="btn-new-machine" onclick="openMachineModal()" class="hidden px-4 py-2.5 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-[#e57cd8]/20">
                             <i class="fa-solid fa-plus"></i> + Nueva Máquina / Hoja de Vida
                         </button>
                     </div>
                 </div>
 
-                <!-- Machines & Hojas de Vida Grid -->
-                <div id="all-qr-cards-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Codeforge 1px Architectural Grid for Machines -->
+                <div id="all-qr-cards-grid" class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/[0.085] bg-[#090b0f]">
                     <!-- Populated via JS -->
                 </div>
             </section>
 
 
-            <!-- ========================================================= -->
-            <!-- VIEW 4: PLANES DE MANTENIMIENTO & PLAN PREVENTIVO 2027    -->
-            <!-- ========================================================= -->
-            <section id="view-plans" class="space-y-6 hidden">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h2 class="text-lg font-bold text-white">Planes de Mantenimiento & Cronograma Preventivo 2027</h2>
-                            <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">2027 READY</span>
+            <!-- ============================================================= -->
+            <!-- VIEW 4: PLANES DE MANTENIMIENTO & PLAN PREVENTIVO 2027        -->
+            <!-- ============================================================= -->
+            <section id="view-plans" class="divide-y divide-white/[0.085] hidden">
+                <div class="p-6 sm:p-8 cf-hero-glow cf-crosshair-tl cf-crosshair-br flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="relative z-10">
+                        <div class="cf-pill-badge text-[#e57cd8] mb-2">
+                            <i class="fa-solid fa-calendar-check"></i>
+                            <span>CRONOGRAMA MAESTRO ANUAL • 2027</span>
                         </div>
-                        <p class="text-xs text-zinc-400 mt-0.5">Programación anual preventiva y predictiva vinculada a las Hojas de Vida de las máquinas.</p>
+                        <h2 class="text-2xl font-extrabold tracking-tighter text-white">Planes de Mantenimiento & Plan Preventivo 2027</h2>
+                        <p class="text-xs text-zinc-400 mt-0.5">Matriz interactiva Enero–Diciembre 2027 vinculada a las Hojas de Vida de cada máquina.</p>
                     </div>
-                    <div class="flex items-center gap-2.5">
-                        <select id="filter-plan-year" onchange="renderPlansView()" class="bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono">
-                            <option value="2027">📅 Año 2027 (Plan Preventivo)</option>
+                    <div class="relative z-10 flex items-center gap-2.5">
+                        <select id="filter-plan-year" onchange="renderPlansView()" class="bg-[#0f1218] border border-white/15 rounded-lg px-3.5 py-2 text-xs text-white font-mono">
+                            <option value="2027">📅 Plan Preventivo 2027</option>
                             <option value="2026">📅 Año 2026</option>
                             <option value="">Todos los Años</option>
                         </select>
-                        <button id="btn-new-plan" onclick="openPlanModal()" class="hidden px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-purple-600/20">
-                            <i class="fa-solid fa-calendar-plus"></i> + Nuevo Plan 2027
+                        <button id="btn-new-plan" onclick="openPlanModal()" class="hidden px-4 py-2.5 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] text-xs font-extrabold flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-plus"></i> + Programar Plan 2027
                         </button>
                     </div>
                 </div>
 
-                <!-- Interactive 2027 Annual Preventive Matrix (Ene - Dic) -->
-                <div class="cf-card rounded-2xl p-5 overflow-hidden">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                <!-- Interactive 2027 Matrix -->
+                <div class="p-6 bg-[#0b0d11] space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
-                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                                <i class="fa-solid fa-table-cells text-purple-400"></i>
-                                <span>Matriz Anual de Mantenimiento Preventivo 2027 (Enero – Diciembre)</span>
+                            <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-[#2CD5FF]">
+                                MATRIZ DE PLANIFICACIÓN ANUAL 2027 (ENE — DIC)
                             </h3>
-                            <p id="matrix-helper-text" class="text-[11px] text-zinc-400">Vista cronológica de meses programados por máquina. (El Jefe puede hacer clic en cualquier mes para activar/desactivar).</p>
+                            <p class="text-[11px] text-zinc-400">El Jefe puede hacer clic en cualquier mes para activar o desactivar preventivos de esa máquina en 2027.</p>
                         </div>
-                        <div class="flex items-center gap-3 text-[11px]">
-                            <span class="flex items-center gap-1.5 text-zinc-400"><span class="w-3 h-3 rounded bg-purple-600 inline-block"></span> Preventivo Programado</span>
-                            <span class="flex items-center gap-1.5 text-zinc-400"><span class="w-3 h-3 rounded bg-zinc-900 border border-white/10 inline-block"></span> Libre</span>
+                        <div class="flex items-center gap-4 text-[11px] font-mono">
+                            <span class="flex items-center gap-1.5 text-zinc-300"><span class="w-3 h-3 rounded bg-[#e57cd8] inline-block"></span> Mes Programado</span>
+                            <span class="flex items-center gap-1.5 text-zinc-500"><span class="w-3 h-3 rounded bg-zinc-900 border border-white/10 inline-block"></span> Sin Programar</span>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
+
+                    <div class="overflow-x-auto border border-white/[0.08] rounded-lg">
                         <table class="w-full text-left text-xs">
-                            <thead class="bg-zinc-950/80 text-[10px] font-mono uppercase text-zinc-400 border-b border-white/[0.08]">
+                            <thead class="bg-[#07080a] text-[10px] font-mono uppercase text-zinc-400 border-b border-white/[0.08]">
                                 <tr>
-                                    <th class="px-3 py-2.5 min-w-[180px]">Máquina / Plan</th>
-                                    <th class="px-2 py-2.5 text-center">Ene</th>
-                                    <th class="px-2 py-2.5 text-center">Feb</th>
-                                    <th class="px-2 py-2.5 text-center">Mar</th>
-                                    <th class="px-2 py-2.5 text-center">Abr</th>
-                                    <th class="px-2 py-2.5 text-center">May</th>
-                                    <th class="px-2 py-2.5 text-center">Jun</th>
-                                    <th class="px-2 py-2.5 text-center">Jul</th>
-                                    <th class="px-2 py-2.5 text-center">Ago</th>
-                                    <th class="px-2 py-2.5 text-center">Sep</th>
-                                    <th class="px-2 py-2.5 text-center">Oct</th>
-                                    <th class="px-2 py-2.5 text-center">Nov</th>
-                                    <th class="px-2 py-2.5 text-center">Dic</th>
+                                    <th class="px-4 py-3 min-w-[200px]">Máquina / Plan Preventivo</th>
+                                    <th class="px-2 py-3 text-center">Ene</th>
+                                    <th class="px-2 py-3 text-center">Feb</th>
+                                    <th class="px-2 py-3 text-center">Mar</th>
+                                    <th class="px-2 py-3 text-center">Abr</th>
+                                    <th class="px-2 py-3 text-center">May</th>
+                                    <th class="px-2 py-3 text-center">Jun</th>
+                                    <th class="px-2 py-3 text-center">Jul</th>
+                                    <th class="px-2 py-3 text-center">Ago</th>
+                                    <th class="px-2 py-3 text-center">Sep</th>
+                                    <th class="px-2 py-3 text-center">Oct</th>
+                                    <th class="px-2 py-3 text-center">Nov</th>
+                                    <th class="px-2 py-3 text-center">Dic</th>
                                 </tr>
                             </thead>
-                            <tbody id="matrix-2027-tbody" class="divide-y divide-white/[0.06]">
-                                <!-- Populated via JS -->
-                            </tbody>
+                            <tbody id="matrix-2027-tbody" class="divide-y divide-white/[0.06] bg-[#0b0d11]"></tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Detailed Maintenance Plan Cards -->
-                <div id="plans-cards-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <!-- Populated via JS -->
-                </div>
+                <!-- Detailed Plan Cards -->
+                <div id="plans-cards-grid" class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/[0.085] bg-[#090b0f]"></div>
             </section>
 
 
-            <!-- ========================================================= -->
-            <!-- VIEW 5: CATEGORIZACIÓN DE FALLAS (JEFE)                   -->
-            <!-- ========================================================= -->
-            <section id="view-categories" class="space-y-6 hidden">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-tags text-purple-400"></i>
-                            <span>Catálogo y Categorización de Fallas</span>
-                        </h2>
-                        <p class="text-xs text-zinc-400">Configura las categorías y subcategorías de fallas disponibles cuando los operarios y técnicos reportan incidencias.</p>
+            <!-- ============================================================= -->
+            <!-- VIEW 5: CATEGORIZACIÓN DE FALLAS (JEFE)                       -->
+            <!-- ============================================================= -->
+            <section id="view-categories" class="divide-y divide-white/[0.085] hidden">
+                <div class="p-6 sm:p-8 cf-hero-glow flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="relative z-10">
+                        <div class="cf-pill-badge text-[#e57cd8] mb-2">
+                            <i class="fa-solid fa-tags"></i>
+                            <span>TAXONOMÍA TÉCNICA DE PLANTA</span>
+                        </div>
+                        <h2 class="text-2xl font-extrabold tracking-tighter text-white">Categorización y Subcategorías de Fallas</h2>
+                        <p class="text-xs text-zinc-400 mt-0.5">Personaliza los tipos de falla y componentes para reportes QR y métricas de confiabilidad.</p>
                     </div>
-                    <button onclick="openCategoryModal()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-purple-600/20">
-                        <i class="fa-solid fa-plus"></i> + Nueva Categoría de Falla
+                    <button onclick="openCategoryModal()" class="relative z-10 px-4 py-2.5 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] text-xs font-extrabold flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> + Nueva Categoría
                     </button>
                 </div>
 
-                <div id="categories-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <!-- Populated via JS -->
-                </div>
+                <div id="categories-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6 bg-[#090b0f]"></div>
             </section>
 
 
-            <!-- ========================================================= -->
-            <!-- VIEW 6: DASHBOARD EJECUTIVO & MÉTRICAS (EXCLUSIVO JEFE)   -->
-            <!-- ========================================================= -->
-            <section id="view-dashboard" class="space-y-6 hidden">
+            <!-- ============================================================= -->
+            <!-- VIEW 6: DASHBOARD EJECUTIVO CODEFORGE + TOGGL INSIGHTS (JEFE) -->
+            <!-- ============================================================= -->
+            <section id="view-dashboard" class="divide-y divide-white/[0.085] hidden">
                 
-                <!-- Codeforge Bento KPI Row -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="cf-card rounded-2xl p-5">
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs font-semibold text-zinc-400">Órdenes Activas</span>
-                            <div class="w-8 h-8 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center text-xs">
-                                <i class="fa-solid fa-bolt"></i>
-                            </div>
+                <!-- Codeforge Hero Banner -->
+                <div class="p-6 sm:p-8 cf-hero-glow cf-crosshair-tl cf-crosshair-br flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="relative z-10">
+                        <div class="cf-pill-badge text-[#2CD5FF] mb-2">
+                            <i class="fa-solid fa-crown text-[#e57cd8]"></i>
+                            <span>INSIGHTS & CONTROL DE JEFE DE MANTENIMIENTO</span>
+                        </div>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tighter text-white">
+                            Rendimiento de Planta & Tiempos de Respuesta
+                        </h2>
+                    </div>
+                    <div class="relative z-10 flex items-center gap-2">
+                        <button onclick="resetDemoDatabase()" class="px-3.5 py-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-xs font-mono text-zinc-300">
+                            <i class="fa-solid fa-rotate-left mr-1 text-[#2CD5FF]"></i> Restaurar 2 Objetos Demo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Codeforge Flush 4-Column KPI Grid with Laser Top Bars -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 divide-x divide-white/[0.085] bg-[#0b0d11]">
+                    <div class="p-6 cf-laser-top active">
+                        <div class="flex items-center justify-between text-xs font-mono text-zinc-400 mb-2">
+                            <span>01 // ÓRDENES ACTIVAS</span>
+                            <i class="fa-solid fa-bolt text-[#e57cd8]"></i>
                         </div>
                         <div class="flex items-baseline gap-2">
-                            <span id="kpi-active-orders" class="text-3xl font-black font-mono text-white">0</span>
-                            <span id="kpi-Active-breakdown" class="text-[11px] text-zinc-400">0 pend / 0 proc</span>
+                            <span id="kpi-active-orders" class="text-3xl sm:text-4xl font-black font-mono text-white">0</span>
+                            <span id="kpi-Active-breakdown" class="text-[11px] font-mono text-zinc-400">0 pend</span>
                         </div>
                     </div>
 
-                    <div class="cf-card rounded-2xl p-5">
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs font-semibold text-zinc-400">Máquinas en Falla / Paradas</span>
-                            <div class="w-8 h-8 rounded-lg bg-rose-500/15 text-rose-400 flex items-center justify-center text-xs">
-                                <i class="fa-solid fa-triangle-exclamation"></i>
-                            </div>
+                    <div class="p-6 cf-laser-top">
+                        <div class="flex items-center justify-between text-xs font-mono text-zinc-400 mb-2">
+                            <span>02 // MÁQUINAS EN FALLA</span>
+                            <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
                         </div>
                         <div class="flex items-baseline gap-2">
-                            <span id="kpi-stopped-machines" class="text-3xl font-black font-mono text-rose-400">0</span>
-                            <span class="text-[11px] text-zinc-400">Paro acum: <strong id="kpi-total-downtime" class="text-zinc-200 font-mono">0m</strong></span>
+                            <span id="kpi-stopped-machines" class="text-3xl sm:text-4xl font-black font-mono text-rose-400">0</span>
+                            <span class="text-[11px] font-mono text-zinc-400">Paro: <strong id="kpi-total-downtime" class="text-white">0m</strong></span>
                         </div>
                     </div>
 
-                    <div class="cf-card rounded-2xl p-5">
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs font-semibold text-zinc-400">MTTR (Tiempo Prom. Reparación)</span>
-                            <div class="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-xs">
-                                <i class="fa-solid fa-stopwatch"></i>
-                            </div>
+                    <div class="p-6 cf-laser-top">
+                        <div class="flex items-center justify-between text-xs font-mono text-zinc-400 mb-2">
+                            <span>03 // MTTR PROMEDIO</span>
+                            <i class="fa-solid fa-stopwatch text-[#2CD5FF]"></i>
                         </div>
                         <div class="flex items-baseline gap-2">
-                            <span id="kpi-avg-repair" class="text-3xl font-black font-mono text-emerald-400">0 min</span>
-                            <span class="text-[11px] text-zinc-400">Cerradas: <strong id="kpi-finished-orders" class="text-zinc-200 font-mono">0</strong></span>
+                            <span id="kpi-avg-repair" class="text-3xl sm:text-4xl font-black font-mono text-[#2CD5FF]">0 min</span>
+                            <span class="text-[11px] font-mono text-zinc-400">Cerradas: <strong id="kpi-finished-orders" class="text-white">0</strong></span>
                         </div>
                     </div>
 
-                    <div class="cf-card rounded-2xl p-5">
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs font-semibold text-zinc-400">Planes Preventivos 2027</span>
-                            <div class="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center text-xs">
-                                <i class="fa-solid fa-calendar-days"></i>
-                            </div>
+                    <div class="p-6 cf-laser-top">
+                        <div class="flex items-center justify-between text-xs font-mono text-zinc-400 mb-2">
+                            <span>04 // PLAN PREVENTIVO 2027</span>
+                            <i class="fa-solid fa-calendar-days text-emerald-400"></i>
                         </div>
                         <div class="flex items-baseline justify-between">
-                            <span id="kpi-plans-2027" class="text-3xl font-black font-mono text-blue-400">2</span>
-                            <button onclick="navigateTo('plans')" class="text-[11px] text-purple-400 hover:underline font-semibold">Ver Plan 2027 &rarr;</button>
+                            <span id="kpi-plans-2027" class="text-3xl sm:text-4xl font-black font-mono text-emerald-400">2</span>
+                            <button onclick="navigateTo('plans')" class="text-[11px] font-mono text-[#e57cd8] hover:underline">Matriz 2027 &rarr;</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Charts Bento Row -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                    <div class="cf-card rounded-2xl p-5">
-                        <div class="flex items-center justify-between mb-4">
+                <!-- Codeforge 2-Column Flush Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.085] bg-[#090b0f]">
+                    <div class="p-6 space-y-4">
+                        <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="text-sm font-bold text-white">Incidencias por Categoría de Falla</h3>
-                                <p class="text-[11px] text-zinc-400">Distribución acumulada según categorización</p>
+                                <h3 class="text-xs font-mono uppercase font-bold text-[#e57cd8]">DISTRIBUCIÓN POR CATEGORÍA DE FALLA</h3>
+                                <p class="text-xs text-zinc-400">Frecuencia de averías según taxonomía técnica</p>
                             </div>
-                            <button onclick="navigateTo('categories')" class="text-[11px] text-purple-400 hover:text-purple-300 font-semibold">Configurar Categorías</button>
+                            <button onclick="navigateTo('categories')" class="text-xs font-mono text-zinc-400 hover:text-white">Editar &rarr;</button>
                         </div>
                         <div class="h-56">
                             <canvas id="failuresChart"></canvas>
                         </div>
                     </div>
 
-                    <div class="cf-card rounded-2xl p-5">
-                        <div class="flex items-center justify-between mb-4">
+                    <div class="p-6 space-y-4">
+                        <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="text-sm font-bold text-white">Órdenes por Tipo de Mantenimiento</h3>
-                                <p class="text-[11px] text-zinc-400">Correctivo vs Preventivo vs Predictivo (Clasificado por Jefe)</p>
+                                <h3 class="text-xs font-mono uppercase font-bold text-[#2CD5FF]">ÓRDENES POR TIPO DE MANTENIMIENTO</h3>
+                                <p class="text-xs text-zinc-400">Clasificación exclusiva del Jefe de Mantenimiento</p>
                             </div>
-                            <button onclick="resetDemoDatabase()" class="text-[11px] text-zinc-400 hover:text-white border border-white/10 px-2.5 py-1 rounded-lg">
-                                <i class="fa-solid fa-rotate-left mr-1"></i> Restaurar 2 Objetos Demo
-                            </button>
                         </div>
                         <div class="h-56">
                             <canvas id="maintenanceTypeChart"></canvas>
@@ -913,23 +1132,23 @@ body {
                 </div>
 
                 <!-- Recent Orders in Dashboard -->
-                <div class="cf-card rounded-2xl overflow-hidden">
-                    <div class="px-5 py-4 border-b border-white/[0.07] flex items-center justify-between">
-                        <h3 class="text-sm font-bold text-white">Últimas Órdenes y Control del Jefe</h3>
-                        <button onclick="navigateTo('orders')" class="text-xs text-purple-400 hover:text-purple-300 font-semibold">Ver todas &rarr;</button>
+                <div class="bg-[#0b0d11]">
+                    <div class="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
+                        <h3 class="text-xs font-mono uppercase font-bold text-white">ÚLTIMAS ÓRDENES DE TRABAJO & ASIGNACIÓN DE TÉCNICOS</h3>
+                        <button onclick="navigateTo('orders')" class="text-xs font-mono text-[#e57cd8] hover:underline">Ver todas &rarr;</button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs text-zinc-300">
-                            <thead class="bg-zinc-950/60 text-[11px] uppercase text-zinc-500 border-b border-white/[0.07]">
+                            <thead class="bg-[#07080a] text-[10px] font-mono uppercase text-zinc-500 border-b border-white/[0.07]">
                                 <tr>
-                                    <th class="px-4 py-3">N° Orden</th>
+                                    <th class="px-5 py-3">N° Orden</th>
                                     <th class="px-4 py-3">Máquina</th>
                                     <th class="px-4 py-3">Categoría / Tipo</th>
                                     <th class="px-4 py-3">Operario</th>
                                     <th class="px-4 py-3">¿Parada?</th>
                                     <th class="px-4 py-3">Técnico</th>
-                                    <th class="px-4 py-3">Estado / Tiempo</th>
-                                    <th class="px-4 py-3 text-right">Gestionar</th>
+                                    <th class="px-4 py-3">Estado</th>
+                                    <th class="px-5 py-3 text-right">Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="recent-orders-tbody" class="divide-y divide-white/[0.05]"></tbody>
@@ -939,35 +1158,37 @@ body {
             </section>
 
 
-            <!-- ========================================================= -->
-            <!-- VIEW 7: EQUIPO TÉCNICO (JEFE)                             -->
-            <!-- ========================================================= -->
-            <section id="view-technicians" class="space-y-6 hidden">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-lg font-bold text-white">Equipo de Técnicos e Ingenieros</h2>
-                        <p class="text-xs text-zinc-400">Personal disponible para asignación de órdenes y planes preventivos 2027.</p>
+            <!-- ============================================================= -->
+            <!-- VIEW 7: EQUIPO TÉCNICO (JEFE)                                 -->
+            <!-- ============================================================= -->
+            <section id="view-technicians" class="divide-y divide-white/[0.085] hidden">
+                <div class="p-6 sm:p-8 cf-hero-glow flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="relative z-10">
+                        <div class="cf-pill-badge text-[#2CD5FF] mb-2">
+                            <i class="fa-solid fa-users-gear"></i>
+                            <span>CUADRILLA DE INGENIERÍA & TÉCNICOS</span>
+                        </div>
+                        <h2 class="text-2xl font-extrabold tracking-tighter text-white">Equipo Técnico de Mantenimiento</h2>
+                        <p class="text-xs text-zinc-400 mt-0.5">Ingenieros y especialistas para asignación de órdenes y planes preventivos 2027.</p>
                     </div>
-                    <button onclick="openTechnicianModal()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-2">
+                    <button onclick="openTechnicianModal()" class="relative z-10 px-4 py-2.5 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] text-xs font-extrabold flex items-center gap-2">
                         <i class="fa-solid fa-user-plus"></i> + Nuevo Técnico / Ingeniero
                     </button>
                 </div>
 
-                <div id="technicians-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <!-- Populated via JS -->
-                </div>
+                <div id="technicians-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6 bg-[#090b0f]"></div>
             </section>
 
         </main>
 
         <!-- Footer -->
-        <footer class="mt-auto border-t border-white/[0.07] bg-[#09090d]/90 py-4 text-center text-xs text-zinc-400 no-print">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-                <div class="flex items-center gap-2 text-zinc-400">
-                    <i class="fa-solid fa-bolt-lightning text-purple-400"></i>
-                    <span class="font-bold text-zinc-300">SistMaint CMMS 2.0</span>
-                    <span class="text-zinc-700">|</span>
-                    <span>Control Integral de Planta & Plan 2027</span>
+        <footer class="mt-auto border-t border-white/[0.085] bg-[#07080a] py-4 text-center text-xs text-zinc-400 no-print">
+            <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div class="flex items-center gap-2 text-zinc-400 font-mono text-[11px]">
+                    <span class="w-2 h-2 rounded-full bg-[#e57cd8]"></span>
+                    <span class="font-bold text-zinc-200">SistMaint CMMS 2.0</span>
+                    <span class="text-zinc-700">/</span>
+                    <span>Codeforge × Toggl Track UI</span>
                 </div>
                 <div class="text-zinc-400">
                     Developed by <span class="text-zinc-200 font-semibold">Daniel Martínez</span>, <span class="text-zinc-200 font-semibold">Nicolás Cifuentes</span> & <span class="text-zinc-200 font-semibold">Andrés Garzón</span>
@@ -982,19 +1203,19 @@ body {
     <!-- ===================================================================== -->
     <div id="notification-drawer" class="fixed inset-0 z-50 hidden no-print">
         <div onclick="toggleNotificationDrawer()" class="fixed inset-0 bg-black/70 backdrop-blur-sm"></div>
-        <div class="fixed inset-y-0 right-0 w-full max-w-md bg-[#101015] border-l border-white/10 shadow-2xl flex flex-col z-10">
+        <div class="fixed inset-y-0 right-0 w-full max-w-md bg-[#0b0d11] border-l border-white/10 shadow-2xl flex flex-col z-10">
             <div class="p-4 border-b border-white/10 flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-lg bg-[#e57cd8]/15 text-[#e57cd8] flex items-center justify-center">
                         <i class="fa-solid fa-bell"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-white">Centro de Notificaciones</h3>
+                        <h3 class="text-sm font-bold text-white">Notificaciones de Planta</h3>
                         <p class="text-[11px] text-zinc-400">Alertas de Hojas de Vida, Fallas y Planes 2027</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="markAllNotificationsRead()" class="text-[11px] text-purple-400 hover:text-purple-300 font-semibold">
+                    <button onclick="markAllNotificationsRead()" class="text-[11px] text-[#2CD5FF] hover:underline font-mono">
                         Marcar leídas
                     </button>
                     <button onclick="toggleNotificationDrawer()" class="p-1.5 text-zinc-400 hover:text-white">
@@ -1002,9 +1223,7 @@ body {
                     </button>
                 </div>
             </div>
-            <div id="notifications-list" class="flex-1 overflow-y-auto p-4 space-y-3">
-                <!-- Populated via JS -->
-            </div>
+            <div id="notifications-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
         </div>
     </div>
 
@@ -1013,12 +1232,12 @@ body {
     <!-- MODAL 1: DETALLE DE ORDEN, CRONÓMETRO TOGGL & CLASIFICACIÓN JEFE      -->
     <!-- ===================================================================== -->
     <div id="order-detail-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto no-print">
-        <div class="bg-[#111116] border border-white/10 rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+        <div class="bg-[#0b0d11] border border-white/15 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
             
             <!-- Modal Header -->
-            <div class="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-zinc-950/70">
+            <div class="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-[#07080a]">
                 <div class="flex items-center gap-3">
-                    <span id="modal-order-number" class="font-mono text-base font-black text-purple-400 bg-purple-500/10 px-3 py-1 rounded-xl border border-purple-500/30">OT-0000</span>
+                    <span id="modal-order-number" class="font-mono text-base font-black text-[#2CD5FF] bg-[#2CD5FF]/10 px-3 py-1 rounded-lg border border-[#2CD5FF]/30">OT-0000</span>
                     <span id="modal-order-status" class="text-xs px-2.5 py-1 rounded-full font-bold">PENDIENTE</span>
                 </div>
                 <button onclick="closeOrderModal()" class="w-8 h-8 rounded-lg bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center">
@@ -1030,19 +1249,19 @@ body {
             <div class="p-5 overflow-y-auto space-y-5 flex-1">
                 
                 <!-- Top Info Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-zinc-950/60 p-4 rounded-2xl border border-white/[0.06]">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-[#07080a] p-4 rounded-xl border border-white/[0.08]">
                     <div>
-                        <p class="text-[10px] text-zinc-500 uppercase font-bold">Máquina</p>
+                        <p class="text-[10px] font-mono text-zinc-500 uppercase font-bold">Máquina</p>
                         <p id="modal-machine-name" class="text-sm font-bold text-white mt-0.5">-</p>
                         <p id="modal-machine-location" class="text-xs text-zinc-400">-</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-zinc-500 uppercase font-bold">Reportado Por (Operario)</p>
+                        <p class="text-[10px] font-mono text-zinc-500 uppercase font-bold">Reportado Por (Operario)</p>
                         <p id="modal-operator" class="text-sm font-semibold text-zinc-200 mt-0.5">-</p>
                         <p id="modal-datetime" class="text-xs font-mono text-zinc-400">-</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-zinc-500 uppercase font-bold">Categoría & Estado Máquina</p>
+                        <p class="text-[10px] font-mono text-zinc-500 uppercase font-bold">Categoría & Estado</p>
                         <div class="flex flex-wrap items-center gap-1.5 mt-1">
                             <span id="modal-failure-badge" class="text-xs px-2 py-0.5 rounded font-semibold">-</span>
                             <span id="modal-stopped-badge" class="text-xs px-2 py-0.5 rounded font-semibold">-</span>
@@ -1052,25 +1271,22 @@ body {
 
                 <!-- Reported Symptom -->
                 <div class="p-3.5 rounded-xl bg-zinc-900/60 border border-white/[0.06]">
-                    <p class="text-[10px] text-zinc-400 uppercase font-bold mb-1">Descripción del Reporte Inicial:</p>
+                    <p class="text-[10px] font-mono text-zinc-400 uppercase font-bold mb-1">Descripción del Reporte Inicial:</p>
                     <p id="modal-description" class="text-xs sm:text-sm text-zinc-200"></p>
                 </div>
 
-                <!-- ========================================================= -->
-                <!-- BOSS CLASSIFICATION & ASSIGNMENT PANEL (ONLY FOR JEFE!)   -->
-                <!-- ========================================================= -->
-                <div id="modal-boss-classification-box" class="hidden p-4 rounded-2xl bg-purple-950/25 border border-purple-500/35 space-y-3">
+                <!-- BOSS CLASSIFICATION & ASSIGNMENT PANEL (ONLY FOR JEFE!) -->
+                <div id="modal-boss-classification-box" class="hidden p-4 rounded-xl bg-[#160d1f] border border-[#e57cd8]/40 space-y-3">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-purple-300 flex items-center gap-1.5">
-                            <i class="fa-solid fa-crown text-amber-400"></i>
-                            Panel del Jefe: Asignar Técnico y Tipo de Mantenimiento
+                        <span class="text-xs font-mono font-bold text-[#e57cd8] flex items-center gap-1.5">
+                            <i class="fa-solid fa-crown"></i>
+                            EXCLUSIVO JEFE: TIPO DE MANTENIMIENTO Y ASIGNACIÓN DE TÉCNICO
                         </span>
-                        <span class="text-[10px] text-purple-400 font-mono">Exclusivo Jefe</span>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                         <div>
                             <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Tipo Mantenimiento</label>
-                            <select id="modal-boss-maint-type" class="w-full bg-zinc-950 border border-white/15 rounded-xl px-2.5 py-2 text-xs text-white">
+                            <select id="modal-boss-maint-type" class="w-full bg-[#07080a] border border-white/15 rounded-lg px-2.5 py-2 text-xs text-white">
                                 <option value="CORRECTIVO">Correctivo</option>
                                 <option value="PREVENTIVO">Preventivo</option>
                                 <option value="PREDICTIVO">Predictivo</option>
@@ -1078,17 +1294,17 @@ body {
                         </div>
                         <div>
                             <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Técnico Asignado</label>
-                            <select id="modal-assign-tech" class="w-full bg-zinc-950 border border-white/15 rounded-xl px-2.5 py-2 text-xs text-white">
+                            <select id="modal-assign-tech" class="w-full bg-[#07080a] border border-white/15 rounded-lg px-2.5 py-2 text-xs text-white">
                                 <option value="">-- Sin asignar --</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Categoría de Falla</label>
-                            <select id="modal-boss-failure-type" class="w-full bg-zinc-950 border border-white/15 rounded-xl px-2.5 py-2 text-xs text-white"></select>
+                            <select id="modal-boss-failure-type" class="w-full bg-[#07080a] border border-white/15 rounded-lg px-2.5 py-2 text-xs text-white"></select>
                         </div>
                         <div class="flex items-end">
-                            <button type="button" onclick="saveBossOrderClassification()" class="w-full py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all">
-                                <i class="fa-solid fa-check mr-1"></i> Guardar Asignación
+                            <button type="button" onclick="saveBossOrderClassification()" class="w-full py-2 px-3 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] text-xs font-extrabold transition-all">
+                                <i class="fa-solid fa-check mr-1"></i> Guardar
                             </button>
                         </div>
                     </div>
@@ -1098,41 +1314,41 @@ body {
                 <div id="modal-tech-readonly-info" class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-zinc-900/80 border border-white/[0.06] text-xs">
                     <div>
                         <span class="text-zinc-400">Tipo de Mantenimiento:</span>
-                        <strong id="modal-readonly-maint-type" class="text-white ml-1">CORRECTIVO</strong>
+                        <strong id="modal-readonly-maint-type" class="text-white font-mono ml-1">CORRECTIVO</strong>
                     </div>
                     <div>
                         <span class="text-zinc-400">Técnico Responsable:</span>
-                        <strong id="modal-readonly-tech-name" class="text-purple-300 ml-1">Sin asignar</strong>
+                        <strong id="modal-readonly-tech-name" class="text-[#e57cd8] ml-1">Sin asignar</strong>
                     </div>
                 </div>
 
-                <!-- TOGGL-STYLE REPAIR STOPWATCH PANEL -->
-                <div class="p-5 rounded-2xl bg-gradient-to-r from-zinc-950 via-[#13111c] to-zinc-950 border border-purple-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <!-- TOGGL TRACK LIVE STOPWATCH PANEL -->
+                <div class="p-5 rounded-xl bg-[#130b1c] border border-[#e57cd8]/35 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
-                        <div id="timer-status-indicator" class="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center text-purple-400 text-xl">
+                        <div id="timer-status-indicator" class="w-12 h-12 rounded-full bg-[#e57cd8]/15 border border-[#e57cd8]/40 flex items-center justify-center text-[#e57cd8] text-xl">
                             <i class="fa-solid fa-stopwatch"></i>
                         </div>
                         <div>
-                            <p class="text-[11px] uppercase tracking-wider font-bold text-zinc-400">Tiempo de Reparación (Cronómetro)</p>
+                            <p class="text-[10px] font-mono uppercase tracking-wider font-bold text-[#b8a8c4]">TOGGL REPAIR TIMER • TIEMPO DE INTERVENCIÓN</p>
                             <div id="modal-live-timer" class="text-3xl sm:text-4xl font-mono font-black text-white tracking-wider">00:00:00</div>
                             <p id="modal-downtime-counter" class="text-[11px] text-rose-400 font-mono mt-0.5"></p>
                         </div>
                     </div>
 
                     <div id="modal-timer-controls" class="flex flex-wrap items-center gap-2.5">
-                        <button type="button" id="btn-timer-start" onclick="startOrderTimer()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/20">
-                            <i class="fa-solid fa-play"></i> Iniciar Reparación
+                        <button type="button" id="btn-timer-start" onclick="startOrderTimer()" class="px-5 py-2.5 rounded-full bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-[#e57cd8]/25">
+                            <i class="fa-solid fa-play"></i> Iniciar Timer
                         </button>
-                        <button type="button" id="btn-timer-pause" onclick="pauseOrderTimer()" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-2">
+                        <button type="button" id="btn-timer-pause" onclick="pauseOrderTimer()" class="px-5 py-2.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs flex items-center gap-2">
                             <i class="fa-solid fa-pause"></i> Pausar
                         </button>
                     </div>
                 </div>
 
                 <!-- Spare Parts Used (Repuestos) -->
-                <div class="p-4 rounded-2xl bg-zinc-950/60 border border-white/[0.07] space-y-3">
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
-                        <i class="fa-solid fa-boxes-stacked text-purple-400"></i>
+                <div class="p-4 rounded-xl bg-[#07080a] border border-white/[0.08] space-y-3">
+                    <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-[#2CD5FF] flex items-center gap-2">
+                        <i class="fa-solid fa-boxes-stacked"></i>
                         Repuestos e Insumos Utilizados
                     </h4>
 
@@ -1140,18 +1356,18 @@ body {
 
                     <div id="modal-add-part-form" class="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2">
                         <input type="text" id="part-name-input" placeholder="Nombre del repuesto (ej. Rodamiento 6205)"
-                            class="sm:col-span-2 bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+                            class="sm:col-span-2 bg-[#0f1218] border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
                         <input type="number" id="part-qty-input" value="1" min="0.1" step="any" placeholder="Cant."
-                            class="bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono">
-                        <button type="button" onclick="addPartToOrder()" class="px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold border border-white/10">
+                            class="bg-[#0f1218] border border-white/10 rounded-lg px-3 py-2 text-xs text-white font-mono">
+                        <button type="button" onclick="addPartToOrder()" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-bold">
                             + Agregar Repuesto
                         </button>
                     </div>
 
                     <div>
                         <label class="block text-[11px] text-zinc-400 mb-1">Notas generales de repuestos:</label>
-                        <input type="text" id="modal-spare-parts-notes" placeholder="Detalle adicional de repuestos o referencias..."
-                            class="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+                        <input type="text" id="modal-spare-parts-notes" placeholder="Detalle adicional de repuestos instalados..."
+                            class="w-full bg-[#0f1218] border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
                     </div>
                 </div>
 
@@ -1160,23 +1376,23 @@ body {
                     <div>
                         <label class="block text-xs font-bold text-zinc-300 mb-1">Diagnóstico Técnico</label>
                         <textarea id="modal-diagnosis" rows="2" placeholder="Causa raíz encontrada..."
-                            class="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-xs text-white"></textarea>
+                            class="w-full bg-[#0f1218] border border-white/10 rounded-lg p-3 text-xs text-white"></textarea>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-zinc-300 mb-1">Trabajo Realizado / Solución</label>
-                        <textarea id="modal-solution" rows="2" placeholder="Acciones correctivas o preventivas ejecutadas..."
-                            class="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-xs text-white"></textarea>
+                        <textarea id="modal-solution" rows="2" placeholder="Acciones ejecutadas..."
+                            class="w-full bg-[#0f1218] border border-white/10 rounded-lg p-3 text-xs text-white"></textarea>
                     </div>
                 </div>
             </div>
 
             <!-- Modal Footer -->
-            <div class="p-4 border-t border-white/10 bg-zinc-950/90 flex flex-wrap items-center justify-between gap-3">
-                <button type="button" onclick="saveOrderProgress()" id="btn-save-progress" class="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold border border-white/10">
+            <div class="p-4 border-t border-white/10 bg-[#07080a] flex flex-wrap items-center justify-between gap-3">
+                <button type="button" onclick="saveOrderProgress()" id="btn-save-progress" class="px-4 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-bold border border-white/10">
                     <i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Avance
                 </button>
-                <button type="button" onclick="finishMaintenanceOrder()" id="btn-finish-order" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/25 flex items-center gap-2">
-                    <i class="fa-solid fa-flag-checkered"></i> Finalizar Orden y Detener Tiempo
+                <button type="button" onclick="finishMaintenanceOrder()" id="btn-finish-order" class="px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-extrabold flex items-center gap-2">
+                    <i class="fa-solid fa-flag-checkered"></i> Finalizar Orden y Detener Timer
                 </button>
             </div>
         </div>
@@ -1187,17 +1403,17 @@ body {
     <!-- MODAL 2: HOJA DE VIDA DE LA MÁQUINA (EXPEDIENTE TÉCNICO & ALERTAS)    -->
     <!-- ===================================================================== -->
     <div id="machine-dossier-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto no-print">
-        <div class="bg-[#111116] border border-white/10 rounded-3xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+        <div class="bg-[#0b0d11] border border-white/15 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
             
-            <div class="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-zinc-950/80">
+            <div class="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-[#07080a]">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center">
+                    <div class="w-10 h-10 rounded-lg bg-[#2CD5FF]/15 border border-[#2CD5FF]/30 text-[#2CD5FF] flex items-center justify-center">
                         <i class="fa-solid fa-book-medical"></i>
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <span id="dossier-code" class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">MAQ-001</span>
-                            <h3 id="dossier-name" class="text-base sm:text-lg font-bold text-white">Hoja de Vida de Máquina</h3>
+                            <span id="dossier-code" class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-[#2CD5FF]/15 text-[#2CD5FF]">MAQ-001</span>
+                            <h3 id="dossier-name" class="text-base sm:text-lg font-extrabold text-white">Hoja de Vida de Máquina</h3>
                         </div>
                         <p id="dossier-subtitle" class="text-xs text-zinc-400">Expediente técnico, indicadores de confiabilidad y bitácora histórica</p>
                     </div>
@@ -1211,98 +1427,98 @@ body {
                 
                 <!-- KPIs of the Machine -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div class="p-3.5 rounded-2xl bg-zinc-950/80 border border-white/[0.07]">
-                        <p class="text-[10px] uppercase font-bold text-zinc-500">Total Intervenciones</p>
+                    <div class="p-3.5 rounded-xl bg-[#07080a] border border-white/[0.08]">
+                        <p class="text-[10px] font-mono uppercase font-bold text-zinc-500">Total Intervenciones</p>
                         <p id="dossier-kpi-orders" class="text-2xl font-mono font-black text-white mt-1">0</p>
                     </div>
-                    <div class="p-3.5 rounded-2xl bg-zinc-950/80 border border-white/[0.07]">
-                        <p class="text-[10px] uppercase font-bold text-zinc-500">Tiempo Parada Acum.</p>
+                    <div class="p-3.5 rounded-xl bg-[#07080a] border border-white/[0.08]">
+                        <p class="text-[10px] font-mono uppercase font-bold text-zinc-500">Tiempo Parada Acum.</p>
                         <p id="dossier-kpi-downtime" class="text-2xl font-mono font-black text-rose-400 mt-1">0 min</p>
                     </div>
-                    <div class="p-3.5 rounded-2xl bg-zinc-950/80 border border-white/[0.07]">
-                        <p class="text-[10px] uppercase font-bold text-zinc-500">MTTR (Prom. Reparación)</p>
-                        <p id="dossier-kpi-mttr" class="text-2xl font-mono font-black text-emerald-400 mt-1">0 min</p>
+                    <div class="p-3.5 rounded-xl bg-[#07080a] border border-white/[0.08]">
+                        <p class="text-[10px] font-mono uppercase font-bold text-zinc-500">MTTR (Prom. Reparación)</p>
+                        <p id="dossier-kpi-mttr" class="text-2xl font-mono font-black text-[#2CD5FF] mt-1">0 min</p>
                     </div>
-                    <div class="p-3.5 rounded-2xl bg-zinc-950/80 border border-white/[0.07]">
-                        <p class="text-[10px] uppercase font-bold text-zinc-500">Planes Activos (2027)</p>
-                        <p id="dossier-kpi-plans" class="text-2xl font-mono font-black text-purple-400 mt-1">0</p>
+                    <div class="p-3.5 rounded-xl bg-[#07080a] border border-white/[0.08]">
+                        <p class="text-[10px] font-mono uppercase font-bold text-zinc-500">Planes Activos (2027)</p>
+                        <p id="dossier-kpi-plans" class="text-2xl font-mono font-black text-[#e57cd8] mt-1">0</p>
                     </div>
                 </div>
 
                 <!-- Technical Specs Card -->
-                <div class="p-4 rounded-2xl bg-zinc-950/70 border border-white/[0.07] space-y-4">
+                <div class="p-4 rounded-xl bg-[#07080a] border border-white/[0.08] space-y-4">
                     <div class="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-purple-300 flex items-center gap-2">
+                        <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-[#2CD5FF] flex items-center gap-2">
                             <i class="fa-solid fa-microchip"></i> Ficha Técnica e Identificación del Activo
                         </h4>
-                        <span id="dossier-criticality" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">CRITICIDAD ALTA</span>
+                        <span id="dossier-criticality" class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">CRITICIDAD ALTA</span>
                     </div>
 
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                         <div>
-                            <span class="text-zinc-500 block text-[10px] uppercase">Marca / Fabricante</span>
+                            <span class="text-zinc-500 block text-[10px] font-mono uppercase">Marca / Fabricante</span>
                             <strong id="dossier-brand" class="text-white">-</strong>
                         </div>
                         <div>
-                            <span class="text-zinc-500 block text-[10px] uppercase">Modelo</span>
+                            <span class="text-zinc-500 block text-[10px] font-mono uppercase">Modelo</span>
                             <strong id="dossier-model" class="text-white font-mono">-</strong>
                         </div>
                         <div>
-                            <span class="text-zinc-500 block text-[10px] uppercase">Número de Serie</span>
+                            <span class="text-zinc-500 block text-[10px] font-mono uppercase">Número de Serie</span>
                             <strong id="dossier-serial" class="text-white font-mono">-</strong>
                         </div>
                         <div>
-                            <span class="text-zinc-500 block text-[10px] uppercase">Fecha Instalación</span>
+                            <span class="text-zinc-500 block text-[10px] font-mono uppercase">Fecha Instalación</span>
                             <strong id="dossier-install-date" class="text-white font-mono">-</strong>
                         </div>
                         <div>
-                            <span class="text-zinc-500 block text-[10px] uppercase">Voltaje / Alimentación</span>
+                            <span class="text-zinc-500 block text-[10px] font-mono uppercase">Voltaje / Alimentación</span>
                             <strong id="dossier-voltage" class="text-white">-</strong>
                         </div>
                         <div>
-                            <span class="text-zinc-500 block text-[10px] uppercase">Potencia Nominal</span>
+                            <span class="text-zinc-500 block text-[10px] font-mono uppercase">Potencia Nominal</span>
                             <strong id="dossier-power" class="text-white">-</strong>
                         </div>
                         <div>
-                            <span class="text-zinc-500 block text-[10px] uppercase">Proveedor / Soporte</span>
+                            <span class="text-zinc-500 block text-[10px] font-mono uppercase">Proveedor / Soporte</span>
                             <strong id="dossier-supplier" class="text-white">-</strong>
                         </div>
                         <div>
-                            <span class="text-zinc-500 block text-[10px] uppercase">Próximo Preventivo</span>
+                            <span class="text-zinc-500 block text-[10px] font-mono uppercase">Próximo Preventivo</span>
                             <strong id="dossier-next-maint" class="text-amber-400 font-mono">-</strong>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/[0.05] text-xs">
-                        <div class="p-3 rounded-xl bg-zinc-900/70">
-                            <span class="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Repuestos Críticos Recomendados:</span>
+                        <div class="p-3 rounded-lg bg-zinc-900/70">
+                            <span class="text-[10px] font-mono uppercase font-bold text-zinc-400 block mb-1">Repuestos Críticos Recomendados:</span>
                             <p id="dossier-critical-parts" class="text-zinc-200"></p>
                         </div>
-                        <div class="p-3 rounded-xl bg-zinc-900/70">
-                            <span class="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Notas Técnicas de la Hoja de Vida:</span>
+                        <div class="p-3 rounded-lg bg-zinc-900/70">
+                            <span class="text-[10px] font-mono uppercase font-bold text-zinc-400 block mb-1">Notas Técnicas de la Hoja de Vida:</span>
                             <p id="dossier-life-notes" class="text-zinc-200"></p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Send Notification to Jefes & Técnicos directly from Hoja de Vida -->
-                <div class="p-4 rounded-2xl bg-gradient-to-r from-purple-950/30 to-indigo-950/20 border border-purple-500/30 space-y-3">
+                <div class="p-4 rounded-xl bg-[#160d1f] border border-[#e57cd8]/35 space-y-3">
                     <div class="flex items-center justify-between">
-                        <h4 class="text-xs font-bold text-purple-300 flex items-center gap-2">
+                        <h4 class="text-xs font-mono font-bold text-[#e57cd8] flex items-center gap-2">
                             <i class="fa-solid fa-bell"></i>
-                            Emitir Notificación / Alerta desde Hoja de Vida a Jefes y Técnicos
+                            EMITIR NOTIFICACIÓN DESDE HOJA DE VIDA A JEFES Y TÉCNICOS
                         </h4>
-                        <span class="text-[10px] text-zinc-400">Alerta instantánea en plataforma</span>
+                        <span class="text-[10px] font-mono text-zinc-400">Alerta en tiempo real</span>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-2">
-                        <input type="text" id="dossier-alert-message" placeholder="Escribe la alerta técnica de esta máquina (ej: Requiere cambio urgente de rodamiento en próximo turno)..."
-                            class="flex-1 bg-zinc-950 border border-white/15 rounded-xl px-3.5 py-2 text-xs text-white">
-                        <select id="dossier-alert-target" class="bg-zinc-950 border border-white/15 rounded-xl px-3 py-2 text-xs text-white">
+                        <input type="text" id="dossier-alert-message" placeholder="Escribe la alerta de esta máquina (ej: Cambio urgente de rodamiento en próximo turno)..."
+                            class="flex-1 bg-[#07080a] border border-white/15 rounded-lg px-3.5 py-2 text-xs text-white">
+                        <select id="dossier-alert-target" class="bg-[#07080a] border border-white/15 rounded-lg px-3 py-2 text-xs text-white">
                             <option value="ALL">Notificar a: Jefes y Técnicos</option>
                             <option value="JEFE">Solo al Jefe</option>
                             <option value="TECNICO">Solo a Técnicos</option>
                         </select>
-                        <button type="button" onclick="sendDossierNotification()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold whitespace-nowrap">
+                        <button type="button" onclick="sendDossierNotification()" class="px-4 py-2 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] text-xs font-extrabold whitespace-nowrap">
                             <i class="fa-solid fa-paper-plane mr-1"></i> Enviar Alerta
                         </button>
                     </div>
@@ -1310,8 +1526,8 @@ body {
 
                 <!-- Maintenance Plans Linked to this Machine -->
                 <div class="space-y-2">
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
-                        <i class="fa-solid fa-calendar-check text-emerald-400"></i>
+                    <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-check text-[#2CD5FF]"></i>
                         Planes Preventivos y Cronograma 2027 de esta Máquina
                     </h4>
                     <div id="dossier-plans-list" class="space-y-2"></div>
@@ -1319,8 +1535,8 @@ body {
 
                 <!-- Chronological Intervention History -->
                 <div class="space-y-2">
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
-                        <i class="fa-solid fa-clock-rotate-left text-blue-400"></i>
+                    <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-[#e57cd8]"></i>
                         Historial Cronológico de Mantenimientos y Reparaciones
                     </h4>
                     <div id="dossier-history-list" class="space-y-2.5"></div>
@@ -1335,7 +1551,7 @@ body {
     <!-- MODAL 3: CREAR / EDITAR MÁQUINA + HOJA DE VIDA (JEFE)                 -->
     <!-- ===================================================================== -->
     <div id="machine-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
-        <div class="bg-[#111116] border border-white/10 rounded-3xl w-full max-w-2xl p-6 shadow-2xl space-y-4 my-auto">
+        <div class="bg-[#0b0d11] border border-white/15 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 my-auto">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
                 <h3 id="machine-modal-title" class="text-base font-bold text-white">Registrar Máquina y Hoja de Vida</h3>
                 <button onclick="closeMachineModal()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
@@ -1347,22 +1563,22 @@ body {
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Código QR *</label>
-                        <input type="text" id="machine-code-input" required placeholder="MAQ-003" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
+                        <input type="text" id="machine-code-input" required placeholder="MAQ-003" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white font-mono">
                     </div>
                     <div class="sm:col-span-2">
                         <label class="block text-zinc-400 font-bold mb-1">Nombre de la Máquina *</label>
-                        <input type="text" id="machine-name-input" required placeholder="Máquina 3 - Compresor Industrial" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <input type="text" id="machine-name-input" required placeholder="Máquina 3 - Compresor Industrial" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Ubicación en Planta</label>
-                        <input type="text" id="machine-location-input" placeholder="Línea 1" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <input type="text" id="machine-location-input" placeholder="Línea 1" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Estado Operativo</label>
-                        <select id="machine-status-input" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <select id="machine-status-input" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                             <option value="OPERATIVA">OPERATIVA</option>
                             <option value="EN_MANTENIMIENTO">EN MANTENIMIENTO</option>
                             <option value="PARADA">PARADA</option>
@@ -1370,7 +1586,7 @@ body {
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Nivel de Criticidad</label>
-                        <select id="machine-criticality-input" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <select id="machine-criticality-input" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                             <option value="ALTA">ALTA</option>
                             <option value="MEDIA">MEDIA</option>
                             <option value="BAJA">BAJA</option>
@@ -1381,54 +1597,54 @@ body {
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-white/5">
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Marca</label>
-                        <input type="text" id="machine-brand-input" placeholder="Ej: Siemens / Haas" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <input type="text" id="machine-brand-input" placeholder="Ej: Siemens / Haas" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Modelo</label>
-                        <input type="text" id="machine-model-input" placeholder="Ej: ST-20" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <input type="text" id="machine-model-input" placeholder="Ej: ST-20" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">N° Serie</label>
-                        <input type="text" id="machine-serial-input" placeholder="SN-00123" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
+                        <input type="text" id="machine-serial-input" placeholder="SN-00123" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white font-mono">
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Fecha Instalación</label>
-                        <input type="date" id="machine-install-input" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
+                        <input type="date" id="machine-install-input" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white font-mono">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Voltaje</label>
-                        <input type="text" id="machine-voltage-input" placeholder="220V / 440V" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <input type="text" id="machine-voltage-input" placeholder="220V / 440V" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Potencia</label>
-                        <input type="text" id="machine-power-input" placeholder="15 kW (20 HP)" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <input type="text" id="machine-power-input" placeholder="15 kW (20 HP)" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Proveedor</label>
-                        <input type="text" id="machine-supplier-input" placeholder="Proveedor Industrial" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <input type="text" id="machine-supplier-input" placeholder="Proveedor Industrial" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Próximo Preventivo</label>
-                        <input type="date" id="machine-next-maint-input" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
+                        <input type="date" id="machine-next-maint-input" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white font-mono">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Repuestos Críticos (Hoja de Vida)</label>
-                    <input type="text" id="machine-parts-input" placeholder="Rodamientos, correas, sensores, contactores..." class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                    <input type="text" id="machine-parts-input" placeholder="Rodamientos, correas, sensores, contactores..." class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                 </div>
 
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Descripción / Notas de Hoja de Vida</label>
-                    <textarea id="machine-desc-input" rows="2" placeholder="Especificaciones y recomendaciones de mantenimiento..." class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white"></textarea>
+                    <textarea id="machine-desc-input" rows="2" placeholder="Especificaciones y recomendaciones de mantenimiento..." class="w-full bg-[#07080a] border border-white/10 rounded-lg p-3 text-white"></textarea>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-3 border-t border-white/10">
-                    <button type="button" onclick="closeMachineModal()" class="px-4 py-2 rounded-xl bg-zinc-900 text-zinc-400">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold">Guardar Hoja de Vida</button>
+                    <button type="button" onclick="closeMachineModal()" class="px-4 py-2 rounded-lg bg-zinc-900 text-zinc-400">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] font-extrabold">Guardar Hoja de Vida</button>
                 </div>
             </form>
         </div>
@@ -1439,7 +1655,7 @@ body {
     <!-- MODAL 4: CREAR / EDITAR PLAN DE MANTENIMIENTO & PLAN 2027 (JEFE)      -->
     <!-- ===================================================================== -->
     <div id="plan-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
-        <div class="bg-[#111116] border border-white/10 rounded-3xl w-full max-w-xl p-6 shadow-2xl space-y-4 my-auto">
+        <div class="bg-[#0b0d11] border border-white/15 rounded-2xl w-full max-w-xl p-6 shadow-2xl space-y-4 my-auto">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
                 <h3 id="plan-modal-title" class="text-base font-bold text-white">Programar Plan Preventivo / Plan 2027</h3>
                 <button onclick="closePlanModal()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
@@ -1451,11 +1667,11 @@ body {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Máquina *</label>
-                        <select id="plan-machine-input" required class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white"></select>
+                        <select id="plan-machine-input" required class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white"></select>
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Año del Plan *</label>
-                        <select id="plan-year-input" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
+                        <select id="plan-year-input" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white font-mono">
                             <option value="2027">2027 (Plan Preventivo 2027)</option>
                             <option value="2026">2026 (Actual)</option>
                         </select>
@@ -1464,20 +1680,20 @@ body {
 
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Título del Plan Preventivo / Predictivo *</label>
-                    <input type="text" id="plan-title-input" required placeholder="Ej: Plan Preventivo 2027 - Ajuste General y Lubricación" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                    <input type="text" id="plan-title-input" required placeholder="Ej: Plan Preventivo 2027 - Ajuste General y Lubricación" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Tipo</label>
-                        <select id="plan-type-input" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <select id="plan-type-input" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                             <option value="PREVENTIVO">PREVENTIVO</option>
                             <option value="PREDICTIVO">PREDICTIVO</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Frecuencia</label>
-                        <select id="plan-frequency-input" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <select id="plan-frequency-input" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                             <option value="MENSUAL">MENSUAL</option>
                             <option value="BIMESTRAL">BIMESTRAL</option>
                             <option value="TRIMESTRAL">TRIMESTRAL</option>
@@ -1487,32 +1703,30 @@ body {
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Próxima Fecha</label>
-                        <input type="date" id="plan-date-input" value="2027-01-15" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
+                        <input type="date" id="plan-date-input" value="2027-01-15" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white font-mono">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1.5">Meses Programados en el Año (Clic para marcar):</label>
-                    <div id="plan-months-selector" class="grid grid-cols-6 gap-1.5">
-                        <!-- 1..12 month toggle buttons -->
-                    </div>
+                    <div id="plan-months-selector" class="grid grid-cols-6 gap-1.5"></div>
                 </div>
 
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Técnico Responsable</label>
-                    <select id="plan-tech-input" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                    <select id="plan-tech-input" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                         <option value="">-- Sin asignar --</option>
                     </select>
                 </div>
 
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Checklist de Tareas (1 tarea por línea)</label>
-                    <textarea id="plan-checklist-input" rows="4" placeholder="Verificar rodamientos&#10;Lubricar guías&#10;Reapretar borneras eléctricas" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white"></textarea>
+                    <textarea id="plan-checklist-input" rows="4" placeholder="Verificar rodamientos&#10;Lubricar guías&#10;Reapretar borneras eléctricas" class="w-full bg-[#07080a] border border-white/10 rounded-lg p-3 text-white"></textarea>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-3 border-t border-white/10">
-                    <button type="button" onclick="closePlanModal()" class="px-4 py-2 rounded-xl bg-zinc-900 text-zinc-400">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold">Guardar Plan</button>
+                    <button type="button" onclick="closePlanModal()" class="px-4 py-2 rounded-lg bg-zinc-900 text-zinc-400">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] font-extrabold">Guardar Plan</button>
                 </div>
             </form>
         </div>
@@ -1523,7 +1737,7 @@ body {
     <!-- MODAL 5: CREAR / EDITAR CATEGORÍA DE FALLA (JEFE)                     -->
     <!-- ===================================================================== -->
     <div id="category-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 no-print">
-        <div class="bg-[#111116] border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+        <div class="bg-[#0b0d11] border border-white/15 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
                 <h3 id="category-modal-title" class="text-base font-bold text-white">Categoría de Falla</h3>
                 <button onclick="closeCategoryModal()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
@@ -1533,16 +1747,16 @@ body {
                 <input type="hidden" id="category-edit-id">
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Nombre de la Categoría *</label>
-                    <input type="text" id="category-name-input" required placeholder="Ej: Neumática / Aire Comprimido" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                    <input type="text" id="category-name-input" required placeholder="Ej: Neumática / Aire Comprimido" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Color Identificador</label>
-                        <input type="color" id="category-color-input" value="#8b5cf6" class="w-full h-9 bg-zinc-950 border border-white/10 rounded-xl px-2 py-1">
+                        <input type="color" id="category-color-input" value="#e57cd8" class="w-full h-9 bg-[#07080a] border border-white/10 rounded-lg px-2 py-1">
                     </div>
                     <div>
                         <label class="block text-zinc-400 font-bold mb-1">Ícono FontAwesome</label>
-                        <select id="category-icon-input" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                        <select id="category-icon-input" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                             <option value="fa-bolt">⚡ Eléctrica (fa-bolt)</option>
                             <option value="fa-gears">⚙️ Mecánica (fa-gears)</option>
                             <option value="fa-droplet">💧 Hidráulica (fa-droplet)</option>
@@ -1555,15 +1769,15 @@ body {
                 </div>
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Subcategorías (Separadas por coma)</label>
-                    <textarea id="category-subcats-input" rows="3" placeholder="Compresor, Válvulas, Mangueras, Fuga de presión" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white"></textarea>
+                    <textarea id="category-subcats-input" rows="3" placeholder="Compresor, Válvulas, Mangueras, Fuga de presión" class="w-full bg-[#07080a] border border-white/10 rounded-lg p-3 text-white"></textarea>
                 </div>
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Descripción</label>
-                    <input type="text" id="category-desc-input" placeholder="Descripción breve del grupo de fallas" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                    <input type="text" id="category-desc-input" placeholder="Descripción breve del grupo de fallas" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                 </div>
                 <div class="flex justify-end gap-2 pt-3 border-t border-white/10">
-                    <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 rounded-xl bg-zinc-900 text-zinc-400">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold">Guardar Categoría</button>
+                    <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 rounded-lg bg-zinc-900 text-zinc-400">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] font-extrabold">Guardar Categoría</button>
                 </div>
             </form>
         </div>
@@ -1574,7 +1788,7 @@ body {
     <!-- MODAL 6: CREAR / EDITAR TÉCNICO (JEFE)                                -->
     <!-- ===================================================================== -->
     <div id="technician-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 no-print">
-        <div class="bg-[#111116] border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+        <div class="bg-[#0b0d11] border border-white/15 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
                 <h3 id="tech-modal-title" class="text-base font-bold text-white">Registrar Técnico / Ingeniero</h3>
                 <button onclick="closeTechnicianModal()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
@@ -1583,23 +1797,23 @@ body {
                 <input type="hidden" id="tech-edit-id">
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Nombre Completo *</label>
-                    <input type="text" id="tech-name-input" required placeholder="Ingeniero 3" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                    <input type="text" id="tech-name-input" required placeholder="Ingeniero 3" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                 </div>
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Cargo / Rol</label>
-                    <input type="text" id="tech-role-input" placeholder="Especialista Electromecánico" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                    <input type="text" id="tech-role-input" placeholder="Especialista Electromecánico" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                 </div>
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Especialidad</label>
-                    <input type="text" id="tech-specialty-input" placeholder="Eléctrica, Mecánica, PLC..." class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                    <input type="text" id="tech-specialty-input" placeholder="Eléctrica, Mecánica, PLC..." class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white">
                 </div>
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Teléfono / WhatsApp</label>
-                    <input type="text" id="tech-phone-input" placeholder="300 000 0000" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
+                    <input type="text" id="tech-phone-input" placeholder="300 000 0000" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3 py-2 text-white font-mono">
                 </div>
                 <div class="flex justify-end gap-2 pt-3 border-t border-white/10">
-                    <button type="button" onclick="closeTechnicianModal()" class="px-4 py-2 rounded-xl bg-zinc-900 text-zinc-400">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold">Guardar</button>
+                    <button type="button" onclick="closeTechnicianModal()" class="px-4 py-2 rounded-lg bg-zinc-900 text-zinc-400">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] font-extrabold">Guardar</button>
                 </div>
             </form>
         </div>
@@ -1610,11 +1824,11 @@ body {
     <!-- MODAL 7: LOGIN DEL JEFE DE MANTENIMIENTO (CON CUENTAS DE PRUEBA)      -->
     <!-- ===================================================================== -->
     <div id="login-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 no-print">
-        <div class="bg-[#111116] border border-white/10 rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-5">
+        <div class="bg-[#0b0d11] border border-white/15 rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-5">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-400 flex items-center justify-center">
-                        <i class="fa-solid fa-user-shield"></i>
+                    <div class="w-9 h-9 rounded-lg bg-[#e57cd8]/15 border border-[#e57cd8]/40 text-[#e57cd8] flex items-center justify-center">
+                        <i class="fa-solid fa-crown"></i>
                     </div>
                     <div>
                         <h3 class="text-base font-bold text-white">Acceso Jefe de Mantenimiento</h3>
@@ -1625,16 +1839,16 @@ body {
             </div>
 
             <!-- Quick Fill Test Accounts Box -->
-            <div class="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/25 space-y-2">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-purple-300">Cuentas Iniciales de Prueba (Clic para usar):</p>
+            <div class="p-3 rounded-xl bg-[#160d1f] border border-[#e57cd8]/30 space-y-2">
+                <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#e57cd8]">Cuentas de Prueba (Clic para autocompletar):</p>
                 <div class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="fillDemoLogin('jefe', '1234')" class="p-2 rounded-xl bg-zinc-950/90 hover:bg-zinc-900 border border-white/10 text-left transition-all">
+                    <button type="button" onclick="fillDemoLogin('jefe', '1234')" class="p-2 rounded-lg bg-[#07080a] hover:bg-zinc-900 border border-white/10 text-left transition-all">
                         <p class="text-xs font-bold text-white">👑 Jefe Planta</p>
-                        <p class="text-[10px] font-mono text-purple-300">jefe / 1234</p>
+                        <p class="text-[10px] font-mono text-[#2CD5FF]">jefe / 1234</p>
                     </button>
-                    <button type="button" onclick="fillDemoLogin('admin', 'admin123')" class="p-2 rounded-xl bg-zinc-950/90 hover:bg-zinc-900 border border-white/10 text-left transition-all">
+                    <button type="button" onclick="fillDemoLogin('admin', 'admin123')" class="p-2 rounded-lg bg-[#07080a] hover:bg-zinc-900 border border-white/10 text-left transition-all">
                         <p class="text-xs font-bold text-white">🛡️ Supervisor</p>
-                        <p class="text-[10px] font-mono text-purple-300">admin / admin123</p>
+                        <p class="text-[10px] font-mono text-[#2CD5FF]">admin / admin123</p>
                     </button>
                 </div>
             </div>
@@ -1642,13 +1856,13 @@ body {
             <form onsubmit="submitLoginForm(event)" class="space-y-3 text-xs">
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Usuario</label>
-                    <input type="text" id="login-username" required value="jefe" placeholder="jefe" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-white font-mono">
+                    <input type="text" id="login-username" required value="jefe" placeholder="jefe" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3.5 py-2.5 text-white font-mono">
                 </div>
                 <div>
                     <label class="block text-zinc-400 font-bold mb-1">Contraseña / PIN</label>
-                    <input type="password" id="login-password" required value="1234" placeholder="••••" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-white font-mono">
+                    <input type="password" id="login-password" required value="1234" placeholder="••••" class="w-full bg-[#07080a] border border-white/10 rounded-lg px-3.5 py-2.5 text-white font-mono">
                 </div>
-                <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-600/25">
+                <button type="submit" class="w-full py-3 rounded-lg bg-[#e57cd8] hover:bg-[#f09be5] text-[#160b1e] font-extrabold uppercase tracking-wider shadow-lg shadow-[#e57cd8]/25">
                     Ingresar como Jefe
                 </button>
             </form>
@@ -1923,9 +2137,9 @@ function applyRoleUI() {
         const btn = document.getElementById(`role-btn-${r}`);
         if (!btn) return;
         if (state.role === r) {
-            btn.className = 'py-2 px-1.5 rounded-lg text-[11px] font-bold border border-purple-500/50 bg-purple-600/20 text-white flex flex-col items-center gap-1 shadow';
+            btn.className = 'py-1.5 px-1 rounded text-[10px] font-extrabold border border-[#e57cd8]/60 bg-[#e57cd8]/20 text-white flex flex-col items-center gap-0.5 shadow';
         } else {
-            btn.className = 'py-2 px-1.5 rounded-lg text-[11px] font-medium border border-white/5 bg-zinc-900/60 text-zinc-400 hover:text-white hover:bg-zinc-800 flex flex-col items-center gap-1';
+            btn.className = 'py-1.5 px-1 rounded text-[10px] font-medium border border-white/5 bg-white/[0.02] text-[#9c89b0] hover:text-white hover:bg-white/[0.06] flex flex-col items-center gap-0.5';
         }
     });
 
@@ -1933,6 +2147,7 @@ function applyRoleUI() {
     const navOrders = document.getElementById('nav-orders');
     const navMachines = document.getElementById('nav-machines');
     const navPlans = document.getElementById('nav-plans');
+    const analyzeLabel = document.getElementById('sidebar-analyze-label');
     const bossSection = document.getElementById('sidebar-boss-section');
     const logoutBtn = document.getElementById('logout-boss-btn');
     const headerLoginBtn = document.getElementById('header-login-btn');
@@ -1942,6 +2157,7 @@ function applyRoleUI() {
     if (navOrders) navOrders.classList.toggle('hidden', isOp);
     if (navMachines) navMachines.classList.toggle('hidden', isOp);
     if (navPlans) navPlans.classList.toggle('hidden', isOp);
+    if (analyzeLabel) analyzeLabel.classList.toggle('hidden', isOp);
     if (bossSection) bossSection.classList.toggle('hidden', !isBoss);
     if (logoutBtn) logoutBtn.classList.toggle('hidden', !isBoss);
     if (headerNotifBtn) headerNotifBtn.classList.toggle('hidden', isOp);
@@ -1956,10 +2172,10 @@ function applyRoleUI() {
 
     if (headerLoginBtn) {
         if (isBoss) {
-            headerLoginBtn.innerHTML = `<i class="fa-solid fa-crown text-amber-400 text-[11px]"></i><span class="hidden sm:inline">Jefe Activo</span>`;
+            headerLoginBtn.innerHTML = `<i class="fa-solid fa-crown text-[#e57cd8] text-[11px]"></i><span class="hidden sm:inline">Jefe Activo</span>`;
             headerLoginBtn.onclick = () => navigateTo('dashboard');
         } else {
-            headerLoginBtn.innerHTML = `<i class="fa-solid fa-lock text-[11px]"></i><span class="hidden sm:inline">Login Jefe</span>`;
+            headerLoginBtn.innerHTML = `<i class="fa-solid fa-lock text-[#e57cd8] text-[11px]"></i><span class="hidden sm:inline">Acceso Jefe</span>`;
             headerLoginBtn.onclick = () => openLoginModal();
         }
     }
@@ -2797,17 +3013,24 @@ function renderOrdersTable(tbodyId, ordersList) {
     tbody.innerHTML = ordersList.map(o => {
         const cat = getCategoryMeta(o.failure_type);
         const isRunning = Boolean(o.is_timer_running);
+        const isFinished = o.status === 'FINALIZADO';
         const durSec = o.current_live_duration_seconds || o.repair_duration_seconds || 0;
 
         return `
-            <tr onclick="openOrderModal(${o.id})" class="hover:bg-white/[0.03] cursor-pointer transition-colors">
-                <td class="px-4 py-3.5">
-                    <div class="font-mono font-bold text-purple-300">${o.order_number}</div>
-                    <div class="text-[10px] text-zinc-500 font-mono">${o.report_date} ${o.report_time}</div>
+            <tr onclick="openOrderModal(${o.id})" class="hover:bg-[#11141c] cursor-pointer transition-colors ${isRunning ? 'bg-[#160d1f]/60 border-l-2 border-l-[#e57cd8]' : ''}">
+                <td class="px-5 py-3.5">
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono font-bold text-[#2CD5FF]">${o.order_number}</span>
+                        <span class="text-xs font-semibold text-white truncate max-w-[220px]">${o.description || 'Sin descripción'}</span>
+                    </div>
+                    <div class="text-[10px] text-zinc-500 font-mono mt-0.5">${o.report_date} • ${o.report_time} • Rep: ${o.operator_name}</div>
                 </td>
                 <td class="px-4 py-3.5">
-                    <div class="font-bold text-white">${o.machine_name || ''}</div>
-                    <div class="text-[10px] font-mono text-zinc-500">${o.machine_code || ''}</div>
+                    <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/[0.03] border border-white/[0.06]">
+                        <span class="w-2 h-2 rounded-full bg-[#e57cd8]"></span>
+                        <span class="font-bold text-white text-xs">${o.machine_name || ''}</span>
+                        <span class="text-[10px] font-mono text-zinc-400">${o.machine_code || ''}</span>
+                    </div>
                 </td>
                 <td class="px-4 py-3.5">
                     <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
@@ -2815,7 +3038,7 @@ function renderOrdersTable(tbodyId, ordersList) {
                         <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${cat.color}"></span>
                         <span>${cat.name}</span>
                     </div>
-                    ${o.failure_subcategory ? `<div class="text-[10px] text-zinc-400 mt-0.5">${o.failure_subcategory}</div>` : ''}
+                    ${o.failure_subcategory ? `<div class="text-[10px] text-zinc-400 mt-0.5 font-mono">${o.failure_subcategory}</div>` : ''}
                 </td>
                 <td class="px-4 py-3.5">
                     <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-zinc-900 border border-white/10 text-zinc-300">
@@ -2824,8 +3047,8 @@ function renderOrdersTable(tbodyId, ordersList) {
                 </td>
                 <td class="px-4 py-3.5">
                     ${o.machine_stopped
-                        ? `<span class="text-rose-400 font-bold text-[11px] flex items-center gap-1"><i class="fa-solid fa-octagon-exclamation"></i> Parada (${o.current_live_downtime_minutes || o.total_downtime_minutes || 0}m)</span>`
-                        : `<span class="text-emerald-400 text-[11px]">Operando</span>`
+                        ? `<span class="text-rose-400 font-bold text-[11px] font-mono flex items-center gap-1"><i class="fa-solid fa-octagon-exclamation"></i> PARADA (${o.current_live_downtime_minutes || o.total_downtime_minutes || 0}m)</span>`
+                        : `<span class="text-emerald-400 text-[11px] font-mono">● OPERANDO</span>`
                     }
                 </td>
                 <td class="px-4 py-3.5">
@@ -2837,30 +3060,52 @@ function renderOrdersTable(tbodyId, ordersList) {
                 <td class="px-4 py-3.5">
                     <div class="flex items-center gap-2">
                         ${getStatusBadgeHTML(o.status)}
-                        <span class="font-mono text-xs font-bold ${isRunning ? 'text-emerald-400' : 'text-zinc-400'} order-live-timer" data-order-id="${o.id}">
+                        <span class="font-mono text-sm font-extrabold ${isRunning ? 'text-[#e57cd8]' : 'text-zinc-200'} order-live-timer" data-order-id="${o.id}">
                             ${formatSecondsToHHMMSS(durSec)}
                         </span>
                     </div>
                 </td>
-                <td class="px-4 py-3.5 text-right">
-                    <button class="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-purple-600 text-zinc-200 hover:text-white text-xs font-semibold border border-white/10 transition-all">
-                        Abrir
-                    </button>
+                <td class="px-5 py-3.5 text-right" onclick="event.stopPropagation()">
+                    <div class="inline-flex items-center gap-2">
+                        ${!isFinished ? `
+                            <button onclick="quickToggleOrderTimer(${o.id}, ${isRunning})"
+                                class="${isRunning ? 'toggl-stop-btn' : 'toggl-play-btn'} !w-8 !h-8"
+                                title="${isRunning ? 'Pausar Timer' : 'Iniciar Timer (Toggl)'}">
+                                <i class="fa-solid ${isRunning ? 'fa-pause' : 'fa-play'} text-[10px]"></i>
+                            </button>
+                        ` : ''}
+                        <button onclick="openOrderModal(${o.id})" class="px-2.5 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.12] text-zinc-200 text-xs font-mono border border-white/10 transition-all">
+                            Detalle
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
     }).join('');
 }
 
+async function quickToggleOrderTimer(orderId, currentlyRunning) {
+    const endpoint = currentlyRunning ? `/api/orders/${orderId}/timer/pause` : `/api/orders/${orderId}/timer/start`;
+    const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    });
+    if (res.ok) {
+        showToast(currentlyRunning ? '⏸️ Timer pausado' : '▶️ Timer Toggl iniciado', currentlyRunning ? 'info' : 'success');
+        await loadAllData();
+    }
+}
+
 function getStatusBadgeHTML(status) {
     const map = {
         PENDIENTE: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-        EN_PROCESO: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-        PAUSADO: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+        EN_PROCESO: 'bg-[#e57cd8]/20 text-[#e57cd8] border-[#e57cd8]/40',
+        PAUSADO: 'bg-[#2CD5FF]/15 text-[#2CD5FF] border-[#2CD5FF]/30',
         FINALIZADO: 'bg-zinc-800 text-zinc-400 border-white/10'
     };
     const cls = map[status] || map.PENDIENTE;
-    return `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${cls}">${status}</span>`;
+    return `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${cls}">${status}</span>`;
 }
 
 // ============================================================================
@@ -2874,26 +3119,33 @@ function updateTopTogglTimerBar() {
     const label = document.getElementById('toggl-bar-label');
     const clock = document.getElementById('toggl-bar-clock');
     const btn = document.getElementById('toggl-bar-action-btn');
+    const btnIcon = document.getElementById('toggl-bar-btn-icon');
 
     if (!dot || !label || !clock) return;
 
     if (runningOrder) {
-        if (header) header.classList.add('toggl-timer-active');
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 timer-pulse';
-        label.innerHTML = `<strong class="text-white font-mono">${runningOrder.order_number}</strong> • ${runningOrder.machine_name}`;
+        if (header) header.classList.add('timer-running');
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-[#e57cd8] timer-pulse';
+        label.innerHTML = `<strong class="text-[#2CD5FF] font-mono">${runningOrder.order_number}</strong> <span class="text-white font-semibold mx-1">● ${runningOrder.machine_name}</span> <span class="text-zinc-400 text-[11px]">${runningOrder.description || ''}</span>`;
         clock.textContent = formatSecondsToHHMMSS(runningOrder.current_live_duration_seconds || 0);
-        clock.className = 'font-mono text-sm font-black text-emerald-400 tracking-wider';
+        clock.className = 'font-mono text-base font-black text-[#e57cd8] tracking-tight';
         if (btn) {
-            btn.classList.remove('hidden');
+            btn.className = 'toggl-stop-btn !w-8 !h-8';
             btn.dataset.orderId = runningOrder.id;
         }
+        if (btnIcon) btnIcon.className = 'fa-solid fa-stop text-xs';
     } else {
-        if (header) header.classList.remove('toggl-timer-active');
+        if (header) header.classList.remove('timer-running');
         dot.className = 'w-2.5 h-2.5 rounded-full bg-zinc-600';
-        label.textContent = 'Sin reparación en curso';
+        label.textContent = '¿Qué máquina estás interviniendo? — Haz clic en ▶ en una orden para iniciar Timer';
         clock.textContent = '00:00:00';
-        clock.className = 'font-mono text-sm font-bold text-zinc-500 tracking-wider';
-        if (btn) btn.classList.add('hidden');
+        clock.className = 'font-mono text-base font-bold text-zinc-500 tracking-tight';
+        if (btn) {
+            btn.className = 'toggl-play-btn !w-8 !h-8';
+            const firstPending = state.orders.find(o => o.status !== 'FINALIZADO');
+            btn.dataset.orderId = firstPending ? firstPending.id : '';
+        }
+        if (btnIcon) btnIcon.className = 'fa-solid fa-play text-xs';
     }
 }
 

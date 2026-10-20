@@ -261,9 +261,9 @@ function applyRoleUI() {
         const btn = document.getElementById(`role-btn-${r}`);
         if (!btn) return;
         if (state.role === r) {
-            btn.className = 'py-2 px-1.5 rounded-lg text-[11px] font-bold border border-purple-500/50 bg-purple-600/20 text-white flex flex-col items-center gap-1 shadow';
+            btn.className = 'py-1.5 px-1 rounded text-[10px] font-extrabold border border-[#e57cd8]/60 bg-[#e57cd8]/20 text-white flex flex-col items-center gap-0.5 shadow';
         } else {
-            btn.className = 'py-2 px-1.5 rounded-lg text-[11px] font-medium border border-white/5 bg-zinc-900/60 text-zinc-400 hover:text-white hover:bg-zinc-800 flex flex-col items-center gap-1';
+            btn.className = 'py-1.5 px-1 rounded text-[10px] font-medium border border-white/5 bg-white/[0.02] text-[#9c89b0] hover:text-white hover:bg-white/[0.06] flex flex-col items-center gap-0.5';
         }
     });
 
@@ -271,6 +271,7 @@ function applyRoleUI() {
     const navOrders = document.getElementById('nav-orders');
     const navMachines = document.getElementById('nav-machines');
     const navPlans = document.getElementById('nav-plans');
+    const analyzeLabel = document.getElementById('sidebar-analyze-label');
     const bossSection = document.getElementById('sidebar-boss-section');
     const logoutBtn = document.getElementById('logout-boss-btn');
     const headerLoginBtn = document.getElementById('header-login-btn');
@@ -280,6 +281,7 @@ function applyRoleUI() {
     if (navOrders) navOrders.classList.toggle('hidden', isOp);
     if (navMachines) navMachines.classList.toggle('hidden', isOp);
     if (navPlans) navPlans.classList.toggle('hidden', isOp);
+    if (analyzeLabel) analyzeLabel.classList.toggle('hidden', isOp);
     if (bossSection) bossSection.classList.toggle('hidden', !isBoss);
     if (logoutBtn) logoutBtn.classList.toggle('hidden', !isBoss);
     if (headerNotifBtn) headerNotifBtn.classList.toggle('hidden', isOp);
@@ -294,10 +296,10 @@ function applyRoleUI() {
 
     if (headerLoginBtn) {
         if (isBoss) {
-            headerLoginBtn.innerHTML = `<i class="fa-solid fa-crown text-amber-400 text-[11px]"></i><span class="hidden sm:inline">Jefe Activo</span>`;
+            headerLoginBtn.innerHTML = `<i class="fa-solid fa-crown text-[#e57cd8] text-[11px]"></i><span class="hidden sm:inline">Jefe Activo</span>`;
             headerLoginBtn.onclick = () => navigateTo('dashboard');
         } else {
-            headerLoginBtn.innerHTML = `<i class="fa-solid fa-lock text-[11px]"></i><span class="hidden sm:inline">Login Jefe</span>`;
+            headerLoginBtn.innerHTML = `<i class="fa-solid fa-lock text-[#e57cd8] text-[11px]"></i><span class="hidden sm:inline">Acceso Jefe</span>`;
             headerLoginBtn.onclick = () => openLoginModal();
         }
     }
@@ -1135,17 +1137,24 @@ function renderOrdersTable(tbodyId, ordersList) {
     tbody.innerHTML = ordersList.map(o => {
         const cat = getCategoryMeta(o.failure_type);
         const isRunning = Boolean(o.is_timer_running);
+        const isFinished = o.status === 'FINALIZADO';
         const durSec = o.current_live_duration_seconds || o.repair_duration_seconds || 0;
 
         return `
-            <tr onclick="openOrderModal(${o.id})" class="hover:bg-white/[0.03] cursor-pointer transition-colors">
-                <td class="px-4 py-3.5">
-                    <div class="font-mono font-bold text-purple-300">${o.order_number}</div>
-                    <div class="text-[10px] text-zinc-500 font-mono">${o.report_date} ${o.report_time}</div>
+            <tr onclick="openOrderModal(${o.id})" class="hover:bg-[#11141c] cursor-pointer transition-colors ${isRunning ? 'bg-[#160d1f]/60 border-l-2 border-l-[#e57cd8]' : ''}">
+                <td class="px-5 py-3.5">
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono font-bold text-[#2CD5FF]">${o.order_number}</span>
+                        <span class="text-xs font-semibold text-white truncate max-w-[220px]">${o.description || 'Sin descripción'}</span>
+                    </div>
+                    <div class="text-[10px] text-zinc-500 font-mono mt-0.5">${o.report_date} • ${o.report_time} • Rep: ${o.operator_name}</div>
                 </td>
                 <td class="px-4 py-3.5">
-                    <div class="font-bold text-white">${o.machine_name || ''}</div>
-                    <div class="text-[10px] font-mono text-zinc-500">${o.machine_code || ''}</div>
+                    <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/[0.03] border border-white/[0.06]">
+                        <span class="w-2 h-2 rounded-full bg-[#e57cd8]"></span>
+                        <span class="font-bold text-white text-xs">${o.machine_name || ''}</span>
+                        <span class="text-[10px] font-mono text-zinc-400">${o.machine_code || ''}</span>
+                    </div>
                 </td>
                 <td class="px-4 py-3.5">
                     <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
@@ -1153,7 +1162,7 @@ function renderOrdersTable(tbodyId, ordersList) {
                         <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${cat.color}"></span>
                         <span>${cat.name}</span>
                     </div>
-                    ${o.failure_subcategory ? `<div class="text-[10px] text-zinc-400 mt-0.5">${o.failure_subcategory}</div>` : ''}
+                    ${o.failure_subcategory ? `<div class="text-[10px] text-zinc-400 mt-0.5 font-mono">${o.failure_subcategory}</div>` : ''}
                 </td>
                 <td class="px-4 py-3.5">
                     <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-zinc-900 border border-white/10 text-zinc-300">
@@ -1162,8 +1171,8 @@ function renderOrdersTable(tbodyId, ordersList) {
                 </td>
                 <td class="px-4 py-3.5">
                     ${o.machine_stopped
-                        ? `<span class="text-rose-400 font-bold text-[11px] flex items-center gap-1"><i class="fa-solid fa-octagon-exclamation"></i> Parada (${o.current_live_downtime_minutes || o.total_downtime_minutes || 0}m)</span>`
-                        : `<span class="text-emerald-400 text-[11px]">Operando</span>`
+                        ? `<span class="text-rose-400 font-bold text-[11px] font-mono flex items-center gap-1"><i class="fa-solid fa-octagon-exclamation"></i> PARADA (${o.current_live_downtime_minutes || o.total_downtime_minutes || 0}m)</span>`
+                        : `<span class="text-emerald-400 text-[11px] font-mono">● OPERANDO</span>`
                     }
                 </td>
                 <td class="px-4 py-3.5">
@@ -1175,30 +1184,52 @@ function renderOrdersTable(tbodyId, ordersList) {
                 <td class="px-4 py-3.5">
                     <div class="flex items-center gap-2">
                         ${getStatusBadgeHTML(o.status)}
-                        <span class="font-mono text-xs font-bold ${isRunning ? 'text-emerald-400' : 'text-zinc-400'} order-live-timer" data-order-id="${o.id}">
+                        <span class="font-mono text-sm font-extrabold ${isRunning ? 'text-[#e57cd8]' : 'text-zinc-200'} order-live-timer" data-order-id="${o.id}">
                             ${formatSecondsToHHMMSS(durSec)}
                         </span>
                     </div>
                 </td>
-                <td class="px-4 py-3.5 text-right">
-                    <button class="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-purple-600 text-zinc-200 hover:text-white text-xs font-semibold border border-white/10 transition-all">
-                        Abrir
-                    </button>
+                <td class="px-5 py-3.5 text-right" onclick="event.stopPropagation()">
+                    <div class="inline-flex items-center gap-2">
+                        ${!isFinished ? `
+                            <button onclick="quickToggleOrderTimer(${o.id}, ${isRunning})"
+                                class="${isRunning ? 'toggl-stop-btn' : 'toggl-play-btn'} !w-8 !h-8"
+                                title="${isRunning ? 'Pausar Timer' : 'Iniciar Timer (Toggl)'}">
+                                <i class="fa-solid ${isRunning ? 'fa-pause' : 'fa-play'} text-[10px]"></i>
+                            </button>
+                        ` : ''}
+                        <button onclick="openOrderModal(${o.id})" class="px-2.5 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.12] text-zinc-200 text-xs font-mono border border-white/10 transition-all">
+                            Detalle
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
     }).join('');
 }
 
+async function quickToggleOrderTimer(orderId, currentlyRunning) {
+    const endpoint = currentlyRunning ? `/api/orders/${orderId}/timer/pause` : `/api/orders/${orderId}/timer/start`;
+    const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    });
+    if (res.ok) {
+        showToast(currentlyRunning ? '⏸️ Timer pausado' : '▶️ Timer Toggl iniciado', currentlyRunning ? 'info' : 'success');
+        await loadAllData();
+    }
+}
+
 function getStatusBadgeHTML(status) {
     const map = {
         PENDIENTE: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-        EN_PROCESO: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-        PAUSADO: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+        EN_PROCESO: 'bg-[#e57cd8]/20 text-[#e57cd8] border-[#e57cd8]/40',
+        PAUSADO: 'bg-[#2CD5FF]/15 text-[#2CD5FF] border-[#2CD5FF]/30',
         FINALIZADO: 'bg-zinc-800 text-zinc-400 border-white/10'
     };
     const cls = map[status] || map.PENDIENTE;
-    return `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${cls}">${status}</span>`;
+    return `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${cls}">${status}</span>`;
 }
 
 // ============================================================================
@@ -1212,26 +1243,33 @@ function updateTopTogglTimerBar() {
     const label = document.getElementById('toggl-bar-label');
     const clock = document.getElementById('toggl-bar-clock');
     const btn = document.getElementById('toggl-bar-action-btn');
+    const btnIcon = document.getElementById('toggl-bar-btn-icon');
 
     if (!dot || !label || !clock) return;
 
     if (runningOrder) {
-        if (header) header.classList.add('toggl-timer-active');
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 timer-pulse';
-        label.innerHTML = `<strong class="text-white font-mono">${runningOrder.order_number}</strong> • ${runningOrder.machine_name}`;
+        if (header) header.classList.add('timer-running');
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-[#e57cd8] timer-pulse';
+        label.innerHTML = `<strong class="text-[#2CD5FF] font-mono">${runningOrder.order_number}</strong> <span class="text-white font-semibold mx-1">● ${runningOrder.machine_name}</span> <span class="text-zinc-400 text-[11px]">${runningOrder.description || ''}</span>`;
         clock.textContent = formatSecondsToHHMMSS(runningOrder.current_live_duration_seconds || 0);
-        clock.className = 'font-mono text-sm font-black text-emerald-400 tracking-wider';
+        clock.className = 'font-mono text-base font-black text-[#e57cd8] tracking-tight';
         if (btn) {
-            btn.classList.remove('hidden');
+            btn.className = 'toggl-stop-btn !w-8 !h-8';
             btn.dataset.orderId = runningOrder.id;
         }
+        if (btnIcon) btnIcon.className = 'fa-solid fa-stop text-xs';
     } else {
-        if (header) header.classList.remove('toggl-timer-active');
+        if (header) header.classList.remove('timer-running');
         dot.className = 'w-2.5 h-2.5 rounded-full bg-zinc-600';
-        label.textContent = 'Sin reparación en curso';
+        label.textContent = '¿Qué máquina estás interviniendo? — Haz clic en ▶ en una orden para iniciar Timer';
         clock.textContent = '00:00:00';
-        clock.className = 'font-mono text-sm font-bold text-zinc-500 tracking-wider';
-        if (btn) btn.classList.add('hidden');
+        clock.className = 'font-mono text-base font-bold text-zinc-500 tracking-tight';
+        if (btn) {
+            btn.className = 'toggl-play-btn !w-8 !h-8';
+            const firstPending = state.orders.find(o => o.status !== 'FINALIZADO');
+            btn.dataset.orderId = firstPending ? firstPending.id : '';
+        }
+        if (btnIcon) btnIcon.className = 'fa-solid fa-play text-xs';
     }
 }
 
