@@ -142,6 +142,7 @@ const state = {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
+    initThemeMode();
     setCurrentDateTime();
     applyRoleUI();
     renderFailureCategorySelector('MECANICA');
@@ -154,6 +155,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     setInterval(tickLiveClocks, 1000);
 });
+
+function initThemeMode() {
+    const savedTheme = localStorage.getItem('sm_v2_theme') || 'dark';
+    const isDark = savedTheme === 'dark';
+    document.documentElement.classList.toggle('dark', isDark);
+    const icon = document.getElementById('theme-toggle-icon');
+    if (icon) {
+        icon.className = isDark ? 'fa-solid fa-sun text-xs' : 'fa-solid fa-moon text-xs';
+    }
+}
+
+function toggleThemeMode() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('sm_v2_theme', isDark ? 'dark' : 'light');
+    const icon = document.getElementById('theme-toggle-icon');
+    if (icon) {
+        icon.className = isDark ? 'fa-solid fa-sun text-xs' : 'fa-solid fa-moon text-xs';
+    }
+    showToast(isDark ? 'Tema Violet Bloom Dark activado' : 'Tema Violet Bloom Light activado', 'info');
+}
 
 async function loadAllData() {
     await Promise.allSettled([
@@ -256,50 +277,45 @@ function applyRoleUI() {
         }
     }
 
-    // Highlight active role button in switcher
+    // Highlight active role button in top navbar capsule switcher
     ['OPERARIO', 'TECNICO', 'JEFE'].forEach(r => {
         const btn = document.getElementById(`role-btn-${r}`);
         if (!btn) return;
         if (state.role === r) {
-            btn.className = 'py-1.5 px-1 rounded text-[10px] font-extrabold border border-[#e57cd8]/60 bg-[#e57cd8]/20 text-white flex flex-col items-center gap-0.5 shadow';
+            btn.className = 'px-3 py-1 rounded-full text-xs font-semibold vb-btn-primary transition-all flex items-center gap-1.5';
         } else {
-            btn.className = 'py-1.5 px-1 rounded text-[10px] font-medium border border-white/5 bg-white/[0.02] text-[#9c89b0] hover:text-white hover:bg-white/[0.06] flex flex-col items-center gap-0.5';
+            btn.className = 'px-3 py-1 rounded-full text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-all flex items-center gap-1.5';
         }
     });
 
     // Show/hide nav items based on role
-    const navOrders = document.getElementById('nav-orders');
-    const navMachines = document.getElementById('nav-machines');
-    const navPlans = document.getElementById('nav-plans');
-    const analyzeLabel = document.getElementById('sidebar-analyze-label');
     const bossSection = document.getElementById('sidebar-boss-section');
     const logoutBtn = document.getElementById('logout-boss-btn');
     const headerLoginBtn = document.getElementById('header-login-btn');
     const headerNotifBtn = document.getElementById('header-notif-btn');
     const togglWidget = document.getElementById('toggl-live-timer-widget');
 
-    if (navOrders) navOrders.classList.toggle('hidden', isOp);
-    if (navMachines) navMachines.classList.toggle('hidden', isOp);
-    if (navPlans) navPlans.classList.toggle('hidden', isOp);
-    if (analyzeLabel) analyzeLabel.classList.toggle('hidden', isOp);
-    if (bossSection) bossSection.classList.toggle('hidden', !isBoss);
+    if (bossSection) {
+        bossSection.classList.toggle('hidden', !isBoss);
+        bossSection.classList.toggle('grid', isBoss);
+    }
     if (logoutBtn) logoutBtn.classList.toggle('hidden', !isBoss);
     if (headerNotifBtn) headerNotifBtn.classList.toggle('hidden', isOp);
     if (togglWidget) {
         if (isOp) {
             togglWidget.classList.add('hidden');
-            togglWidget.classList.remove('md:flex');
+            togglWidget.classList.remove('lg:flex');
         } else {
-            togglWidget.classList.add('md:flex');
+            togglWidget.classList.add('lg:flex');
         }
     }
 
     if (headerLoginBtn) {
         if (isBoss) {
-            headerLoginBtn.innerHTML = `<i class="fa-solid fa-crown text-[#e57cd8] text-[11px]"></i><span class="hidden sm:inline">Jefe Activo</span>`;
+            headerLoginBtn.innerHTML = `<i class="fa-solid fa-crown text-[11px]"></i><span class="hidden sm:inline">${state.bossUser.full_name || 'Jefe Activo'}</span>`;
             headerLoginBtn.onclick = () => navigateTo('dashboard');
         } else {
-            headerLoginBtn.innerHTML = `<i class="fa-solid fa-lock text-[#e57cd8] text-[11px]"></i><span class="hidden sm:inline">Acceso Jefe</span>`;
+            headerLoginBtn.innerHTML = `<i class="fa-solid fa-lock text-[11px]"></i><span class="hidden sm:inline">Acceso Jefe</span>`;
             headerLoginBtn.onclick = () => openLoginModal();
         }
     }
@@ -321,14 +337,18 @@ function applyRoleUI() {
 }
 
 function navigateTo(viewName) {
+    // If Operario clicks one of the open Técnico tabs (orders, machines, plans), seamlessly switch to Técnico (since Técnico requires no account!)
+    if (state.role === 'OPERARIO' && ['orders', 'machines', 'plans'].includes(viewName)) {
+        state.role = 'TECNICO';
+        localStorage.setItem('sm_v2_role', 'TECNICO');
+        applyRoleUI();
+    }
+
     const isBoss = state.role === 'JEFE' && !!state.bossUser;
     const isTech = state.role === 'TECNICO';
 
-    // Guard permissions
-    if (state.role === 'OPERARIO' && viewName !== 'report') {
-        viewName = 'report';
-    }
-    if (isTech && ['dashboard', 'categories', 'technicians'].includes(viewName)) {
+    // Guard Boss-only views
+    if (!isBoss && ['dashboard', 'categories', 'technicians'].includes(viewName)) {
         showToast('Esa sección requiere cuenta de Jefe de Mantenimiento', 'warning');
         openLoginModal();
         return;
@@ -348,7 +368,7 @@ function navigateTo(viewName) {
         }
     });
 
-    // Update Header Title & Subtitle
+    // Update Header Title & Subtitle in the Codeforge window bar
     const titles = {
         report: ['Reportar Falla por QR', 'Formulario rápido de planta para reportar averías en máquinas'],
         orders: ['Máquinas Dañadas & Órdenes de Trabajo', 'Control de tiempos con cronómetro en vivo y estado de planta'],
@@ -364,14 +384,6 @@ function navigateTo(viewName) {
     if (titleEl) titleEl.textContent = t;
     if (subEl) subEl.textContent = sub;
 
-    // Close mobile sidebar if open
-    const sidebar = document.getElementById('app-sidebar');
-    const backdrop = document.getElementById('sidebar-backdrop');
-    if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
-        sidebar.classList.add('-translate-x-full');
-        if (backdrop) backdrop.classList.add('hidden');
-    }
-
     // Trigger view-specific refresh
     if (viewName === 'dashboard') loadDashboardData();
     else if (viewName === 'orders') {
@@ -386,8 +398,6 @@ function navigateTo(viewName) {
         renderQuickMachineChips();
         renderFailureCategorySelector();
     }
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function toggleMobileSidebar() {

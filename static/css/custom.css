@@ -1,318 +1,231 @@
 /* ==========================================================================
-   SistMaint CMMS 2.0 — Authentic MagicUI Codeforge + Toggl Track Web UI/UX
-   - Codeforge: Architectural 1px blueprint grid, corner crosshairs (+),
-     #2CD5FF / #2C30FF radial glow, flush grid tabs, Geist typography
-   - Toggl Track: Grouped sidebar (TRACK / ANALYZE / MANAGE), Top Live Timer
-     Bar with circular Play/Stop button, #e57cd8 orchid & project dot pills,
-     grouped time-entry rows
+   SistMaint CMMS 2.0 — Codeforge (codeforge-magicui.vercel.app)
+   + Violet Bloom Theme (21st.dev/@serafimcloud/themes/violet-bloom)
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-    --cf-bg: #07080a;
-    --cf-surface: #0b0d11;
-    --cf-card: #0f1218;
-    --cf-border: rgba(255, 255, 255, 0.085);
-    --cf-border-strong: rgba(255, 255, 255, 0.15);
-    --cf-cyan: #2CD5FF;
-    --cf-blue: #2C30FF;
-    --toggl-plum: #160d1f;
-    --toggl-orchid: #e57cd8;
-    --toggl-mint: #4ade80;
+    --background: #fdfdfd;
+    --foreground: #09090b;
+    --card: #f8f7fc;
+    --card-foreground: #09090b;
+    --popover: #ffffff;
+    --popover-foreground: #09090b;
+    --primary: #7033ff;
+    --primary-glow: #8c5cff;
+    --primary-foreground: #ffffff;
+    --secondary: #edf0f4;
+    --secondary-foreground: #18181b;
+    --muted: #f3f2f8;
+    --muted-foreground: #646470;
+    --accent: #ede8ff;
+    --accent-foreground: #5b21b6;
+    --border: #e4e2ee;
+    --input: #e4e2ee;
+    --ring: #7033ff;
+    --radius: 1rem;
 }
 
-html.light {
-    --cf-bg: #fafafa;
-    --cf-surface: #ffffff;
-    --cf-card: #f4f4f5;
-    --cf-border: rgba(0, 0, 0, 0.09);
-    --cf-border-strong: rgba(0, 0, 0, 0.16);
+html.dark {
+    --background: #0c0c10;
+    --foreground: #f4f4f6;
+    --card: #13131a;
+    --card-foreground: #f4f4f6;
+    --popover: #16161f;
+    --popover-foreground: #f4f4f6;
+    --primary: #8c5cff;
+    --primary-glow: #7033ff;
+    --primary-foreground: #ffffff;
+    --secondary: #1e1e28;
+    --secondary-foreground: #e4e4e7;
+    --muted: #191922;
+    --muted-foreground: #9494a6;
+    --accent: #231d38;
+    --accent-foreground: #d8b4fe;
+    --border: #242430;
+    --input: #242430;
+    --ring: #8c5cff;
 }
 
 body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: var(--cf-bg);
-    color: #f4f4f5;
+    background-color: var(--background);
+    color: var(--foreground);
     overflow-x: hidden;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .font-mono {
     font-family: 'JetBrains Mono', monospace;
-    letter-spacing: -0.02em;
 }
 
 /* ==========================================================================
-   CODEFORGE ARCHITECTURAL GRID & CROSSHAIRS (+)
+   CODEFORGE ARCHITECTURAL BORDERS & CROSSHAIRS
    ========================================================================== */
 
-/* Codeforge Radial Cyan/Blue Spotlight */
-.cf-hero-glow {
+.cf-border {
+    border-color: var(--border) !important;
+}
+
+.cf-divide-y > :not([hidden]) ~ :not([hidden]) {
+    border-top: 1px solid var(--border);
+}
+
+.cf-divide-x > :not([hidden]) ~ :not([hidden]) {
+    border-left: 1px solid var(--border);
+}
+
+/* Codeforge Shadow Badge Pill (from codeforge-magicui.vercel.app) */
+.shadow-badge {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.08), inset 0px 1px 0px 0px rgba(255, 255, 255, 0.08);
+}
+
+/* Codeforge 3D Violet Bloom Skeuomorphic Button */
+.vb-btn-primary {
+    background: linear-gradient(180deg, #8c5cff 0%, #7033ff 100%);
+    color: #ffffff;
+    box-shadow: 
+        0px 1px 2px 0px rgba(0, 0, 0, 0.25),
+        0px 4px 14px 0px rgba(112, 51, 255, 0.35),
+        inset 0px 0px 1.5px #5b21b6,
+        inset 0px 2px 0px rgba(255, 255, 255, 0.25);
+    border: 1px solid #8c5cff;
+    transition: all 0.2s ease;
+}
+.vb-btn-primary:hover {
+    background: linear-gradient(180deg, #9b72ff 0%, #7c4dff 100%);
+    box-shadow: 
+        0px 2px 6px 0px rgba(0, 0, 0, 0.3),
+        0px 6px 22px 0px rgba(140, 92, 255, 0.5),
+        inset 0px 2px 0px rgba(255, 255, 255, 0.32);
+    transform: translateY(-1px);
+}
+
+/* Codeforge Dual Radial Violet Bloom Hero Glow (exact match to codeforge #hero) */
+.cf-violet-radial-1 {
+    background: radial-gradient(ellipse 65% 55% at 50% 88%, rgba(112, 51, 255, 0.38) 0%, rgba(140, 92, 255, 0.08) 55%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 100%);
+}
+
+.cf-violet-radial-2 {
+    background: radial-gradient(ellipse 50% 45% at 50% 72%, rgba(140, 92, 255, 0.55) 0%, rgba(229, 124, 216, 0.12) 50%, transparent 100%);
+    filter: blur(48px);
+}
+
+/* Codeforge Gradient Headline Text */
+.vb-gradient-text {
+    background: radial-gradient(circle at 50% 20%, #a78bfa 0%, #8c5cff 45%, #e57cd8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Codeforge Interactive Showcase Tab Button (#demo tabs) */
+.cf-demo-tab {
     position: relative;
+    cursor: pointer;
     overflow: hidden;
+    width: 100%;
+    min-height: 54px;
+    padding: 1rem 1.25rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    color: var(--muted-foreground);
+    background-color: transparent;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
 }
-.cf-hero-glow::before {
-    content: "";
+
+.cf-demo-tab:hover {
+    color: var(--foreground);
+    background-color: rgba(140, 92, 255, 0.04);
+}
+
+.cf-demo-tab.active {
+    color: var(--foreground);
+    background: linear-gradient(180deg, rgba(140, 92, 255, 0.14) 0%, transparent 90%);
+}
+
+/* Animated bottom laser line on active Codeforge tab */
+.cf-demo-tab .tab-laser {
     position: absolute;
-    inset: 0;
-    background: 
-        radial-gradient(circle at 45% 0%, rgba(44, 213, 255, 0.16) 0%, rgba(44, 48, 255, 0.06) 42%, transparent 72%),
-        radial-gradient(circle at 85% 20%, rgba(229, 124, 216, 0.10) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-/* Architectural 1px Blueprint Section with Corner Crosshairs (+) */
-.cf-section-box {
-    position: relative;
-    border: 1px solid var(--cf-border);
-    background-color: rgba(11, 13, 17, 0.82);
-    backdrop-filter: blur(12px);
-}
-
-/* Corner Crosshair (+) Markers exactly like codeforge-magicui.vercel.app */
-.cf-crosshair-tl::before,
-.cf-crosshair-br::after {
-    content: "+";
-    position: absolute;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    font-weight: 300;
-    line-height: 1;
-    color: rgba(255, 255, 255, 0.32);
-    pointer-events: none;
-    z-index: 20;
-}
-.cf-crosshair-tl::before {
-    top: -7px;
-    left: -5px;
-}
-.cf-crosshair-br::after {
-    bottom: -7px;
-    right: -5px;
-}
-
-/* Flush 1px Grid Container (Codeforge Bento Grid) */
-.cf-bento-grid {
-    display: grid;
-    background-color: var(--cf-border);
-    gap: 1px;
-    border: 1px solid var(--cf-border);
-}
-.cf-bento-cell {
-    background-color: var(--cf-surface);
-    position: relative;
-    transition: background-color 0.2s ease;
-}
-.cf-bento-cell:hover {
-    background-color: #11151d;
-}
-
-/* Codeforge Top Laser Line on Active Cell/Tab */
-.cf-laser-top {
-    position: relative;
-}
-.cf-laser-top::before {
-    content: "";
-    position: absolute;
-    top: 0;
+    bottom: 0;
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #2CD5FF 0%, #e57cd8 50%, #2C30FF 100%);
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-.cf-laser-top.active::before,
-.cf-laser-top:hover::before {
-    opacity: 1;
-}
-.cf-laser-top.active {
-    background: linear-gradient(180deg, rgba(44, 213, 255, 0.08) 0%, rgba(11, 13, 17, 0.95) 100%);
+    background: linear-gradient(90deg, #7033ff 0%, #8c5cff 50%, #e57cd8 100%);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Codeforge Pill Badge */
-.cf-pill-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.28rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+.cf-demo-tab.active .tab-laser {
+    transform: scaleX(1);
 }
 
-/* ==========================================================================
-   TOGGL TRACK WEB SIDEBAR, TOP TIMER BAR & ENTRY ROWS
-   ========================================================================== */
-
-/* Toggl Track Dark Plum/Obsidian Sidebar */
-.toggl-sidebar {
-    background: linear-gradient(180deg, #130b1c 0%, #0b0910 65%, #08090c 100%);
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+/* Dotted Canvas Texture inside Active Tab & Bento Headers */
+.cf-dot-matrix {
+    background-image: radial-gradient(rgba(140, 92, 255, 0.28) 1px, transparent 1px);
+    background-size: 10px 10px;
 }
 
-.toggl-section-label {
-    font-size: 0.65rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #8c7a9b;
-    padding: 0.75rem 0.75rem 0.35rem;
+/* Codeforge Card & Surface Helpers */
+.cf-card {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cf-card:hover {
+    border-color: rgba(140, 92, 255, 0.45);
 }
 
-.toggl-nav-item {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    padding: 0.55rem 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #b8a8c4;
-    transition: all 0.15s ease;
-    width: 100%;
-    text-align: left;
-    position: relative;
-}
-
-.toggl-nav-item:hover {
-    color: #ffffff;
-    background: rgba(229, 124, 216, 0.08);
-}
-
-.toggl-nav-item.active {
-    color: #ffffff;
-    background: rgba(229, 124, 216, 0.15);
-    font-weight: 600;
-}
-
-.toggl-nav-item.active::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 6px;
-    bottom: 6px;
-    width: 3px;
-    border-radius: 0 3px 3px 0;
-    background: var(--toggl-orchid);
-}
-
-.toggl-nav-item.active i {
-    color: var(--toggl-orchid);
-}
-
-/* Toggl Track Top Timer Bar */
-.toggl-top-bar {
-    background: #0d0e13;
-    border-bottom: 1px solid var(--cf-border);
-    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
-}
-
-.toggl-top-bar.timer-running {
-    background: linear-gradient(90deg, #170e21 0%, #0d121c 60%, #0d1a16 100%);
-    border-bottom: 1px solid rgba(229, 124, 216, 0.35);
-}
-
-/* Toggl Play / Stop Circular Button */
+/* Toggl Track Play / Stop Circular Buttons in Violet Bloom */
 .toggl-play-btn {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 9999px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--toggl-orchid);
-    color: #160b1e;
-    font-size: 0.85rem;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-    box-shadow: 0 0 18px rgba(229, 124, 216, 0.35);
+    background: linear-gradient(180deg, #8c5cff 0%, #7033ff 100%);
+    color: #ffffff;
+    font-size: 0.8rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 0 16px rgba(140, 92, 255, 0.45);
 }
 .toggl-play-btn:hover {
-    transform: scale(1.06);
-    background: #f09be5;
+    transform: scale(1.07);
 }
 
 .toggl-stop-btn {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 9999px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: #f43f5e;
     color: #ffffff;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 0 18px rgba(244, 63, 94, 0.4);
+    box-shadow: 0 0 16px rgba(244, 63, 94, 0.45);
 }
 .toggl-stop-btn:hover {
-    transform: scale(1.06);
+    transform: scale(1.07);
 }
 
-/* Toggl Track Time Entry Row */
-.toggl-entry-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.85rem 1.25rem;
-    background-color: var(--cf-surface);
-    border-bottom: 1px solid var(--cf-border);
-    transition: background-color 0.15s ease;
-}
-.toggl-entry-row:hover {
-    background-color: #13161f;
-}
-.toggl-entry-row.running-row {
-    background: linear-gradient(90deg, rgba(229, 124, 216, 0.08) 0%, rgba(44, 213, 255, 0.04) 100%);
-    border-left: 3px solid var(--toggl-orchid);
-}
-
-/* Project / Machine Dot Pill (Toggl Style) */
-.toggl-project-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.2rem 0.6rem;
-    border-radius: 0.375rem;
-    background: rgba(255, 255, 255, 0.03);
-}
-
-/* Legacy compatibility card class mapped to Codeforge architectural style */
-.cf-card {
-    position: relative;
-    background-color: var(--cf-surface);
-    border: 1px solid var(--cf-border);
-    transition: border-color 0.2s ease, background-color 0.2s ease;
-}
-.cf-card:hover {
-    border-color: var(--cf-border-strong);
-}
-
-/* Scrollbar */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-::-webkit-scrollbar-track {
-    background: #07080a;
-}
-::-webkit-scrollbar-thumb {
-    background: #27272a;
-    border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: #3f3f46;
-}
-
-/* Pulsing Status Indicator */
+/* Pulsing Status Dot */
 @keyframes pulse-ring {
     0% { transform: scale(0.85); opacity: 0.9; }
     50% { transform: scale(1.25); opacity: 0.35; }
@@ -333,9 +246,21 @@ body {
 .qr-container canvas,
 .qr-container img {
     margin: 0 auto;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 6px;
     background: #ffffff;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
 }
 
 @media print {
@@ -343,14 +268,8 @@ body {
         background: #ffffff !important;
         color: #000000 !important;
     }
-    aside, header, footer, .no-print, #order-detail-modal, #machine-modal, #login-modal, #plan-modal, #category-modal, #notification-drawer {
+    header, footer, #hero, #company, #workflow-bento, .no-print, #order-detail-modal, #machine-modal, #login-modal, #plan-modal, #category-modal, #notification-drawer {
         display: none !important;
-    }
-    main {
-        margin: 0 !important;
-        padding: 0 !important;
-        max-width: 100% !important;
-        width: 100% !important;
     }
     #view-machines {
         display: block !important;
