@@ -1,167 +1,541 @@
 /**
- * SistMaint - CMMS 4.0 Industrial Maintenance Web System
- * Resilient Front-end Controller with LocalStorage fallback & safe CDN handling
+ * SistMaint CMMS 2.0 - Industrial Maintenance, Machine Dossiers (Hojas de Vida) & Preventive Plan 2027
+ * UI Aesthetic: MagicUI Codeforge + Toggl Track Web
+ * Features:
+ *  - Role-Based Access: Operario (QR), Técnico (No-login damaged machines & timer), Jefe (Login admin)
+ *  - Failure Categorization + Subcategories
+ *  - Machine Dossiers (Hojas de Vida) with instant Notifications to Jefes & Técnicos
+ *  - Maintenance Plans & Interactive 2027 Preventive Matrix (Jan-Dec 2027)
+ *  - Real-time Cloud Sync (Phone <-> PC on Vercel & Local)
  */
 
-// Default Seed State (Guarantees app works even if offline or serverless cold-start)
+const CLOUD_OBJECT_ID = 'ff808181a09d98f701a15b90d54134d5';
+const CLOUD_API_URL = `https://api.restful-api.dev/objects/${CLOUD_OBJECT_ID}`;
+const NTFY_TOPIC = 'sistmaint_cmms_v2_live';
+const MONTH_NAMES_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+// 2-Object Initial Seed Fallback (Matches database.py v2 seed)
+const DEFAULT_CATEGORIES = [
+    {
+        id: 1, code: 'ELECTRICA', name: 'Eléctrica', color: '#f59e0b', icon: 'fa-bolt',
+        subcategories_list: ['Motor Eléctrico', 'Tablero / Contactores', 'Sensores / Final de Carrera', 'Cableado / Cortocircuito', 'Alimentación'],
+        description: 'Fallas de potencia, tableros, motores y suministro eléctrico'
+    },
+    {
+        id: 2, code: 'MECANICA', name: 'Mecánica', color: '#3b82f6', icon: 'fa-gears',
+        subcategories_list: ['Rodamientos / Balineras', 'Correas / Cadenas', 'Ejes / Engranajes', 'Desalineación / Vibración', 'Estructura / Sellos'],
+        description: 'Desgaste de piezas móviles, transmisión, rodamientos y ajustes mecánicos'
+    },
+    {
+        id: 3, code: 'HIDRAULICA_NEUMATICA', name: 'Hidráulica / Neumática', color: '#06b6d4', icon: 'fa-droplet',
+        subcategories_list: ['Fuga de Aire / Aceite', 'Cilindros / Actuadores', 'Electroválvulas', 'Baja Presión / Compresor', 'Mangueras / Racores'],
+        description: 'Sistemas de presión neumática, bombas e hidráulica'
+    },
+    {
+        id: 4, code: 'ELECTRONICA_CONTROL', name: 'Electrónica / PLC', color: '#a855f7', icon: 'fa-microchip',
+        subcategories_list: ['Variador de Frecuencia (VFD)', 'PLC / Módulo I/O', 'Pantalla HMI', 'Desconfiguración / Software', 'Paro de Emergencia'],
+        description: 'Automatización, sensores inteligentes, variadores y control lógico'
+    },
+    {
+        id: 5, code: 'LUBRICACION', name: 'Lubricación / Térmica', color: '#10b981', icon: 'fa-oil-can',
+        subcategories_list: ['Falta de Grasa / Aceite', 'Sobrecalentamiento', 'Filtro Obstruido', 'Degradación de Lubricante'],
+        description: 'Problemas de lubricación, fricción y temperatura'
+    },
+    {
+        id: 6, code: 'AMBAS', name: 'Eléctrica y Mecánica (Ambas)', color: '#ec4899', icon: 'fa-screwdriver-wrench',
+        subcategories_list: ['Paro Electromecánico General', 'Atasco de Motor y Transmisión'],
+        description: 'Falla combinada en sistema eléctrico y mecánico'
+    },
+    {
+        id: 7, code: 'NO_SABE', name: 'Por Diagnosticar / No sabe', color: '#71717a', icon: 'fa-circle-question',
+        subcategories_list: ['Ruido Anormal', 'La máquina no inicia', 'Falla intermitente', 'Otro síntoma'],
+        description: 'Cuando el operario reporta el síntoma sin identificar el origen exacto'
+    }
+];
+
 const DEFAULT_MACHINES = [
-    { id: 1, code: 'MAQ-001', name: 'Máquina 1', location: 'Línea de Producción 1', status: 'OPERATIVA', description: 'Torno y mecanizado general' },
-    { id: 2, code: 'MAQ-002', name: 'Máquina 2', location: 'Línea de Producción 1', status: 'OPERATIVA', description: 'Fresadora universal' },
-    { id: 3, code: 'MAQ-003', name: 'Máquina 3', location: 'Línea de Envasado', status: 'OPERATIVA', description: 'Selladora y empacadora automática' },
-    { id: 4, code: 'MAQ-004', name: 'Máquina 4', location: 'Área de Calderas', status: 'OPERATIVA', description: 'Compresor de tornillo 50HP' },
-    { id: 5, code: 'MAQ-005', name: 'Máquina 5', location: 'Línea de Mezclado', status: 'OPERATIVA', description: 'Bomba centrífuga e impulsión' }
+    {
+        id: 1, code: 'MAQ-001', name: 'Máquina 1', location: 'Línea de Producción 1', status: 'EN_MANTENIMIENTO',
+        description: 'Centro de mecanizado y torno industrial principal',
+        brand: 'Haas Automation', model: 'ST-20Y', serial_number: 'SN-HAAS-88412', install_date: '2023-03-15',
+        voltage: '440V Trifásico', power_kw: '15 kW (20 HP)', criticality: 'ALTA', supplier: 'Maquinaria Industrial S.A.',
+        critical_parts: 'Rodamiento husillo 6205-2RS, Correa dentada HTD-8M, Contactor Siemens 24VDC, Sellos hidráulicos',
+        preventive_interval_days: 30, last_maintenance_date: '2026-09-20', next_maintenance_date: '2026-10-25',
+        life_notes: 'Hoja de Vida activa. Requiere verificación mensual de vibración en cabezal y limpieza de circuito de refrigeración.'
+    },
+    {
+        id: 2, code: 'MAQ-002', name: 'Máquina 2', location: 'Línea de Empaque y Sellado', status: 'OPERATIVA',
+        description: 'Empacadora y selladora termoformadora automática',
+        brand: 'Bosch Packaging', model: 'SVE-2520', serial_number: 'SN-BSH-44901', install_date: '2024-01-10',
+        voltage: '220V Trifásico', power_kw: '7.5 kW (10 HP)', criticality: 'ALTA', supplier: 'TecnoPack Andina',
+        critical_parts: 'Resistencia térmica 500W, Sensor óptico Omron E3Z, Cilindro neumático Festo DSNU-25, Relevo SSR-40DA',
+        preventive_interval_days: 45, last_maintenance_date: '2026-10-01', next_maintenance_date: '2026-11-15',
+        life_notes: 'Hoja de Vida al día. Calibrar mordazas de sellado y presión neumática a 6 bar cada 45 días.'
+    }
 ];
 
 const DEFAULT_TECHS = [
-    { id: 1, name: 'Ingeniero 1', role: 'Ingeniero de Mantenimiento Eléctrico', phone: '300 123 4567' },
-    { id: 2, name: 'Ingeniero 2', role: 'Ingeniero de Mantenimiento Mecánico', phone: '310 987 6543' },
-    { id: 3, name: 'Técnico 1', role: 'Técnico Especialista Mecánico', phone: '315 555 1234' },
-    { id: 4, name: 'Técnico 2', role: 'Técnico Especialista Eléctrico', phone: '320 888 4321' }
+    { id: 1, name: 'Ingeniero 1', role: 'Ingeniero Electromecánico Senior', specialty: 'Eléctrica & Control PLC', phone: '300 123 4567' },
+    { id: 2, name: 'Ingeniero 2', role: 'Especialista Mecánico & Preventivo', specialty: 'Mecánica & Neumática', phone: '310 987 6543' }
 ];
 
-// App Global State
+const DEFAULT_PLANS = [
+    {
+        id: 1, plan_code: 'PLAN-2027-001', machine_id: 1, machine_name: 'Máquina 1', machine_code: 'MAQ-001',
+        title: 'Plan Preventivo Anual 2027 - Overhaul & Alineación Máquina 1',
+        maintenance_type: 'PREVENTIVO', frequency: 'TRIMESTRAL', year: 2027,
+        months: [1, 4, 7, 10], scheduled_date: '2027-01-15', estimated_minutes: 120,
+        assigned_technician_id: 2, technician_name: 'Ingeniero 2', status: 'PROGRAMADO',
+        checklist: [
+            { task: 'Verificar holgura y vibración de rodamientos del husillo', done: false },
+            { task: 'Cambiar aceite de caja de transmisión y limpiar filtros', done: false },
+            { task: 'Reapretar borneras del tablero de fuerza 440V', done: false },
+            { task: 'Calibrar ejes X/Y y lubricar guías lineales', done: false }
+        ]
+    },
+    {
+        id: 2, plan_code: 'PLAN-2027-002', machine_id: 2, machine_name: 'Máquina 2', machine_code: 'MAQ-002',
+        title: 'Plan Preventivo 2027 - Sistema Térmico y Neumático Máquina 2',
+        maintenance_type: 'PREVENTIVO', frequency: 'BIMESTRAL', year: 2027,
+        months: [2, 4, 6, 8, 10, 12], scheduled_date: '2027-02-10', estimated_minutes: 90,
+        assigned_technician_id: 1, technician_name: 'Ingeniero 1', status: 'PROGRAMADO',
+        checklist: [
+            { task: 'Inspeccionar resistencias de mordaza y termocuplas', done: false },
+            { task: 'Purgar unidad de mantenimiento neumático FRL (6 bar)', done: false },
+            { task: 'Limpiar y calibrar sensores ópticos y encoder de avance', done: false },
+            { task: 'Reemplazar teflón antiadherente en barra de sellado', done: false }
+        ]
+    }
+];
+
+// Global App State
 const state = {
-    currentView: 'dashboard',
-    machines: JSON.parse(localStorage.getItem('sm_machines') || 'null') || DEFAULT_MACHINES,
-    technicians: JSON.parse(localStorage.getItem('sm_technicians') || 'null') || DEFAULT_TECHS,
-    orders: JSON.parse(localStorage.getItem('sm_orders') || 'null') || [],
+    role: localStorage.getItem('sm_v2_role') || 'OPERARIO', // 'OPERARIO' | 'TECNICO' | 'JEFE'
+    bossUser: JSON.parse(localStorage.getItem('sm_v2_boss_user') || 'null'),
+    currentView: 'report',
+    machines: DEFAULT_MACHINES,
+    technicians: DEFAULT_TECHS,
+    categories: DEFAULT_CATEGORIES,
+    orders: [],
+    plans: DEFAULT_PLANS,
+    notifications: [],
+    unreadNotifications: 0,
     activeOrder: null,
+    activeDossierMachineId: null,
+    selectedPlanMonths: [1, 4, 7, 10],
     settings: {
         server_ip: window.location.hostname || '192.168.68.56',
         server_port: window.location.port || '5000',
-        company_name: 'Planta Industrial'
+        company_name: 'SistMaint CMMS 2.0',
+        qr_base_url: window.location.origin
     },
-    timerInterval: null,
     html5QrCode: null,
+    sseConnection: null,
     charts: {
         failures: null,
         maintenance: null
     }
 };
 
-// -------------------------------------------------------------
-// INITIALIZATION & ROUTING
-// -------------------------------------------------------------
+// ============================================================================
+// INITIALIZATION, ROUTING & ROLE ENFORCEMENT
+// ============================================================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initial UI setup (instant, non-blocking)
+document.addEventListener('DOMContentLoaded', async () => {
     setCurrentDateTime();
+    applyRoleUI();
+    renderFailureCategorySelector('MECANICA');
     populateFormDropdowns();
-    populateFilterMachines();
     renderQuickMachineChips();
-    renderScannerMachineList();
-    
-    // 2. Load API data in parallel
-    loadAllData();
 
-    // 3. Handle initial route (URL query params from QR scan or bookmark)
+    await loadAllData();
     handleInitialRoute();
+    initRealtimeCloudStream();
 
-    // 4. Live clock tick
     setInterval(tickLiveClocks, 1000);
 });
 
 async function loadAllData() {
-    try {
-        await Promise.allSettled([
-            loadSettings(),
-            loadMachines(),
-            loadTechnicians(),
-            loadOrdersList(false),
-            loadDashboardData()
-        ]);
-    } catch (err) {
-        console.warn("API load completed with fallbacks:", err);
-    }
+    await Promise.allSettled([
+        loadSettings(),
+        loadCategories(),
+        loadMachines(),
+        loadTechnicians(),
+        loadOrdersList(false),
+        loadPlans(),
+        loadNotifications(),
+        loadDashboardData()
+    ]);
+    updateTopTogglTimerBar();
 }
 
 function handleInitialRoute() {
-    const hash = (window.location.hash || '').replace('#', '') || 'dashboard';
     const urlParams = new URLSearchParams(window.location.search);
-    
     const machineId = urlParams.get('machine_id') || urlParams.get('machine');
     const machineCode = urlParams.get('machine_code');
+    const hash = (window.location.hash || '').replace('#', '');
 
-    if (machineId || machineCode || hash.startsWith('report')) {
+    if (machineId || machineCode) {
         navigateTo('report');
-        if (machineId) {
-            preselectMachine(machineId);
-        } else if (machineCode) {
-            preselectMachineByCode(machineCode);
+        if (machineId) preselectMachine(machineId);
+        else if (machineCode) preselectMachineByCode(machineCode);
+        return;
+    }
+
+    if (state.role === 'OPERARIO') {
+        navigateTo('report');
+    } else if (state.role === 'TECNICO') {
+        if (['orders', 'machines', 'plans', 'report'].includes(hash)) {
+            navigateTo(hash);
+        } else {
+            navigateTo('orders');
         }
-    } else if (hash === 'orders') {
-        navigateTo('orders');
-    } else if (hash === 'machines') {
-        navigateTo('machines');
-    } else if (hash === 'technicians') {
-        navigateTo('technicians');
-    } else {
-        navigateTo('dashboard');
+    } else if (state.role === 'JEFE') {
+        if (['dashboard', 'orders', 'machines', 'plans', 'categories', 'technicians', 'report'].includes(hash)) {
+            navigateTo(hash);
+        } else {
+            navigateTo('dashboard');
+        }
     }
 }
 
-function navigateTo(viewName) {
-    state.currentView = viewName;
-    window.location.hash = viewName;
+function handleLogoClick() {
+    if (state.role === 'JEFE') navigateTo('dashboard');
+    else if (state.role === 'TECNICO') navigateTo('orders');
+    else navigateTo('report');
+}
 
-    const views = ['dashboard', 'orders', 'report', 'machines', 'technicians'];
-    views.forEach(v => {
-        const el = document.getElementById(`view-${v}`);
-        if (el) {
-            if (v === viewName) {
-                el.classList.remove('hidden');
-            } else {
-                el.classList.add('hidden');
-            }
+function switchRole(targetRole) {
+    if (targetRole === 'JEFE') {
+        if (!state.bossUser) {
+            openLoginModal();
+            return;
         }
+    }
+    state.role = targetRole;
+    localStorage.setItem('sm_v2_role', targetRole);
+    applyRoleUI();
 
-        const navBtn = document.getElementById(`nav-${v}`);
-        if (navBtn) {
-            if (v === viewName) {
-                navBtn.className = "nav-btn px-3.5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-white bg-slate-800 shadow";
-            } else {
-                navBtn.className = "nav-btn px-3.5 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-2";
-            }
+    if (targetRole === 'OPERARIO') {
+        navigateTo('report');
+        showToast('Modo Operario activo: Reporte rápido por QR', 'info');
+    } else if (targetRole === 'TECNICO') {
+        navigateTo('orders');
+        showToast('Modo Técnico activo: Visualización de máquinas dañadas, cronómetro y hojas de vida', 'info');
+    } else if (targetRole === 'JEFE') {
+        navigateTo('dashboard');
+        showToast(`Modo Jefe activo (${state.bossUser?.full_name || 'Admin'})`, 'success');
+    }
+}
+
+function applyRoleUI() {
+    const isBoss = state.role === 'JEFE' && !!state.bossUser;
+    const isTech = state.role === 'TECNICO';
+    const isOp = !isBoss && !isTech;
+
+    if (state.role === 'JEFE' && !state.bossUser) {
+        state.role = 'OPERARIO';
+    }
+
+    // Update Sidebar Role Badge
+    const roleTitle = document.getElementById('sidebar-role-title');
+    const roleIcon = document.getElementById('role-avatar-icon');
+    if (roleTitle && roleIcon) {
+        if (isBoss) {
+            roleTitle.textContent = state.bossUser.full_name || 'Jefe de Mantenimiento';
+            roleIcon.className = 'w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/40 text-purple-300 flex items-center justify-center flex-shrink-0 text-xs';
+            roleIcon.innerHTML = '<i class="fa-solid fa-crown"></i>';
+        } else if (isTech) {
+            roleTitle.textContent = 'Técnico de Planta (Sin Cuenta)';
+            roleIcon.className = 'w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 flex items-center justify-center flex-shrink-0 text-xs';
+            roleIcon.innerHTML = '<i class="fa-solid fa-wrench"></i>';
+        } else {
+            roleTitle.textContent = 'Operario (Escaneo QR)';
+            roleIcon.className = 'w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center flex-shrink-0 text-xs';
+            roleIcon.innerHTML = '<i class="fa-solid fa-helmet-safety"></i>';
+        }
+    }
+
+    // Highlight active role button in switcher
+    ['OPERARIO', 'TECNICO', 'JEFE'].forEach(r => {
+        const btn = document.getElementById(`role-btn-${r}`);
+        if (!btn) return;
+        if (state.role === r) {
+            btn.className = 'py-2 px-1.5 rounded-lg text-[11px] font-bold border border-purple-500/50 bg-purple-600/20 text-white flex flex-col items-center gap-1 shadow';
+        } else {
+            btn.className = 'py-2 px-1.5 rounded-lg text-[11px] font-medium border border-white/5 bg-zinc-900/60 text-zinc-400 hover:text-white hover:bg-zinc-800 flex flex-col items-center gap-1';
         }
     });
 
-    if (viewName === 'dashboard') {
-        loadDashboardData();
-    } else if (viewName === 'orders') {
+    // Show/hide nav items based on role
+    const navOrders = document.getElementById('nav-orders');
+    const navMachines = document.getElementById('nav-machines');
+    const navPlans = document.getElementById('nav-plans');
+    const bossSection = document.getElementById('sidebar-boss-section');
+    const logoutBtn = document.getElementById('logout-boss-btn');
+    const headerLoginBtn = document.getElementById('header-login-btn');
+    const headerNotifBtn = document.getElementById('header-notif-btn');
+    const togglWidget = document.getElementById('toggl-live-timer-widget');
+
+    if (navOrders) navOrders.classList.toggle('hidden', isOp);
+    if (navMachines) navMachines.classList.toggle('hidden', isOp);
+    if (navPlans) navPlans.classList.toggle('hidden', isOp);
+    if (bossSection) bossSection.classList.toggle('hidden', !isBoss);
+    if (logoutBtn) logoutBtn.classList.toggle('hidden', !isBoss);
+    if (headerNotifBtn) headerNotifBtn.classList.toggle('hidden', isOp);
+    if (togglWidget) {
+        if (isOp) {
+            togglWidget.classList.add('hidden');
+            togglWidget.classList.remove('md:flex');
+        } else {
+            togglWidget.classList.add('md:flex');
+        }
+    }
+
+    if (headerLoginBtn) {
+        if (isBoss) {
+            headerLoginBtn.innerHTML = `<i class="fa-solid fa-crown text-amber-400 text-[11px]"></i><span class="hidden sm:inline">Jefe Activo</span>`;
+            headerLoginBtn.onclick = () => navigateTo('dashboard');
+        } else {
+            headerLoginBtn.innerHTML = `<i class="fa-solid fa-lock text-[11px]"></i><span class="hidden sm:inline">Login Jefe</span>`;
+            headerLoginBtn.onclick = () => openLoginModal();
+        }
+    }
+
+    // Strict Operator form restriction: Hide Maintenance Type & Technician Assignment unless Boss!
+    const bossReportBox = document.getElementById('boss-only-report-fields');
+    if (bossReportBox) bossReportBox.classList.toggle('hidden', !isBoss);
+
+    // Action buttons in views (only Boss can create/edit machines & plans)
+    const btnNewMachine = document.getElementById('btn-new-machine');
+    if (btnNewMachine) btnNewMachine.classList.toggle('hidden', !isBoss);
+
+    const btnNewPlan = document.getElementById('btn-new-plan');
+    if (btnNewPlan) btnNewPlan.classList.toggle('hidden', !isBoss);
+
+    // Re-render current views to update boss-only buttons
+    renderMachinesGrid();
+    renderPlansView();
+}
+
+function navigateTo(viewName) {
+    const isBoss = state.role === 'JEFE' && !!state.bossUser;
+    const isTech = state.role === 'TECNICO';
+
+    // Guard permissions
+    if (state.role === 'OPERARIO' && viewName !== 'report') {
+        viewName = 'report';
+    }
+    if (isTech && ['dashboard', 'categories', 'technicians'].includes(viewName)) {
+        showToast('Esa sección requiere cuenta de Jefe de Mantenimiento', 'warning');
+        openLoginModal();
+        return;
+    }
+
+    state.currentView = viewName;
+    window.location.hash = viewName;
+
+    const views = ['report', 'orders', 'machines', 'plans', 'categories', 'dashboard', 'technicians'];
+    views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.toggle('hidden', v !== viewName);
+
+        const navBtn = document.getElementById(`nav-${v}`);
+        if (navBtn) {
+            navBtn.classList.toggle('active', v === viewName);
+        }
+    });
+
+    // Update Header Title & Subtitle
+    const titles = {
+        report: ['Reportar Falla por QR', 'Formulario rápido de planta para reportar averías en máquinas'],
+        orders: ['Máquinas Dañadas & Órdenes de Trabajo', 'Control de tiempos con cronómetro en vivo y estado de planta'],
+        machines: ['Hojas de Vida de Máquinas & Códigos QR', 'Ficha técnica, bitácora histórica, alertas y etiquetas QR'],
+        plans: ['Planes de Mantenimiento & Preventivo 2027', 'Cronograma anual 2027 y rutinas preventivas/predictivas'],
+        categories: ['Categorización de Fallas', 'Catálogo de tipos y subcategorías de fallas técnicas'],
+        dashboard: ['Dashboard Ejecutivo de Planta (Jefe)', 'Métricas en tiempo real, MTTR, paros y distribución de fallas'],
+        technicians: ['Equipo Técnico e Ingenieros', 'Administración del personal de mantenimiento']
+    };
+    const [t, sub] = titles[viewName] || ['SistMaint CMMS', ''];
+    const titleEl = document.getElementById('header-view-title');
+    const subEl = document.getElementById('header-view-subtitle');
+    if (titleEl) titleEl.textContent = t;
+    if (subEl) subEl.textContent = sub;
+
+    // Close mobile sidebar if open
+    const sidebar = document.getElementById('app-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+        sidebar.classList.add('-translate-x-full');
+        if (backdrop) backdrop.classList.add('hidden');
+    }
+
+    // Trigger view-specific refresh
+    if (viewName === 'dashboard') loadDashboardData();
+    else if (viewName === 'orders') {
+        renderDamagedMachinesBanner();
         loadOrdersList();
-    } else if (viewName === 'machines') {
-        renderMachinesGrid();
-    } else if (viewName === 'technicians') {
-        renderTechniciansGrid();
-    } else if (viewName === 'report') {
+    } else if (viewName === 'machines') renderMachinesGrid();
+    else if (viewName === 'plans') renderPlansView();
+    else if (viewName === 'categories') renderCategoriesGrid();
+    else if (viewName === 'technicians') renderTechniciansGrid();
+    else if (viewName === 'report') {
         populateFormDropdowns();
         renderQuickMachineChips();
+        renderFailureCategorySelector();
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function toggleMobileMenu() {
-    const menu = document.getElementById('mobile-menu');
-    if (menu) menu.classList.toggle('hidden');
+function toggleMobileSidebar() {
+    const sidebar = document.getElementById('app-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (!sidebar) return;
+    sidebar.classList.toggle('-translate-x-full');
+    if (backdrop) backdrop.classList.toggle('hidden');
 }
 
-// -------------------------------------------------------------
-// DATA LOADING (WITH LOCAL STORAGE BACKUP)
-// -------------------------------------------------------------
+// ============================================================================
+// LOGIN & AUTHENTICATION (JEFE)
+// ============================================================================
+
+function openLoginModal() {
+    const modal = document.getElementById('login-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeLoginModal() {
+    const modal = document.getElementById('login-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function fillDemoLogin(user, pass) {
+    document.getElementById('login-username').value = user;
+    document.getElementById('login-password').value = pass;
+}
+
+async function submitLoginForm(e) {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            // Fallback demo check if offline
+            if ((username.toLowerCase() === 'jefe' && password === '1234') || (username.toLowerCase() === 'admin' && password === 'admin123')) {
+                state.bossUser = { username, full_name: 'Jefe de Mantenimiento', role: 'JEFE' };
+            } else {
+                showToast(data.error || 'Credenciales incorrectas', 'error');
+                return;
+            }
+        } else {
+            state.bossUser = data.user;
+        }
+
+        localStorage.setItem('sm_v2_boss_user', JSON.stringify(state.bossUser));
+        closeLoginModal();
+        switchRole('JEFE');
+    } catch (err) {
+        if ((username.toLowerCase() === 'jefe' && password === '1234') || (username.toLowerCase() === 'admin' && password === 'admin123')) {
+            state.bossUser = { username, full_name: 'Jefe de Mantenimiento', role: 'JEFE' };
+            localStorage.setItem('sm_v2_boss_user', JSON.stringify(state.bossUser));
+            closeLoginModal();
+            switchRole('JEFE');
+        } else {
+            showToast('Error al iniciar sesión', 'error');
+        }
+    }
+}
+
+function logoutBoss() {
+    state.bossUser = null;
+    localStorage.removeItem('sm_v2_boss_user');
+    switchRole('TECNICO');
+    showToast('Sesión de Jefe cerrada', 'info');
+}
+
+// ============================================================================
+// REAL-TIME CLOUD SYNC (SSE + PULL)
+// ============================================================================
+
+function initRealtimeCloudStream() {
+    try {
+        if (state.sseConnection) state.sseConnection.close();
+        const sse = new EventSource(`https://ntfy.sh/${NTFY_TOPIC}/sse`);
+        sse.onmessage = async (event) => {
+            try {
+                const payload = JSON.parse(event.data);
+                if (payload.event === 'message') {
+                    await loadAllData();
+                    if (payload.title && payload.title !== 'notif_read') {
+                        showToast('☁️ Datos actualizados en tiempo real desde la nube', 'info');
+                    }
+                }
+            } catch (e) {}
+        };
+        state.sseConnection = sse;
+    } catch (err) {
+        console.warn('SSE stream fallback:', err);
+    }
+}
+
+async function syncWithCloud(showFeedback = false) {
+    const icon = document.getElementById('cloud-sync-icon');
+    if (icon) icon.classList.add('fa-spin');
+    try {
+        await fetch('/api/cloud/pull', { method: 'POST' });
+        await loadAllData();
+        if (showFeedback) showToast('☁️ Base de datos sincronizada con la nube', 'success');
+    } catch (err) {
+        if (showFeedback) showToast('Sincronizado con caché local', 'info');
+    } finally {
+        if (icon) icon.classList.remove('fa-spin');
+    }
+}
+
+async function resetDemoDatabase() {
+    if (!confirm('¿Restaurar la base de datos en la nube con los 2 objetos de prueba iniciales (Máquina 1 y Máquina 2)?')) return;
+    try {
+        const res = await fetch('/api/cloud/reset-demo', { method: 'POST' });
+        if (res.ok) {
+            await loadAllData();
+            showToast('Base de datos restaurada con los 2 objetos de prueba', 'success');
+        }
+    } catch (err) {
+        showToast('Error al restaurar demo', 'error');
+    }
+}
+
+// ============================================================================
+// DATA LOADERS
+// ============================================================================
 
 async function loadSettings() {
     try {
         const res = await fetch('/api/settings');
+        if (res.ok) state.settings = await res.json();
+    } catch (e) {}
+}
+
+async function loadCategories() {
+    try {
+        const res = await fetch('/api/categories');
         if (res.ok) {
             const data = await res.json();
-            state.settings = data;
-            const detectedEl = document.getElementById('detected-ip-label');
-            if (detectedEl) detectedEl.textContent = data.detected_lan_ip;
+            if (Array.isArray(data) && data.length > 0) {
+                state.categories = data;
+            }
         }
-    } catch (err) {
-        console.warn("Using local settings:", err);
-    }
+    } catch (e) {}
+    renderFailureCategorySelector();
+    populateFilterCategories();
 }
 
 async function loadMachines() {
@@ -171,16 +545,14 @@ async function loadMachines() {
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
                 state.machines = data;
-                localStorage.setItem('sm_machines', JSON.stringify(data));
             }
         }
-    } catch (err) {
-        console.warn("Using cached machines:", err);
-    }
+    } catch (e) {}
     populateFormDropdowns();
     populateFilterMachines();
     renderQuickMachineChips();
-    renderScannerMachineList();
+    renderDamagedMachinesBanner();
+    if (state.currentView === 'machines') renderMachinesGrid();
 }
 
 async function loadTechnicians() {
@@ -190,40 +562,265 @@ async function loadTechnicians() {
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
                 state.technicians = data;
-                localStorage.setItem('sm_technicians', JSON.stringify(data));
             }
         }
-    } catch (err) {
-        console.warn("Using cached technicians:", err);
-    }
+    } catch (e) {}
     populateFormDropdowns();
+    if (state.currentView === 'technicians') renderTechniciansGrid();
 }
+
+async function loadPlans() {
+    try {
+        const res = await fetch('/api/plans');
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                state.plans = data;
+            }
+        }
+    } catch (e) {}
+    if (state.currentView === 'plans') renderPlansView();
+}
+
+async function loadNotifications() {
+    try {
+        const res = await fetch(`/api/notifications?role=${state.role}`);
+        if (res.ok) {
+            const data = await res.json();
+            state.notifications = data.items || [];
+            state.unreadNotifications = data.unread_count || 0;
+            renderNotificationsDrawer();
+        }
+    } catch (e) {}
+}
+
+// ============================================================================
+// FAILURE CATEGORIZATION UI (FORM & CATALOG)
+// ============================================================================
+
+function getCategoryMeta(code) {
+    const found = state.categories.find(c => c.code === code);
+    if (found) return found;
+    return { code: code || 'NO_SABE', name: code || 'Por Diagnosticar', color: '#71717a', icon: 'fa-circle-question', subcategories_list: [] };
+}
+
+function renderFailureCategorySelector(selectedCode) {
+    const hiddenInput = document.getElementById('form-failure-type');
+    const currentCode = selectedCode || (hiddenInput ? hiddenInput.value : 'MECANICA');
+    if (hiddenInput) hiddenInput.value = currentCode;
+
+    const grid = document.getElementById('form-failure-categories-grid');
+    if (!grid) return;
+
+    grid.innerHTML = state.categories.map(cat => {
+        const isSelected = cat.code === currentCode;
+        return `
+            <button type="button" onclick="selectFailureCategory('${cat.code}')"
+                class="p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                    isSelected
+                        ? 'bg-zinc-900 border-purple-500 shadow-lg shadow-purple-500/10 ring-1 ring-purple-500/40'
+                        : 'bg-zinc-950/70 border-white/[0.07] hover:border-white/20'
+                }">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs"
+                     style="background-color: ${cat.color}22; color: ${cat.color}; border: 1px solid ${cat.color}44;">
+                    <i class="fa-solid ${cat.icon || 'fa-tag'}"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${cat.color}"></span>
+                        <p class="text-xs font-bold text-white truncate">${cat.name}</p>
+                    </div>
+                    <p class="text-[10px] text-zinc-400 truncate mt-0.5">${(cat.subcategories_list || []).slice(0, 2).join(', ') || cat.description}</p>
+                </div>
+            </button>
+        `;
+    }).join('');
+
+    renderSubcategoryChips(currentCode);
+}
+
+function selectFailureCategory(code) {
+    const subInput = document.getElementById('form-failure-subcategory');
+    if (subInput) subInput.value = '';
+    renderFailureCategorySelector(code);
+}
+
+function renderSubcategoryChips(code) {
+    const cat = getCategoryMeta(code);
+    const chipsContainer = document.getElementById('form-subcategory-chips');
+    const subInput = document.getElementById('form-failure-subcategory');
+    if (!chipsContainer) return;
+
+    const subcats = cat.subcategories_list || [];
+    const currentSub = subInput ? subInput.value : '';
+
+    chipsContainer.innerHTML = subcats.map(sub => {
+        const active = currentSub === sub;
+        return `
+            <button type="button" onclick="selectSubcategoryChip('${sub.replace(/'/g, "\\'")}')"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all ${
+                    active
+                        ? 'bg-purple-600 text-white border-purple-400'
+                        : 'bg-zinc-900 text-zinc-300 border-white/10 hover:border-white/25'
+                }">
+                ${sub}
+            </button>
+        `;
+    }).join('');
+}
+
+function selectSubcategoryChip(subName) {
+    const subInput = document.getElementById('form-failure-subcategory');
+    if (subInput) subInput.value = subName;
+    const currentCode = document.getElementById('form-failure-type')?.value || 'MECANICA';
+    renderSubcategoryChips(currentCode);
+}
+
+function populateFilterCategories() {
+    const fSelect = document.getElementById('filter-failure');
+    if (fSelect) {
+        const curr = fSelect.value;
+        fSelect.innerHTML = '<option value="">Todas las Categorías</option>' +
+            state.categories.map(c => `<option value="${c.code}">${c.name}</option>`).join('');
+        if (curr) fSelect.value = curr;
+    }
+
+    const modalCatSelect = document.getElementById('modal-boss-failure-type');
+    if (modalCatSelect) {
+        modalCatSelect.innerHTML = state.categories.map(c => `<option value="${c.code}">${c.name}</option>`).join('');
+    }
+}
+
+function renderCategoriesGrid() {
+    const grid = document.getElementById('categories-grid');
+    if (!grid) return;
+
+    grid.innerHTML = state.categories.map(cat => {
+        const subs = (cat.subcategories_list || []).map(s =>
+            `<span class="px-2 py-0.5 rounded-md bg-zinc-900 border border-white/[0.07] text-[11px] text-zinc-300">${s}</span>`
+        ).join('');
+
+        return `
+            <div class="cf-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div>
+                    <div class="flex items-start justify-between gap-2 mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-base"
+                                 style="background-color: ${cat.color}20; color: ${cat.color}; border: 1px solid ${cat.color}40;">
+                                <i class="fa-solid ${cat.icon || 'fa-tag'}"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${cat.color}"></span>
+                                    <h3 class="text-sm font-bold text-white">${cat.name}</h3>
+                                </div>
+                                <span class="text-[10px] font-mono text-zinc-500">${cat.code}</span>
+                            </div>
+                        </div>
+                        <button onclick="openCategoryModal(${cat.id})" class="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-zinc-400 mb-3">${cat.description || ''}</p>
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-zinc-500 mb-1.5">Subcategorías registradas:</p>
+                        <div class="flex flex-wrap gap-1.5">${subs || '<span class="text-xs text-zinc-500">Sin subcategorías</span>'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function openCategoryModal(catId = null) {
+    const modal = document.getElementById('category-modal');
+    const title = document.getElementById('category-modal-title');
+    document.getElementById('category-edit-id').value = catId || '';
+
+    if (catId) {
+        const cat = state.categories.find(c => c.id == catId);
+        if (cat) {
+            title.textContent = `Editar Categoría: ${cat.name}`;
+            document.getElementById('category-name-input').value = cat.name;
+            document.getElementById('category-color-input').value = cat.color || '#8b5cf6';
+            document.getElementById('category-icon-input').value = cat.icon || 'fa-bolt';
+            document.getElementById('category-subcats-input').value = (cat.subcategories_list || []).join(', ');
+            document.getElementById('category-desc-input').value = cat.description || '';
+        }
+    } else {
+        title.textContent = 'Nueva Categoría de Falla';
+        document.getElementById('category-name-input').value = '';
+        document.getElementById('category-color-input').value = '#8b5cf6';
+        document.getElementById('category-subcats-input').value = '';
+        document.getElementById('category-desc-input').value = '';
+    }
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeCategoryModal() {
+    const modal = document.getElementById('category-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function saveCategoryForm(e) {
+    e.preventDefault();
+    const editId = document.getElementById('category-edit-id').value;
+    const payload = {
+        name: document.getElementById('category-name-input').value.trim(),
+        color: document.getElementById('category-color-input').value,
+        icon: document.getElementById('category-icon-input').value,
+        subcategories: document.getElementById('category-subcats-input').value,
+        description: document.getElementById('category-desc-input').value.trim()
+    };
+
+    const url = editId ? `/api/categories/${editId}` : '/api/categories';
+    const method = editId ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+        closeCategoryModal();
+        await loadCategories();
+        renderCategoriesGrid();
+        showToast('Categoría de falla guardada', 'success');
+    } else {
+        showToast('Error al guardar categoría', 'error');
+    }
+}
+
+// ============================================================================
+// OPERATOR QR REPORT & CAMERA SCANNER
+// ============================================================================
 
 function populateFormDropdowns() {
     const mSelect = document.getElementById('form-machine-id');
     if (mSelect) {
         const curr = mSelect.value;
-        mSelect.innerHTML = '<option value="">-- Selecciona una máquina o toca un botón arriba --</option>';
-        state.machines.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.id;
-            opt.textContent = `${m.code} - ${m.name} (${m.location})`;
-            mSelect.appendChild(opt);
-        });
+        mSelect.innerHTML = '<option value="">-- Selecciona o toca una máquina arriba --</option>' +
+            state.machines.map(m => `<option value="${m.id}">${m.code} - ${m.name} (${m.location})</option>`).join('');
         if (curr) mSelect.value = curr;
     }
 
     const tSelect = document.getElementById('form-technician-id');
     if (tSelect) {
         const curr = tSelect.value;
-        tSelect.innerHTML = '<option value="">-- Sin asignar (Se asignará al iniciar o por el jefe) --</option>';
-        state.technicians.forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t.id;
-            opt.textContent = `${t.name} (${t.role})`;
-            tSelect.appendChild(opt);
-        });
+        tSelect.innerHTML = '<option value="">-- Sin asignar aún --</option>' +
+            state.technicians.map(t => `<option value="${t.id}">${t.name} (${t.specialty || t.role})</option>`).join('');
         if (curr) tSelect.value = curr;
+    }
+
+    const planMachineSelect = document.getElementById('plan-machine-input');
+    if (planMachineSelect) {
+        planMachineSelect.innerHTML = state.machines.map(m => `<option value="${m.id}">${m.code} - ${m.name}</option>`).join('');
+    }
+
+    const planTechSelect = document.getElementById('plan-tech-input');
+    if (planTechSelect) {
+        planTechSelect.innerHTML = '<option value="">-- Sin asignar --</option>' +
+            state.technicians.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     }
 }
 
@@ -231,52 +828,40 @@ function populateFilterMachines() {
     const fSelect = document.getElementById('filter-machine');
     if (fSelect) {
         const curr = fSelect.value;
-        fSelect.innerHTML = '<option value="">Todas las Máquinas</option>';
-        state.machines.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.id;
-            opt.textContent = `${m.code} - ${m.name}`;
-            fSelect.appendChild(opt);
-        });
+        fSelect.innerHTML = '<option value="">Todas las Máquinas</option>' +
+            state.machines.map(m => `<option value="${m.id}">${m.code} - ${m.name}</option>`).join('');
         if (curr) fSelect.value = curr;
     }
 }
 
-// Render Quick Machine Chips in Report Form (One-tap selection)
 function renderQuickMachineChips() {
-    let container = document.getElementById('quick-machine-chips');
-    if (!container) {
-        // If container does not exist yet in index.html, inject it right above form-machine-id
-        const mSelect = document.getElementById('form-machine-id');
-        if (mSelect && mSelect.parentNode) {
-            container = document.createElement('div');
-            container.id = 'quick-machine-chips';
-            container.className = 'flex flex-wrap gap-2 mb-3';
-            mSelect.parentNode.parentNode.insertBefore(container, mSelect.parentNode);
-        }
-    }
+    const container = document.getElementById('quick-machine-chips');
     if (!container) return;
 
     const currentSelectedId = document.getElementById('form-machine-id')?.value;
     container.innerHTML = state.machines.map(m => {
-        const isSelected = m.id == currentSelectedId;
+        const isSelected = String(m.id) === String(currentSelectedId);
         return `
-            <button type="button" onclick="selectMachineChip(${m.id})" 
-                class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                    isSelected 
-                        ? 'bg-blue-600 text-white border-blue-400 shadow-md shadow-blue-500/20' 
-                        : 'bg-slate-950 text-slate-300 border-slate-700 hover:border-slate-500 hover:text-white'
+            <button type="button" onclick="preselectMachine(${m.id})"
+                class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-2 ${
+                    isSelected
+                        ? 'bg-purple-600 text-white border-purple-400 shadow-lg shadow-purple-500/20'
+                        : 'bg-zinc-900/90 text-zinc-300 border-white/10 hover:border-purple-500/40 hover:text-white'
                 }">
-                <i class="fa-solid fa-industry mr-1 text-[10px]"></i>
-                ${m.name}
+                <i class="fa-solid fa-industry text-[11px]"></i>
+                <span>${m.code}: ${m.name}</span>
             </button>
         `;
     }).join('');
 }
 
-function selectMachineChip(machineId) {
-    preselectMachine(machineId);
-    renderQuickMachineChips();
+function onMachineSelectChange(val) {
+    if (val) preselectMachine(val);
+    else {
+        const info = document.getElementById('form-machine-info');
+        if (info) info.classList.add('hidden');
+        renderQuickMachineChips();
+    }
 }
 
 function preselectMachine(machineId) {
@@ -285,7 +870,12 @@ function preselectMachine(machineId) {
         mSelect.value = machineId;
         const machine = state.machines.find(m => m.id == machineId);
         if (machine) {
-            showMachineInfoBadge(machine);
+            const info = document.getElementById('form-machine-info');
+            const infoText = document.getElementById('form-machine-info-text');
+            if (info && infoText) {
+                infoText.textContent = `${machine.code} - ${machine.name} (${machine.brand || ''} ${machine.model || ''} • ${machine.location})`;
+                info.classList.remove('hidden');
+            }
         }
     }
     renderQuickMachineChips();
@@ -293,218 +883,1410 @@ function preselectMachine(machineId) {
 
 function preselectMachineByCode(machineCode) {
     const machine = state.machines.find(m => m.code.toUpperCase() === machineCode.toUpperCase());
-    if (machine) {
-        preselectMachine(machine.id);
-    }
-}
-
-function showMachineInfoBadge(machine) {
-    const info = document.getElementById('form-machine-info');
-    const infoText = document.getElementById('form-machine-info-text');
-    if (info && infoText) {
-        infoText.textContent = `Máquina seleccionada: ${machine.code} - ${machine.name} (${machine.location})`;
-        info.classList.remove('hidden');
-    }
+    if (machine) preselectMachine(machine.id);
 }
 
 function setCurrentDateTime() {
     const now = new Date();
     const dateInput = document.getElementById('form-date');
     const timeInput = document.getElementById('form-time');
-
     if (dateInput) {
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        dateInput.value = `${year}-${month}-${day}`;
+        dateInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     }
-
     if (timeInput) {
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        timeInput.value = `${hours}:${minutes}`;
+        timeInput.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     }
 }
 
-// -------------------------------------------------------------
-// VIEW 1: DASHBOARD & METRICS
-// -------------------------------------------------------------
+function toggleQrScanner() {
+    const container = document.getElementById('qr-scanner-container');
+    if (!container) return;
+    if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        startQrScanner();
+    } else {
+        stopQrScanner();
+    }
+}
+
+function startQrScanner() {
+    if (typeof Html5Qrcode === 'undefined') {
+        showToast('Librería de cámara no disponible', 'error');
+        return;
+    }
+    state.html5QrCode = new Html5Qrcode("qr-reader");
+    state.html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+            stopQrScanner();
+            try {
+                const url = new URL(decodedText);
+                const mId = url.searchParams.get('machine_id') || url.searchParams.get('machine');
+                const mCode = url.searchParams.get('machine_code');
+                if (mId) preselectMachine(mId);
+                else if (mCode) preselectMachineByCode(mCode);
+                else preselectMachineByCode(decodedText.trim());
+            } catch (e) {
+                preselectMachineByCode(decodedText.trim());
+            }
+            showToast('Código QR de máquina detectado', 'success');
+        },
+        () => {}
+    ).catch(() => {
+        showToast('No se pudo acceder a la cámara. Selecciona la máquina en los botones.', 'warning');
+    });
+}
+
+function stopQrScanner() {
+    const container = document.getElementById('qr-scanner-container');
+    if (container) container.classList.add('hidden');
+    if (state.html5QrCode) {
+        state.html5QrCode.stop().then(() => state.html5QrCode.clear()).catch(() => {});
+        state.html5QrCode = null;
+    }
+}
+
+async function submitIncidentReport(e) {
+    e.preventDefault();
+    const machineId = document.getElementById('form-machine-id').value;
+    const operatorName = document.getElementById('form-operator-name').value.trim();
+    const reportDate = document.getElementById('form-date').value;
+    const reportTime = document.getElementById('form-time').value;
+    const failureType = document.getElementById('form-failure-type').value;
+    const failureSubcategory = document.getElementById('form-failure-subcategory').value.trim();
+    const machineStopped = document.querySelector('input[name="machine_stopped"]:checked')?.value === '1';
+    const description = document.getElementById('form-description').value.trim();
+
+    if (!machineId) {
+        showToast('Selecciona la máquina afectada', 'error');
+        return;
+    }
+
+    const isBoss = state.role === 'JEFE' && !!state.bossUser;
+    const payload = {
+        machine_id: parseInt(machineId),
+        operator_name: operatorName,
+        report_date: reportDate,
+        report_time: reportTime,
+        failure_type: failureType,
+        failure_subcategory: failureSubcategory,
+        machine_stopped: machineStopped,
+        description,
+        is_boss: isBoss
+    };
+
+    if (isBoss) {
+        payload.maintenance_type = document.getElementById('form-maintenance-type').value;
+        payload.technician_id = document.getElementById('form-technician-id').value || null;
+        payload.priority = document.getElementById('form-priority').value;
+    }
+
+    const btn = document.getElementById('btn-submit-report');
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(`✅ Orden ${data.order_number} registrada. Jefes y Técnicos notificados.`, 'success');
+            document.getElementById('form-description').value = '';
+            document.getElementById('form-failure-subcategory').value = '';
+            await loadAllData();
+            if (state.role !== 'OPERARIO') {
+                navigateTo('orders');
+            }
+        } else {
+            showToast(data.error || 'Error al registrar reporte', 'error');
+        }
+    } catch (err) {
+        showToast('Error de red al enviar reporte', 'error');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+// ============================================================================
+// VIEW 2: DAMAGED MACHINES BANNER & ORDERS LIST (TÉCNICO & JEFE)
+// ============================================================================
+
+function renderDamagedMachinesBanner() {
+    const grid = document.getElementById('damaged-machines-grid');
+    if (!grid) return;
+
+    const damagedMachines = state.machines.filter(m => m.status !== 'OPERATIVA');
+    if (damagedMachines.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-3 text-emerald-300 text-xs">
+                <i class="fa-solid fa-circle-check text-lg"></i>
+                <div>
+                    <p class="font-bold">Todas las máquinas están OPERATIVAS en este momento</p>
+                    <p class="text-[11px] text-emerald-400/80">No hay equipos reportados como detenidos o en falla activa.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = damagedMachines.map(m => {
+        const activeOrder = state.orders.find(o => o.machine_id == m.id && o.status !== 'FINALIZADO');
+        const isStopped = m.status === 'PARADA' || (activeOrder && activeOrder.machine_stopped);
+        const cat = activeOrder ? getCategoryMeta(activeOrder.failure_type) : null;
+
+        return `
+            <div class="p-4 rounded-2xl bg-zinc-950/90 border ${isStopped ? 'border-rose-500/40' : 'border-amber-500/40'} flex flex-col justify-between gap-3">
+                <div class="flex items-start justify-between gap-2">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-zinc-800 text-zinc-200">${m.code}</span>
+                            <h3 class="text-sm font-bold text-white">${m.name}</h3>
+                        </div>
+                        <p class="text-[11px] text-zinc-400 mt-0.5">${m.location} • ${m.brand || ''} ${m.model || ''}</p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                        isStopped ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    }">
+                        ${isStopped ? '🛑 MÁQUINA PARADA' : '⚠️ EN MANTENIMIENTO'}
+                    </span>
+                </div>
+
+                ${activeOrder ? `
+                    <div class="p-3 rounded-xl bg-zinc-900/90 border border-white/[0.06] text-xs space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono font-bold text-purple-300">${activeOrder.order_number}</span>
+                            <span class="text-[11px]" style="color:${cat?.color || '#a1a1aa'}">
+                                ● ${cat?.name || activeOrder.failure_type} ${activeOrder.failure_subcategory ? `(${activeOrder.failure_subcategory})` : ''}
+                            </span>
+                        </div>
+                        <p class="text-zinc-300 line-clamp-2">${activeOrder.description}</p>
+                        <div class="flex items-center justify-between pt-1 text-[11px] text-zinc-400">
+                            <span>Técnico: <strong class="text-white">${activeOrder.technician_name || 'Sin asignar'}</strong></span>
+                            <span class="font-mono text-emerald-400 font-bold order-live-timer" data-order-id="${activeOrder.id}">
+                                ${formatSecondsToHHMMSS(activeOrder.current_live_duration_seconds || 0)}
+                            </span>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="flex flex-wrap items-center gap-2 pt-1">
+                    ${activeOrder ? `
+                        <button onclick="openOrderModal(${activeOrder.id})" class="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-stopwatch"></i> Atender / Cronómetro
+                        </button>
+                    ` : ''}
+                    <button onclick="openMachineDossier(${m.id})" class="py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-xs font-semibold flex items-center gap-1.5">
+                        <i class="fa-solid fa-book-medical text-purple-400"></i> Hoja de Vida
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function loadOrdersList(render = true) {
+    const status = document.getElementById('filter-status')?.value || '';
+    const machineId = document.getElementById('filter-machine')?.value || '';
+    const failure = document.getElementById('filter-failure')?.value || '';
+    const search = document.getElementById('filter-search')?.value || '';
+
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (machineId) params.append('machine_id', machineId);
+    if (failure) params.append('failure', failure);
+    if (search) params.append('search', search);
+
+    try {
+        const res = await fetch(`/api/orders?${params.toString()}`);
+        if (res.ok) {
+            state.orders = await res.json();
+        }
+    } catch (e) {}
+
+    const activeCount = state.orders.filter(o => o.status !== 'FINALIZADO').length;
+    const badge = document.getElementById('badge-active-orders');
+    if (badge) badge.textContent = activeCount;
+
+    if (render) {
+        renderOrdersTable('all-orders-tbody', state.orders);
+        renderDamagedMachinesBanner();
+    }
+    updateTopTogglTimerBar();
+}
+
+function renderOrdersTable(tbodyId, ordersList) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+
+    if (!ordersList || ordersList.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="px-4 py-8 text-center text-zinc-500 text-xs">
+                    No se encontraron órdenes de mantenimiento con los filtros actuales.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = ordersList.map(o => {
+        const cat = getCategoryMeta(o.failure_type);
+        const isRunning = Boolean(o.is_timer_running);
+        const durSec = o.current_live_duration_seconds || o.repair_duration_seconds || 0;
+
+        return `
+            <tr onclick="openOrderModal(${o.id})" class="hover:bg-white/[0.03] cursor-pointer transition-colors">
+                <td class="px-4 py-3.5">
+                    <div class="font-mono font-bold text-purple-300">${o.order_number}</div>
+                    <div class="text-[10px] text-zinc-500 font-mono">${o.report_date} ${o.report_time}</div>
+                </td>
+                <td class="px-4 py-3.5">
+                    <div class="font-bold text-white">${o.machine_name || ''}</div>
+                    <div class="text-[10px] font-mono text-zinc-500">${o.machine_code || ''}</div>
+                </td>
+                <td class="px-4 py-3.5">
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                         style="background-color: ${cat.color}18; color: ${cat.color}; border: 1px solid ${cat.color}35;">
+                        <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${cat.color}"></span>
+                        <span>${cat.name}</span>
+                    </div>
+                    ${o.failure_subcategory ? `<div class="text-[10px] text-zinc-400 mt-0.5">${o.failure_subcategory}</div>` : ''}
+                </td>
+                <td class="px-4 py-3.5">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-zinc-900 border border-white/10 text-zinc-300">
+                        ${o.maintenance_type || 'CORRECTIVO'}
+                    </span>
+                </td>
+                <td class="px-4 py-3.5">
+                    ${o.machine_stopped
+                        ? `<span class="text-rose-400 font-bold text-[11px] flex items-center gap-1"><i class="fa-solid fa-octagon-exclamation"></i> Parada (${o.current_live_downtime_minutes || o.total_downtime_minutes || 0}m)</span>`
+                        : `<span class="text-emerald-400 text-[11px]">Operando</span>`
+                    }
+                </td>
+                <td class="px-4 py-3.5">
+                    ${o.technician_name
+                        ? `<span class="text-zinc-200 font-semibold">${o.technician_name}</span>`
+                        : `<span class="text-amber-400/80 text-[11px] italic">Sin asignar</span>`
+                    }
+                </td>
+                <td class="px-4 py-3.5">
+                    <div class="flex items-center gap-2">
+                        ${getStatusBadgeHTML(o.status)}
+                        <span class="font-mono text-xs font-bold ${isRunning ? 'text-emerald-400' : 'text-zinc-400'} order-live-timer" data-order-id="${o.id}">
+                            ${formatSecondsToHHMMSS(durSec)}
+                        </span>
+                    </div>
+                </td>
+                <td class="px-4 py-3.5 text-right">
+                    <button class="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-purple-600 text-zinc-200 hover:text-white text-xs font-semibold border border-white/10 transition-all">
+                        Abrir
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function getStatusBadgeHTML(status) {
+    const map = {
+        PENDIENTE: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+        EN_PROCESO: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+        PAUSADO: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+        FINALIZADO: 'bg-zinc-800 text-zinc-400 border-white/10'
+    };
+    const cls = map[status] || map.PENDIENTE;
+    return `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${cls}">${status}</span>`;
+}
+
+// ============================================================================
+// TOGGL TRACK LIVE TIMER BAR & ORDER MODAL
+// ============================================================================
+
+function updateTopTogglTimerBar() {
+    const runningOrder = state.orders.find(o => o.is_timer_running);
+    const header = document.getElementById('top-header-bar');
+    const dot = document.getElementById('toggl-bar-dot');
+    const label = document.getElementById('toggl-bar-label');
+    const clock = document.getElementById('toggl-bar-clock');
+    const btn = document.getElementById('toggl-bar-action-btn');
+
+    if (!dot || !label || !clock) return;
+
+    if (runningOrder) {
+        if (header) header.classList.add('toggl-timer-active');
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 timer-pulse';
+        label.innerHTML = `<strong class="text-white font-mono">${runningOrder.order_number}</strong> • ${runningOrder.machine_name}`;
+        clock.textContent = formatSecondsToHHMMSS(runningOrder.current_live_duration_seconds || 0);
+        clock.className = 'font-mono text-sm font-black text-emerald-400 tracking-wider';
+        if (btn) {
+            btn.classList.remove('hidden');
+            btn.dataset.orderId = runningOrder.id;
+        }
+    } else {
+        if (header) header.classList.remove('toggl-timer-active');
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-zinc-600';
+        label.textContent = 'Sin reparación en curso';
+        clock.textContent = '00:00:00';
+        clock.className = 'font-mono text-sm font-bold text-zinc-500 tracking-wider';
+        if (btn) btn.classList.add('hidden');
+    }
+}
+
+function openRunningOrderFromBar() {
+    const btn = document.getElementById('toggl-bar-action-btn');
+    const orderId = btn?.dataset?.orderId;
+    if (orderId) openOrderModal(parseInt(orderId));
+}
+
+function tickLiveClocks() {
+    state.orders.forEach(o => {
+        if (o.is_timer_running) {
+            o.current_live_duration_seconds = (o.current_live_duration_seconds || 0) + 1;
+            document.querySelectorAll(`.order-live-timer[data-order-id="${o.id}"]`).forEach(el => {
+                el.textContent = formatSecondsToHHMMSS(o.current_live_duration_seconds);
+            });
+        }
+    });
+
+    if (state.activeOrder && state.activeOrder.is_timer_running) {
+        state.activeOrder.current_live_duration_seconds = (state.activeOrder.current_live_duration_seconds || 0) + 1;
+        const modalTimer = document.getElementById('modal-live-timer');
+        if (modalTimer) modalTimer.textContent = formatSecondsToHHMMSS(state.activeOrder.current_live_duration_seconds);
+    }
+
+    updateTopTogglTimerBar();
+}
+
+function formatSecondsToHHMMSS(totalSec) {
+    const sec = Math.max(0, Math.floor(totalSec || 0));
+    const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+    const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+    const s = String(sec % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+}
+
+async function openOrderModal(orderId) {
+    try {
+        const res = await fetch(`/api/orders/${orderId}`);
+        if (res.ok) {
+            state.activeOrder = await res.json();
+        } else {
+            state.activeOrder = state.orders.find(o => o.id == orderId);
+        }
+    } catch (e) {
+        state.activeOrder = state.orders.find(o => o.id == orderId);
+    }
+
+    const o = state.activeOrder;
+    if (!o) return;
+
+    const isBoss = state.role === 'JEFE' && !!state.bossUser;
+
+    document.getElementById('modal-order-number').textContent = o.order_number;
+    document.getElementById('modal-order-status').textContent = o.status;
+    document.getElementById('modal-order-status').className = `text-xs px-2.5 py-1 rounded-full font-bold ${
+        o.status === 'FINALIZADO' ? 'bg-zinc-800 text-zinc-300' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+    }`;
+
+    document.getElementById('modal-machine-name').textContent = `${o.machine_code || ''} - ${o.machine_name || ''}`;
+    document.getElementById('modal-machine-location').textContent = o.machine_location || '';
+    document.getElementById('modal-operator').textContent = o.operator_name;
+    document.getElementById('modal-datetime').textContent = `${o.report_date} a las ${o.report_time}`;
+    document.getElementById('modal-description').textContent = o.description;
+
+    const cat = getCategoryMeta(o.failure_type);
+    const failBadge = document.getElementById('modal-failure-badge');
+    failBadge.textContent = `${cat.name}${o.failure_subcategory ? ` • ${o.failure_subcategory}` : ''}`;
+    failBadge.style.backgroundColor = `${cat.color}25`;
+    failBadge.style.color = cat.color;
+
+    const stopBadge = document.getElementById('modal-stopped-badge');
+    if (o.machine_stopped) {
+        stopBadge.textContent = '🛑 Máquina Parada';
+        stopBadge.className = 'text-xs px-2 py-0.5 rounded font-semibold bg-rose-500/20 text-rose-300';
+    } else {
+        stopBadge.textContent = '▶️ Máquina Operando';
+        stopBadge.className = 'text-xs px-2 py-0.5 rounded font-semibold bg-emerald-500/20 text-emerald-300';
+    }
+
+    // Boss classification box vs Technician read-only info
+    const bossBox = document.getElementById('modal-boss-classification-box');
+    const techReadonly = document.getElementById('modal-tech-readonly-info');
+    if (bossBox) bossBox.classList.toggle('hidden', !isBoss);
+    if (techReadonly) techReadonly.classList.toggle('hidden', isBoss);
+
+    document.getElementById('modal-readonly-maint-type').textContent = o.maintenance_type || 'CORRECTIVO';
+    document.getElementById('modal-readonly-tech-name').textContent = o.technician_name || 'Sin asignar';
+
+    // Populate Boss selects
+    const assignSelect = document.getElementById('modal-assign-tech');
+    if (assignSelect) {
+        assignSelect.innerHTML = '<option value="">-- Sin asignar --</option>' +
+            state.technicians.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        assignSelect.value = o.technician_id || '';
+    }
+    const maintSelect = document.getElementById('modal-boss-maint-type');
+    if (maintSelect) maintSelect.value = o.maintenance_type || 'CORRECTIVO';
+
+    const catSelect = document.getElementById('modal-boss-failure-type');
+    if (catSelect) {
+        catSelect.innerHTML = state.categories.map(c => `<option value="${c.code}">${c.name}</option>`).join('');
+        catSelect.value = o.failure_type || 'MECANICA';
+    }
+
+    // Timer & Notes
+    document.getElementById('modal-live-timer').textContent = formatSecondsToHHMMSS(o.current_live_duration_seconds || o.repair_duration_seconds || 0);
+    document.getElementById('modal-spare-parts-notes').value = o.spare_parts_notes || '';
+    document.getElementById('modal-diagnosis').value = o.diagnosis || '';
+    document.getElementById('modal-solution').value = o.solution_notes || '';
+
+    renderOrderPartsList(o.parts || []);
+
+    const isFinished = o.status === 'FINALIZADO';
+    document.getElementById('btn-timer-start').classList.toggle('hidden', isFinished || Boolean(o.is_timer_running));
+    document.getElementById('btn-timer-pause').classList.toggle('hidden', isFinished || !o.is_timer_running);
+    document.getElementById('btn-finish-order').classList.toggle('hidden', isFinished);
+
+    document.getElementById('order-detail-modal').classList.remove('hidden');
+}
+
+function closeOrderModal() {
+    document.getElementById('order-detail-modal').classList.add('hidden');
+    state.activeOrder = null;
+}
+
+async function saveBossOrderClassification() {
+    if (!state.activeOrder) return;
+    const payload = {
+        maintenance_type: document.getElementById('modal-boss-maint-type').value,
+        technician_id: document.getElementById('modal-assign-tech').value || null,
+        failure_type: document.getElementById('modal-boss-failure-type').value
+    };
+
+    const res = await fetch(`/api/orders/${state.activeOrder.id}/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+        showToast('Clasificación de Jefe y Técnico guardados', 'success');
+        await loadAllData();
+        await openOrderModal(state.activeOrder.id);
+    }
+}
+
+async function startOrderTimer() {
+    if (!state.activeOrder) return;
+    const res = await fetch(`/api/orders/${state.activeOrder.id}/timer/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    });
+    if (res.ok) {
+        showToast('⏱️ Cronómetro de reparación iniciado', 'success');
+        await loadAllData();
+        await openOrderModal(state.activeOrder.id);
+    }
+}
+
+async function pauseOrderTimer() {
+    if (!state.activeOrder) return;
+    const res = await fetch(`/api/orders/${state.activeOrder.id}/timer/pause`, { method: 'POST' });
+    if (res.ok) {
+        showToast('⏸️ Cronómetro pausado', 'info');
+        await loadAllData();
+        await openOrderModal(state.activeOrder.id);
+    }
+}
+
+async function saveOrderProgress() {
+    if (!state.activeOrder) return;
+    const payload = {
+        spare_parts_notes: document.getElementById('modal-spare-parts-notes').value,
+        diagnosis: document.getElementById('modal-diagnosis').value,
+        solution_notes: document.getElementById('modal-solution').value
+    };
+    const res = await fetch(`/api/orders/${state.activeOrder.id}/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+        showToast('Avance técnico guardado en la nube', 'success');
+        await loadAllData();
+    }
+}
+
+async function finishMaintenanceOrder() {
+    if (!state.activeOrder) return;
+    const payload = {
+        spare_parts_notes: document.getElementById('modal-spare-parts-notes').value,
+        diagnosis: document.getElementById('modal-diagnosis').value,
+        solution_notes: document.getElementById('modal-solution').value
+    };
+    const res = await fetch(`/api/orders/${state.activeOrder.id}/finish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+        const data = await res.json();
+        showToast(`✅ Orden cerrada. Tiempo total: ${data.repair_duration_minutes} min. Hoja de Vida actualizada.`, 'success');
+        closeOrderModal();
+        await loadAllData();
+    }
+}
+
+function renderOrderPartsList(parts) {
+    const container = document.getElementById('modal-parts-list');
+    if (!container) return;
+    if (!parts || parts.length === 0) {
+        container.innerHTML = '<p class="text-[11px] text-zinc-500">No se han registrado repuestos individuales aún.</p>';
+        return;
+    }
+    container.innerHTML = parts.map(p => `
+        <div class="flex items-center justify-between px-3 py-1.5 rounded-lg bg-zinc-900 border border-white/5 text-xs">
+            <span><strong class="text-white">${p.part_name}</strong> <span class="text-zinc-400 font-mono">x${p.quantity} ${p.unit || ''}</span></span>
+            <button type="button" onclick="deleteOrderPart(${p.id})" class="text-rose-400 hover:text-rose-300 text-[11px]">Eliminar</button>
+        </div>
+    `).join('');
+}
+
+async function addPartToOrder() {
+    if (!state.activeOrder) return;
+    const nameInput = document.getElementById('part-name-input');
+    const qtyInput = document.getElementById('part-qty-input');
+    const part_name = nameInput.value.trim();
+    const quantity = parseFloat(qtyInput.value || 1);
+    if (!part_name) return;
+
+    const res = await fetch(`/api/orders/${state.activeOrder.id}/parts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ part_name, quantity })
+    });
+    if (res.ok) {
+        nameInput.value = '';
+        qtyInput.value = '1';
+        await openOrderModal(state.activeOrder.id);
+    }
+}
+
+async function deleteOrderPart(partId) {
+    if (!state.activeOrder) return;
+    await fetch(`/api/parts/${partId}`, { method: 'DELETE' });
+    await openOrderModal(state.activeOrder.id);
+}
+
+// ============================================================================
+// VIEW 3: MACHINES, HOJAS DE VIDA (DOSSIERS) & QR CODES
+// ============================================================================
+
+function renderMachinesGrid() {
+    const grid = document.getElementById('all-qr-cards-grid');
+    if (!grid) return;
+
+    const isBoss = state.role === 'JEFE' && !!state.bossUser;
+    const baseUrl = state.settings.qr_base_url || window.location.origin;
+
+    grid.innerHTML = state.machines.map(m => {
+        const statusColors = {
+            OPERATIVA: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+            EN_MANTENIMIENTO: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+            PARADA: 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+        };
+        const stCls = statusColors[m.status] || statusColors.OPERATIVA;
+
+        return `
+            <div class="cf-card print-qr-sticker rounded-2xl p-5 flex flex-col justify-between space-y-5">
+                <div class="flex flex-col sm:flex-row items-start justify-between gap-4">
+                    <div class="space-y-2 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-md font-mono text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">${m.code}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${stCls}">${m.status}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-900 text-zinc-400 border border-white/5">Criticidad: ${m.criticality || 'ALTA'}</span>
+                        </div>
+                        <h3 class="text-lg font-extrabold text-white">${m.name}</h3>
+                        <p class="text-xs text-zinc-400"><i class="fa-solid fa-location-dot text-purple-400 mr-1"></i> ${m.location}</p>
+                        
+                        <!-- Technical Hoja de Vida Preview -->
+                        <div class="grid grid-cols-2 gap-2 pt-2 text-[11px] bg-zinc-950/60 p-3 rounded-xl border border-white/[0.05]">
+                            <div><span class="text-zinc-500">Marca/Modelo:</span> <strong class="text-zinc-200 block truncate">${m.brand || '-'} ${m.model || ''}</strong></div>
+                            <div><span class="text-zinc-500">Serie:</span> <strong class="text-zinc-200 font-mono block truncate">${m.serial_number || '-'}</strong></div>
+                            <div><span class="text-zinc-500">Potencia:</span> <strong class="text-zinc-200 block truncate">${m.voltage || ''} ${m.power_kw || ''}</strong></div>
+                            <div><span class="text-zinc-500">Próx. Preventivo:</span> <strong class="text-amber-400 font-mono block">${m.next_maintenance_date || 'Ver Plan 2027'}</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- QR Code Box -->
+                    <div class="flex flex-col items-center bg-zinc-950/90 p-3 rounded-2xl border border-white/10 self-center sm:self-start">
+                        <div id="qr-box-${m.id}" class="qr-container w-28 h-28 flex items-center justify-center"></div>
+                        <span class="text-[10px] font-mono text-zinc-400 mt-1.5">Escanear Falla</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="pt-3 border-t border-white/[0.07] flex flex-wrap items-center justify-between gap-2 no-print">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="openMachineDossier(${m.id})" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-600/20">
+                            <i class="fa-solid fa-book-medical"></i> Hoja de Vida
+                        </button>
+                        <button onclick="quickNotifyFromMachineCard(${m.id})" class="px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1.5" title="Enviar Alerta de Hoja de Vida a Jefes y Técnicos">
+                            <i class="fa-solid fa-bell"></i> Alerta
+                        </button>
+                        <button onclick="downloadMachineQR(${m.id}, '${m.code}')" class="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 text-xs font-semibold">
+                            <i class="fa-solid fa-download"></i> QR
+                        </button>
+                    </div>
+
+                    ${isBoss ? `
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="openMachineModal(${m.id})" class="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 hover:text-white text-xs" title="Editar Máquina y Hoja de Vida">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteMachine(${m.id})" class="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-400 text-xs" title="Eliminar Máquina">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Render QR codes
+    setTimeout(() => {
+        state.machines.forEach(m => {
+            const container = document.getElementById(`qr-box-${m.id}`);
+            if (container && typeof QRCode !== 'undefined') {
+                container.innerHTML = '';
+                const qrUrl = `${baseUrl}/?machine_id=${m.id}&machine_code=${encodeURIComponent(m.code)}#report`;
+                new QRCode(container, {
+                    text: qrUrl,
+                    width: 104,
+                    height: 104,
+                    colorDark: "#09090b",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+        });
+    }, 60);
+}
+
+async function openMachineDossier(machineId) {
+    state.activeDossierMachineId = machineId;
+    const modal = document.getElementById('machine-dossier-modal');
+    if (modal) modal.classList.remove('hidden');
+
+    try {
+        const res = await fetch(`/api/machines/${machineId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const m = data.machine;
+        const kpis = data.kpis || {};
+
+        document.getElementById('dossier-code').textContent = m.code;
+        document.getElementById('dossier-name').textContent = `Hoja de Vida: ${m.name}`;
+        document.getElementById('dossier-subtitle').textContent = `${m.location} • ${m.description || ''}`;
+        document.getElementById('dossier-criticality').textContent = `CRITICIDAD ${m.criticality || 'ALTA'}`;
+
+        document.getElementById('dossier-kpi-orders').textContent = kpis.total_orders || 0;
+        document.getElementById('dossier-kpi-downtime').textContent = `${kpis.total_downtime_minutes || 0} min`;
+        document.getElementById('dossier-kpi-mttr').textContent = `${kpis.mttr_minutes || 0} min`;
+        document.getElementById('dossier-kpi-plans').textContent = kpis.plans_count || 0;
+
+        document.getElementById('dossier-brand').textContent = m.brand || 'No especificado';
+        document.getElementById('dossier-model').textContent = m.model || 'No especificado';
+        document.getElementById('dossier-serial').textContent = m.serial_number || 'N/A';
+        document.getElementById('dossier-install-date').textContent = m.install_date || 'N/A';
+        document.getElementById('dossier-voltage').textContent = m.voltage || '220V / 440V';
+        document.getElementById('dossier-power').textContent = m.power_kw || 'N/A';
+        document.getElementById('dossier-supplier').textContent = m.supplier || 'N/A';
+        document.getElementById('dossier-next-maint').textContent = m.next_maintenance_date || 'Ver Plan 2027';
+        document.getElementById('dossier-critical-parts').textContent = m.critical_parts || 'Sin repuestos críticos listados';
+        document.getElementById('dossier-life-notes').textContent = m.life_notes || m.description || 'Sin observaciones adicionales';
+
+        // Render Plans in Dossier
+        const plansEl = document.getElementById('dossier-plans-list');
+        if (plansEl) {
+            if (!data.plans || data.plans.length === 0) {
+                plansEl.innerHTML = '<p class="text-xs text-zinc-500">No hay planes preventivos asociados aún.</p>';
+            } else {
+                plansEl.innerHTML = data.plans.map(p => `
+                    <div class="p-3 rounded-xl bg-zinc-950 border border-white/[0.07] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div>
+                            <span class="font-mono font-bold text-emerald-400 mr-2">${p.plan_code}</span>
+                            <strong class="text-white">${p.title}</strong>
+                            <span class="text-zinc-400 ml-2">(${p.frequency} • Año ${p.year})</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-mono text-zinc-400">Meses: ${(p.months || []).map(m => MONTH_NAMES_SHORT[m - 1]).join(', ')}</span>
+                            <span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold text-[10px]">${p.technician_name || 'Sin asignar'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Render History in Dossier
+        const histEl = document.getElementById('dossier-history-list');
+        if (histEl) {
+            if (!data.history || data.history.length === 0) {
+                histEl.innerHTML = '<p class="text-xs text-zinc-500">Sin intervenciones registradas en la bitácora.</p>';
+            } else {
+                histEl.innerHTML = data.history.map(h => {
+                    const cat = getCategoryMeta(h.failure_type);
+                    return `
+                        <div class="p-3.5 rounded-xl bg-zinc-950/90 border border-white/[0.07] space-y-1.5 text-xs">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono font-bold text-purple-400">${h.order_number}</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-900 text-zinc-200">${h.maintenance_type}</span>
+                                    <span class="text-[11px] font-semibold" style="color:${cat.color}">● ${cat.name} ${h.failure_subcategory ? `(${h.failure_subcategory})` : ''}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    ${getStatusBadgeHTML(h.status)}
+                                    <span class="font-mono text-zinc-400">${h.report_date} ${h.report_time}</span>
+                                </div>
+                            </div>
+                            <p class="text-zinc-300"><strong>Reporte:</strong> ${h.description}</p>
+                            ${h.diagnosis ? `<p class="text-zinc-400"><strong>Diagnóstico:</strong> ${h.diagnosis}</p>` : ''}
+                            ${h.solution_notes ? `<p class="text-emerald-300/90"><strong>Solución aplicada:</strong> ${h.solution_notes}</p>` : ''}
+                            <div class="flex flex-wrap items-center justify-between pt-1 text-[11px] text-zinc-400 border-t border-white/[0.04]">
+                                <span>Técnico: <strong class="text-white">${h.technician_name || 'Sin asignar'}</strong></span>
+                                <span>Repuestos: <strong class="text-zinc-200">${h.spare_parts_notes || 'Ninguno'}</strong></span>
+                                <span class="font-mono">Duración: <strong class="text-emerald-400">${Math.round((h.repair_duration_seconds || 0) / 60)} min</strong></span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+    } catch (e) {
+        showToast('Error al cargar Hoja de Vida', 'error');
+    }
+}
+
+function closeDossierModal() {
+    document.getElementById('machine-dossier-modal').classList.add('hidden');
+}
+
+async function sendDossierNotification() {
+    const machineId = state.activeDossierMachineId;
+    if (!machineId) return;
+    const msgInput = document.getElementById('dossier-alert-message');
+    const targetSelect = document.getElementById('dossier-alert-target');
+    const message = msgInput.value.trim();
+    if (!message) {
+        showToast('Escribe el mensaje de la alerta técnica', 'warning');
+        return;
+    }
+
+    const res = await fetch(`/api/machines/${machineId}/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            message,
+            target_role: targetSelect.value,
+            severity: 'WARNING'
+        })
+    });
+    if (res.ok) {
+        msgInput.value = '';
+        await loadNotifications();
+        showToast('🔔 Alerta de Hoja de Vida enviada a Jefes y Técnicos', 'success');
+    }
+}
+
+async function quickNotifyFromMachineCard(machineId) {
+    const m = state.machines.find(x => x.id == machineId);
+    if (!m) return;
+    const msg = prompt(`Enviar alerta desde la Hoja de Vida de ${m.code} - ${m.name} a Jefes y Técnicos:`, `Revisión preventiva o anomalía detectada en ${m.name}`);
+    if (!msg) return;
+
+    const res = await fetch(`/api/machines/${machineId}/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            title: `🔔 Alerta Hoja de Vida: ${m.code} - ${m.name}`,
+            message: msg,
+            target_role: 'ALL',
+            severity: 'WARNING'
+        })
+    });
+    if (res.ok) {
+        await loadNotifications();
+        showToast('Notificación enviada a Jefes y Técnicos', 'success');
+    }
+}
+
+function openMachineModal(machineId = null) {
+    const modal = document.getElementById('machine-modal');
+    document.getElementById('machine-edit-id').value = machineId || '';
+    if (machineId) {
+        const m = state.machines.find(x => x.id == machineId);
+        if (m) {
+            document.getElementById('machine-modal-title').textContent = `Editar Hoja de Vida: ${m.code}`;
+            document.getElementById('machine-code-input').value = m.code || '';
+            document.getElementById('machine-name-input').value = m.name || '';
+            document.getElementById('machine-location-input').value = m.location || '';
+            document.getElementById('machine-status-input').value = m.status || 'OPERATIVA';
+            document.getElementById('machine-criticality-input').value = m.criticality || 'ALTA';
+            document.getElementById('machine-brand-input').value = m.brand || '';
+            document.getElementById('machine-model-input').value = m.model || '';
+            document.getElementById('machine-serial-input').value = m.serial_number || '';
+            document.getElementById('machine-install-input').value = m.install_date || '';
+            document.getElementById('machine-voltage-input').value = m.voltage || '';
+            document.getElementById('machine-power-input').value = m.power_kw || '';
+            document.getElementById('machine-supplier-input').value = m.supplier || '';
+            document.getElementById('machine-next-maint-input').value = m.next_maintenance_date || '';
+            document.getElementById('machine-parts-input').value = m.critical_parts || '';
+            document.getElementById('machine-desc-input').value = m.life_notes || m.description || '';
+        }
+    } else {
+        document.getElementById('machine-modal-title').textContent = 'Nueva Máquina y Hoja de Vida';
+        const nextNum = state.machines.length + 1;
+        document.getElementById('machine-code-input').value = `MAQ-00${nextNum}`;
+        document.getElementById('machine-name-input').value = `Máquina ${nextNum}`;
+        document.getElementById('machine-location-input').value = 'Planta Principal';
+        document.getElementById('machine-status-input').value = 'OPERATIVA';
+        document.getElementById('machine-criticality-input').value = 'ALTA';
+        document.getElementById('machine-brand-input').value = '';
+        document.getElementById('machine-model-input').value = '';
+        document.getElementById('machine-serial-input').value = '';
+        document.getElementById('machine-install-input').value = '';
+        document.getElementById('machine-voltage-input').value = '220V / 440V';
+        document.getElementById('machine-power-input').value = '';
+        document.getElementById('machine-supplier-input').value = '';
+        document.getElementById('machine-next-maint-input').value = '2027-01-15';
+        document.getElementById('machine-parts-input').value = '';
+        document.getElementById('machine-desc-input').value = '';
+    }
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeMachineModal() {
+    document.getElementById('machine-modal').classList.add('hidden');
+}
+
+async function saveMachineForm(e) {
+    e.preventDefault();
+    const editId = document.getElementById('machine-edit-id').value;
+    const payload = {
+        code: document.getElementById('machine-code-input').value.trim(),
+        name: document.getElementById('machine-name-input').value.trim(),
+        location: document.getElementById('machine-location-input').value.trim(),
+        status: document.getElementById('machine-status-input').value,
+        criticality: document.getElementById('machine-criticality-input').value,
+        brand: document.getElementById('machine-brand-input').value.trim(),
+        model: document.getElementById('machine-model-input').value.trim(),
+        serial_number: document.getElementById('machine-serial-input').value.trim(),
+        install_date: document.getElementById('machine-install-input').value,
+        voltage: document.getElementById('machine-voltage-input').value.trim(),
+        power_kw: document.getElementById('machine-power-input').value.trim(),
+        supplier: document.getElementById('machine-supplier-input').value.trim(),
+        next_maintenance_date: document.getElementById('machine-next-maint-input').value,
+        critical_parts: document.getElementById('machine-parts-input').value.trim(),
+        description: document.getElementById('machine-desc-input').value.trim(),
+        life_notes: document.getElementById('machine-desc-input').value.trim()
+    };
+
+    const url = editId ? `/api/machines/${editId}` : '/api/machines';
+    const method = editId ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+        closeMachineModal();
+        await loadAllData();
+        renderMachinesGrid();
+        showToast('Máquina y Hoja de Vida guardadas', 'success');
+    } else {
+        const err = await res.json();
+        showToast(err.error || 'Error al guardar máquina', 'error');
+    }
+}
+
+async function deleteMachine(machineId) {
+    if (!confirm('¿Eliminar esta máquina y su historial asociado?')) return;
+    const res = await fetch(`/api/machines/${machineId}`, { method: 'DELETE' });
+    if (res.ok) {
+        await loadAllData();
+        renderMachinesGrid();
+        showToast('Máquina eliminada', 'info');
+    }
+}
+
+function downloadMachineQR(machineId, code) {
+    const container = document.getElementById(`qr-box-${machineId}`);
+    if (!container) return;
+    const img = container.querySelector('img') || container.querySelector('canvas');
+    if (!img) return;
+    const src = img.src || img.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = src;
+    a.download = `QR_${code}.png`;
+    a.click();
+}
+
+// ============================================================================
+// VIEW 4: MAINTENANCE PLANS & PREVENTIVE PLAN 2027
+// ============================================================================
+
+function renderPlansView() {
+    const filterYear = document.getElementById('filter-plan-year')?.value || '';
+    const isBoss = state.role === 'JEFE' && !!state.bossUser;
+
+    let filteredPlans = state.plans || [];
+    if (filterYear) {
+        filteredPlans = filteredPlans.filter(p => String(p.year) === String(filterYear));
+    }
+
+    // 1. Render 2027 Annual Matrix
+    const matrixTbody = document.getElementById('matrix-2027-tbody');
+    if (matrixTbody) {
+        if (filteredPlans.length === 0) {
+            matrixTbody.innerHTML = `<tr><td colspan="13" class="px-4 py-6 text-center text-zinc-500">No hay planes programados para el filtro seleccionado.</td></tr>`;
+        } else {
+            matrixTbody.innerHTML = filteredPlans.map(p => {
+                const monthsArr = p.months || [];
+                const monthCells = MONTH_NAMES_SHORT.map((mName, idx) => {
+                    const mNum = idx + 1;
+                    const active = monthsArr.includes(mNum);
+                    return `
+                        <td class="px-1.5 py-2.5 text-center">
+                            <button type="button"
+                                onclick="${isBoss ? `togglePlanMonth2027(${p.id}, ${mNum})` : ''}"
+                                class="month-cell w-8 h-7 rounded-lg font-mono text-[10px] font-bold inline-flex items-center justify-center border ${
+                                    active
+                                        ? 'bg-purple-600 text-white border-purple-400 shadow shadow-purple-500/30'
+                                        : 'bg-zinc-900/70 text-zinc-600 border-white/5 hover:border-white/15'
+                                } ${isBoss ? 'cursor-pointer' : 'cursor-default'}"
+                                title="${mName} ${p.year}: ${active ? 'Programado' : 'Sin programar'}">
+                                ${active ? '<i class="fa-solid fa-check"></i>' : '·'}
+                            </button>
+                        </td>
+                    `;
+                }).join('');
+
+                return `
+                    <tr class="hover:bg-white/[0.02]">
+                        <td class="px-3 py-2.5">
+                            <div class="font-bold text-white">${p.machine_code || ''} - ${p.machine_name || ''}</div>
+                            <div class="text-[10px] text-purple-300 font-mono truncate max-w-[220px]">${p.plan_code}: ${p.title}</div>
+                        </td>
+                        ${monthCells}
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    // 2. Render Plan Cards
+    const cardsGrid = document.getElementById('plans-cards-grid');
+    if (!cardsGrid) return;
+
+    cardsGrid.innerHTML = filteredPlans.map(p => {
+        const checklistHTML = (p.checklist || []).map((item, i) => `
+            <label class="flex items-start gap-2 text-xs text-zinc-300 cursor-pointer py-1">
+                <input type="checkbox" ${item.done ? 'checked' : ''} onchange="togglePlanChecklistItem(${p.id}, ${i}, this.checked)"
+                    class="mt-0.5 rounded bg-zinc-900 border-white/20 text-purple-600 focus:ring-0">
+                <span class="${item.done ? 'line-through text-zinc-500' : ''}">${item.task}</span>
+            </label>
+        `).join('');
+
+        const monthPills = (p.months || []).map(m =>
+            `<span class="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 font-mono text-[10px] font-bold">${MONTH_NAMES_SHORT[m - 1]}</span>`
+        ).join('');
+
+        return `
+            <div class="cf-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div class="space-y-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">${p.plan_code}</span>
+                                <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-zinc-800 text-zinc-300">${p.maintenance_type} • ${p.frequency}</span>
+                            </div>
+                            <h3 class="text-sm sm:text-base font-bold text-white mt-1.5">${p.title}</h3>
+                            <p class="text-xs text-purple-300 font-semibold">${p.machine_code} - ${p.machine_name}</p>
+                        </div>
+                        ${isBoss ? `
+                            <div class="flex items-center gap-1">
+                                <button onclick="openPlanModal(${p.id})" class="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button onclick="deletePlan(${p.id})" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="text-[10px] uppercase font-bold text-zinc-500 mr-1">Meses ${p.year}:</span>
+                        ${monthPills}
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-zinc-950/80 border border-white/[0.06] space-y-1">
+                        <p class="text-[10px] uppercase font-bold text-zinc-400 mb-1">Checklist de Actividades Preventivas:</p>
+                        ${checklistHTML || '<p class="text-xs text-zinc-500">Sin tareas listadas</p>'}
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-white/[0.07] flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="text-zinc-400">
+                        <span>Responsable: <strong class="text-white">${p.technician_name || 'Por asignar'}</strong></span>
+                        <span class="mx-1.5">•</span>
+                        <span class="font-mono text-amber-400">Próx: ${p.scheduled_date}</span>
+                    </div>
+                    ${isBoss ? `
+                        <button onclick="launchOrderFromPlan(${p.id})" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow">
+                            <i class="fa-solid fa-rocket"></i> Lanzar OT
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function togglePlanMonth2027(planId, monthNumber) {
+    const plan = state.plans.find(p => p.id == planId);
+    if (!plan) return;
+    let months = Array.isArray(plan.months) ? [...plan.months] : [];
+    if (months.includes(monthNumber)) {
+        months = months.filter(m => m !== monthNumber);
+    } else {
+        months.push(monthNumber);
+        months.sort((a, b) => a - b);
+    }
+    plan.months = months;
+    renderPlansView();
+
+    await fetch(`/api/plans/${planId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ months })
+    });
+    showToast(`Calendario ${plan.year} actualizado para ${plan.machine_name}`, 'info');
+}
+
+async function togglePlanChecklistItem(planId, taskIdx, doneState) {
+    const plan = state.plans.find(p => p.id == planId);
+    if (!plan || !plan.checklist || !plan.checklist[taskIdx]) return;
+    plan.checklist[taskIdx].done = doneState;
+    renderPlansView();
+
+    await fetch(`/api/plans/${planId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checklist: plan.checklist })
+    });
+}
+
+async function launchOrderFromPlan(planId) {
+    const res = await fetch(`/api/plans/${planId}/launch-order`, { method: 'POST' });
+    if (res.ok) {
+        const data = await res.json();
+        showToast(`🚀 Orden ${data.order_number} creada y enviada a Técnicos`, 'success');
+        await loadAllData();
+        navigateTo('orders');
+    }
+}
+
+function renderPlanModalMonthSelector() {
+    const container = document.getElementById('plan-months-selector');
+    if (!container) return;
+    container.innerHTML = MONTH_NAMES_SHORT.map((mName, idx) => {
+        const mNum = idx + 1;
+        const active = state.selectedPlanMonths.includes(mNum);
+        return `
+            <button type="button" onclick="toggleModalMonth(${mNum})"
+                class="py-1.5 px-2 rounded-lg font-mono text-[11px] font-bold border transition-all ${
+                    active ? 'bg-purple-600 text-white border-purple-400' : 'bg-zinc-950 text-zinc-400 border-white/10'
+                }">
+                ${mName}
+            </button>
+        `;
+    }).join('');
+}
+
+function toggleModalMonth(mNum) {
+    if (state.selectedPlanMonths.includes(mNum)) {
+        state.selectedPlanMonths = state.selectedPlanMonths.filter(m => m !== mNum);
+    } else {
+        state.selectedPlanMonths.push(mNum);
+        state.selectedPlanMonths.sort((a, b) => a - b);
+    }
+    renderPlanModalMonthSelector();
+}
+
+function openPlanModal(planId = null) {
+    populateFormDropdowns();
+    document.getElementById('plan-edit-id').value = planId || '';
+    if (planId) {
+        const p = state.plans.find(x => x.id == planId);
+        if (p) {
+            document.getElementById('plan-modal-title').textContent = `Editar ${p.plan_code}`;
+            document.getElementById('plan-machine-input').value = p.machine_id;
+            document.getElementById('plan-year-input').value = p.year || 2027;
+            document.getElementById('plan-title-input').value = p.title || '';
+            document.getElementById('plan-type-input').value = p.maintenance_type || 'PREVENTIVO';
+            document.getElementById('plan-frequency-input').value = p.frequency || 'TRIMESTRAL';
+            document.getElementById('plan-date-input').value = p.scheduled_date || '2027-01-15';
+            document.getElementById('plan-tech-input').value = p.assigned_technician_id || '';
+            document.getElementById('plan-checklist-input').value = (p.checklist || []).map(c => c.task).join('\n');
+            state.selectedPlanMonths = [...(p.months || [1, 4, 7, 10])];
+        }
+    } else {
+        document.getElementById('plan-modal-title').textContent = 'Nuevo Plan de Mantenimiento / Preventivo 2027';
+        document.getElementById('plan-year-input').value = '2027';
+        document.getElementById('plan-title-input').value = '';
+        document.getElementById('plan-type-input').value = 'PREVENTIVO';
+        document.getElementById('plan-frequency-input').value = 'TRIMESTRAL';
+        document.getElementById('plan-date-input').value = '2027-01-15';
+        document.getElementById('plan-tech-input').value = '';
+        document.getElementById('plan-checklist-input').value = 'Inspección general de rodamientos\nAjuste de borneras eléctricas\nLubricación y limpieza';
+        state.selectedPlanMonths = [1, 4, 7, 10];
+    }
+    renderPlanModalMonthSelector();
+    document.getElementById('plan-modal').classList.remove('hidden');
+}
+
+function closePlanModal() {
+    document.getElementById('plan-modal').classList.add('hidden');
+}
+
+async function savePlanForm(e) {
+    e.preventDefault();
+    const editId = document.getElementById('plan-edit-id').value;
+    const payload = {
+        machine_id: parseInt(document.getElementById('plan-machine-input').value),
+        year: parseInt(document.getElementById('plan-year-input').value),
+        title: document.getElementById('plan-title-input').value.trim(),
+        maintenance_type: document.getElementById('plan-type-input').value,
+        frequency: document.getElementById('plan-frequency-input').value,
+        scheduled_date: document.getElementById('plan-date-input').value,
+        assigned_technician_id: document.getElementById('plan-tech-input').value || null,
+        months: state.selectedPlanMonths,
+        checklist: document.getElementById('plan-checklist-input').value
+    };
+
+    const url = editId ? `/api/plans/${editId}` : '/api/plans';
+    const method = editId ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+        closePlanModal();
+        await loadAllData();
+        renderPlansView();
+        showToast('Plan Preventivo guardado y notificado en Hoja de Vida', 'success');
+    }
+}
+
+async function deletePlan(planId) {
+    if (!confirm('¿Eliminar este plan de mantenimiento?')) return;
+    await fetch(`/api/plans/${planId}`, { method: 'DELETE' });
+    await loadAllData();
+    renderPlansView();
+    showToast('Plan eliminado', 'info');
+}
+
+// ============================================================================
+// NOTIFICATIONS CENTER (JEFES & TÉCNICOS)
+// ============================================================================
+
+function toggleNotificationDrawer() {
+    const drawer = document.getElementById('notification-drawer');
+    if (!drawer) return;
+    drawer.classList.toggle('hidden');
+    if (!drawer.classList.contains('hidden')) {
+        loadNotifications();
+    }
+}
+
+function renderNotificationsDrawer() {
+    const badge = document.getElementById('notif-unread-badge');
+    if (badge) {
+        if (state.unreadNotifications > 0) {
+            badge.textContent = state.unreadNotifications;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    const list = document.getElementById('notifications-list');
+    if (!list) return;
+
+    if (!state.notifications || state.notifications.length === 0) {
+        list.innerHTML = '<p class="text-xs text-zinc-500 text-center py-8">No hay notificaciones registradas.</p>';
+        return;
+    }
+
+    const sevStyles = {
+        CRITICAL: 'border-rose-500/40 bg-rose-500/10 text-rose-300',
+        WARNING: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
+        SUCCESS: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
+        INFO: 'border-purple-500/30 bg-purple-500/10 text-purple-300'
+    };
+
+    list.innerHTML = state.notifications.map(n => {
+        const st = sevStyles[n.severity] || sevStyles.INFO;
+        return `
+            <div onclick="handleNotificationClick(${n.id}, ${n.machine_id || 'null'}, ${n.order_id || 'null'})"
+                 class="p-3.5 rounded-2xl border ${st} ${n.is_read ? 'opacity-65' : ''} cursor-pointer hover:opacity-100 transition-all space-y-1">
+                <div class="flex items-start justify-between gap-2">
+                    <p class="text-xs font-bold text-white">${n.title}</p>
+                    ${!n.is_read ? '<span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0 mt-1"></span>' : ''}
+                </div>
+                <p class="text-[11px] text-zinc-300 leading-relaxed">${n.message}</p>
+                <div class="flex items-center justify-between pt-1 text-[10px] text-zinc-400 font-mono">
+                    <span>${n.category}</span>
+                    <span>${n.created_at || ''}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function handleNotificationClick(notifId, machineId, orderId) {
+    await fetch(`/api/notifications/${notifId}/read`, { method: 'POST' });
+    await loadNotifications();
+    toggleNotificationDrawer();
+    if (orderId) openOrderModal(orderId);
+    else if (machineId) openMachineDossier(machineId);
+}
+
+async function markAllNotificationsRead() {
+    await fetch('/api/notifications/read-all', { method: 'POST' });
+    await loadNotifications();
+}
+
+// ============================================================================
+// DASHBOARD & TECHNICIANS (JEFE)
+// ============================================================================
 
 async function loadDashboardData() {
     try {
         const res = await fetch('/api/dashboard/stats');
-        let data = null;
         if (res.ok) {
-            data = await res.json();
-        } else {
-            data = calculateLocalStats();
+            const data = await res.json();
+            updateDashboardUI(data);
         }
-
-        updateDashboardUI(data);
-
-    } catch (err) {
-        console.warn("Loading dashboard from local fallback:", err);
-        const data = calculateLocalStats();
-        updateDashboardUI(data);
-    }
-}
-
-function calculateLocalStats() {
-    const orders = state.orders || [];
-    const pending = orders.filter(o => o.status === 'PENDIENTE').length;
-    const in_prog = orders.filter(o => o.status === 'EN_PROCESO').length;
-    const finished = orders.filter(o => o.status === 'FINALIZADO').length;
-
-    const stopped_machines = new Set(orders.filter(o => o.machine_stopped && o.status !== 'FINALIZADO').map(o => o.machine_id)).size;
-    const total_downtime = orders.reduce((acc, o) => acc + (o.total_downtime_minutes || o.current_live_downtime_minutes || 0), 0);
-    
-    const finishedOrders = orders.filter(o => o.status === 'FINALIZADO' && o.repair_duration_seconds > 0);
-    const avg_sec = finishedOrders.length > 0 
-        ? finishedOrders.reduce((acc, o) => acc + o.repair_duration_seconds, 0) / finishedOrders.length 
-        : 0;
-
-    const failures_by_type = { ELECTRICA: 0, MECANICA: 0, AMBAS: 0, NO_SABE: 0 };
-    orders.forEach(o => {
-        const f = o.failure_type || 'NO_SABE';
-        failures_by_type[f] = (failures_by_type[f] || 0) + 1;
-    });
-
-    const maintenance_by_type = { CORRECTIVO: 0, PREVENTIVO: 0, PREDICTIVO: 0 };
-    orders.forEach(o => {
-        const m = o.maintenance_type || 'CORRECTIVO';
-        maintenance_by_type[m] = (maintenance_by_type[m] || 0) + 1;
-    });
-
-    return {
-        total_orders: orders.length,
-        pending_orders: pending,
-        in_progress_orders: in_prog,
-        finished_orders: finished,
-        machines_stopped: stopped_machines,
-        total_downtime_minutes: total_downtime,
-        avg_repair_minutes: Math.round(avg_sec / 60 * 10) / 10,
-        failures_by_type,
-        maintenance_by_type,
-        recent_orders: orders.slice(0, 6)
-    };
+    } catch (e) {}
 }
 
 function updateDashboardUI(data) {
     if (!data) return;
-
     const activeCount = (data.pending_orders || 0) + (data.in_progress_orders || 0);
     const elActive = document.getElementById('kpi-active-orders');
     if (elActive) elActive.textContent = activeCount;
-    
-    const badgeActive = document.getElementById('badge-active-orders');
-    if (badgeActive) badgeActive.textContent = activeCount;
 
-    const elPending = document.getElementById('kpi-pending');
-    if (elPending) elPending.textContent = data.pending_orders || 0;
-
-    const elProg = document.getElementById('kpi-in-progress');
-    if (elProg) elProg.textContent = data.in_progress_orders || 0;
+    const elBreak = document.getElementById('kpi-Active-breakdown');
+    if (elBreak) elBreak.textContent = `${data.pending_orders || 0} pend / ${data.in_progress_orders || 0} en curso`;
 
     const elStopped = document.getElementById('kpi-stopped-machines');
     if (elStopped) elStopped.textContent = data.machines_stopped || 0;
 
-    const elAvg = document.getElementById('kpi-avg-repair');
-    if (elAvg) elAvg.textContent = data.avg_repair_minutes || 0;
-
     const elDowntime = document.getElementById('kpi-total-downtime');
-    if (elDowntime) elDowntime.textContent = data.total_downtime_minutes || 0;
+    if (elDowntime) elDowntime.textContent = `${data.total_downtime_minutes || 0}m`;
 
-    const banner = document.getElementById('stopped-machines-banner');
-    if (banner) {
-        if ((data.machines_stopped || 0) > 0) {
-            banner.classList.remove('hidden');
-            const textEl = document.getElementById('stopped-banner-text');
-            if (textEl) textEl.textContent = `¡ALERTA DE PRODUCCIÓN! Hay ${data.machines_stopped} máquina(s) con parada activa.`;
-        } else {
-            banner.classList.add('hidden');
-        }
-    }
+    const elAvg = document.getElementById('kpi-avg-repair');
+    if (elAvg) elAvg.textContent = `${data.avg_repair_minutes || 0} min`;
 
-    // Render Charts safely
-    try {
-        renderFailuresChart(data.failures_by_type || {});
-        renderMaintenanceTypeChart(data.maintenance_by_type || {});
-    } catch (e) {
-        console.warn("Chart render skipped:", e);
-    }
+    const elFin = document.getElementById('kpi-finished-orders');
+    if (elFin) elFin.textContent = data.finished_orders || 0;
 
-    // Render Table
-    renderRecentOrdersTable(data.recent_orders || []);
+    const elPlans = document.getElementById('kpi-plans-2027');
+    if (elPlans) elPlans.textContent = data.total_plans_2027 ?? state.plans.length;
+
+    renderDashboardCharts(data);
+    renderRecentOrdersDashboard(data.recent_orders || []);
 }
 
-function renderFailuresChart(failuresData) {
-    if (typeof Chart === 'undefined') return;
-    const ctx = document.getElementById('failuresChart');
-    if (!ctx) return;
-
-    if (state.charts.failures) {
-        try { state.charts.failures.destroy(); } catch (e) {}
+function renderRecentOrdersDashboard(orders) {
+    const tbody = document.getElementById('recent-orders-tbody');
+    if (!tbody) return;
+    if (!orders.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-6 text-center text-zinc-500">Sin órdenes recientes</td></tr>';
+        return;
     }
+    tbody.innerHTML = orders.map(o => {
+        const cat = getCategoryMeta(o.failure_type);
+        return `
+            <tr onclick="openOrderModal(${o.id})" class="hover:bg-white/[0.03] cursor-pointer">
+                <td class="px-4 py-3 font-mono font-bold text-purple-300">${o.order_number}</td>
+                <td class="px-4 py-3 font-semibold text-white">${o.machine_name}</td>
+                <td class="px-4 py-3">
+                    <span class="text-xs font-semibold" style="color:${cat.color}">● ${cat.name}</span>
+                    <span class="text-[10px] font-mono text-zinc-400 ml-1">[${o.maintenance_type}]</span>
+                </td>
+                <td class="px-4 py-3 text-zinc-300">${o.operator_name}</td>
+                <td class="px-4 py-3">${o.machine_stopped ? '<span class="text-rose-400 font-bold">Sí</span>' : '<span class="text-emerald-400">No</span>'}</td>
+                <td class="px-4 py-3">${o.technician_name || '<span class="text-amber-400 italic">Asignar</span>'}</td>
+                <td class="px-4 py-3">${getStatusBadgeHTML(o.status)}</td>
+                <td class="px-4 py-3 text-right"><button class="text-purple-400 hover:underline font-bold">Gestionar</button></td>
+            </tr>
+        `;
+    }).join('');
+}
 
-    const labels = ['Eléctrica', 'Mecánica', 'Las 2 (Ambas)', 'No sabe'];
-    const counts = [
-        failuresData['ELECTRICA'] || 0,
-        failuresData['MECANICA'] || 0,
-        failuresData['AMBAS'] || 0,
-        failuresData['NO_SABE'] || 0
-    ];
+function renderDashboardCharts(data) {
+    if (typeof Chart === 'undefined') return;
 
-    try {
-        state.charts.failures = new Chart(ctx, {
+    const failCtx = document.getElementById('failuresChart');
+    if (failCtx) {
+        if (state.charts.failures) state.charts.failures.destroy();
+        const fMap = data.failures_by_type || {};
+        const labels = Object.keys(fMap).map(k => getCategoryMeta(k).name);
+        const values = Object.values(fMap);
+        const colors = Object.keys(fMap).map(k => getCategoryMeta(k).color);
+
+        state.charts.failures = new Chart(failCtx, {
             type: 'doughnut',
             data: {
-                labels: labels,
+                labels: labels.length ? labels : ['Sin datos'],
                 datasets: [{
-                    data: counts,
-                    backgroundColor: ['#f59e0b', '#3b82f6', '#a855f7', '#64748b'],
-                    borderWidth: 2,
-                    borderColor: '#0f172a'
+                    data: values.length ? values : [1],
+                    backgroundColor: colors.length ? colors : ['#27272a'],
+                    borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 }, padding: 10 } }
-                },
-                cutout: '70%'
+                    legend: { position: 'right', labels: { color: '#d4d4d8', font: { size: 11 } } }
+                }
             }
         });
-    } catch (err) {
-        console.warn("Chart error:", err);
-    }
-}
-
-function renderMaintenanceTypeChart(maintData) {
-    if (typeof Chart === 'undefined') return;
-    const ctx = document.getElementById('maintTypeChart');
-    if (!ctx) return;
-
-    if (state.charts.maintenance) {
-        try { state.charts.maintenance.destroy(); } catch (e) {}
     }
 
-    const labels = ['Correctivo', 'Preventivo', 'Predictivo'];
-    const counts = [
-        maintData['CORRECTIVO'] || 0,
-        maintData['PREVENTIVO'] || 0,
-        maintData['PREDICTIVO'] || 0
-    ];
-
-    try {
-        state.charts.maintenance = new Chart(ctx, {
+    const maintCtx = document.getElementById('maintenanceTypeChart');
+    if (maintCtx) {
+        if (state.charts.maintenance) state.charts.maintenance.destroy();
+        const mMap = data.maintenance_by_type || {};
+        state.charts.maintenance = new Chart(maintCtx, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels: ['Correctivo', 'Preventivo', 'Predictivo'],
                 datasets: [{
                     label: 'Órdenes',
-                    data: counts,
-                    backgroundColor: ['#ef4444', '#10b981', '#8b5cf6'],
+                    data: [mMap.CORRECTIVO || 0, mMap.PREVENTIVO || 0, mMap.PREDICTIVO || 0],
+                    backgroundColor: ['#f43f5e', '#8b5cf6', '#06b6d4'],
                     borderRadius: 8
                 }]
             },
@@ -513,1102 +2295,65 @@ function renderMaintenanceTypeChart(maintData) {
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } },
-                    y: { beginAtZero: true, ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: '#1e293b' } }
+                    y: { beginAtZero: true, ticks: { color: '#71717a', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                    x: { ticks: { color: '#d4d4d8' }, grid: { display: false } }
                 }
             }
         });
-    } catch (err) {
-        console.warn("Chart error:", err);
     }
 }
-
-function renderRecentOrdersTable(orders) {
-    const tbody = document.getElementById('recent-orders-tbody');
-    if (!tbody) return;
-
-    if (!orders || orders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-500">No hay órdenes registradas todavía.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = orders.map(o => {
-        const statusBadge = getStatusBadge(o.status);
-        const failureBadge = getFailureBadge(o.failure_type);
-        const stoppedBadge = o.machine_stopped 
-            ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">🔴 Parada</span>`
-            : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400">🟢 No</span>`;
-
-        const durationFormatted = formatSeconds(o.repair_duration_seconds || 0);
-
-        return `
-            <tr class="hover:bg-slate-800/40 transition-colors">
-                <td class="px-4 py-3 font-mono font-bold text-blue-400">${o.order_number}</td>
-                <td class="px-4 py-3">
-                    <div class="font-bold text-white text-xs">${o.machine_name}</div>
-                    <div class="text-[10px] text-slate-400">${o.machine_code || ''}</div>
-                </td>
-                <td class="px-4 py-3">
-                    <div class="flex items-center gap-1.5">${failureBadge}</div>
-                    <div class="text-[10px] text-slate-400 uppercase mt-0.5">${o.maintenance_type}</div>
-                </td>
-                <td class="px-4 py-3 text-xs text-slate-300">${o.operator_name}</td>
-                <td class="px-4 py-3 text-xs text-slate-400">
-                    <div>${o.report_date}</div>
-                    <div class="text-[10px] text-slate-500">${o.report_time}</div>
-                </td>
-                <td class="px-4 py-3">${stoppedBadge}</td>
-                <td class="px-4 py-3 text-xs">
-                    ${o.technician_name ? `<span class="text-cyan-300 font-medium">${o.technician_name}</span>` : `<span class="text-slate-500 italic">Sin Asignar</span>`}
-                </td>
-                <td class="px-4 py-3">
-                    <div>${statusBadge}</div>
-                    <div class="text-[10px] font-mono text-slate-400 mt-1">${durationFormatted}</div>
-                </td>
-                <td class="px-4 py-3 text-right">
-                    <button onclick="openOrderDetailModal(${o.id})" class="px-2.5 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 text-xs font-semibold">
-                        Ver / Control
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
-
-// -------------------------------------------------------------
-// VIEW 2: REPORT FORM SUBMISSION (OPERATOR / QR FLOW)
-// -------------------------------------------------------------
-
-async function submitIncidentReport(event) {
-    event.preventDefault();
-    const btn = document.getElementById('btn-submit-report');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Registrando orden...`;
-    }
-
-    try {
-        const machineIdVal = document.getElementById('form-machine-id').value;
-        if (!machineIdVal) {
-            showToast('Por favor selecciona la máquina afectada', 'warning');
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-paper-plane text-xl"></i> <span>REGISTRAR Y GENERAR ORDEN DE TRABAJO</span>`;
-            }
-            return;
-        }
-
-        const operatorName = document.getElementById('form-operator-name').value.trim();
-        const reportDate = document.getElementById('form-date').value;
-        const reportTime = document.getElementById('form-time').value;
-        const maintType = document.querySelector('input[name="form-maint-type"]:checked')?.value || 'CORRECTIVO';
-        const failureType = document.querySelector('input[name="form-failure-type"]:checked')?.value || 'NO_SABE';
-        const machineStopped = document.querySelector('input[name="form-machine-stopped"]:checked')?.value || '0';
-        const technicianIdVal = document.getElementById('form-technician-id')?.value;
-        const description = document.getElementById('form-description').value.trim();
-
-        const selectedMachine = state.machines.find(m => m.id == machineIdVal) || { name: 'Máquina', code: 'MAQ' };
-
-        const payload = {
-            machine_id: parseInt(machineIdVal),
-            operator_name: operatorName,
-            report_date: reportDate,
-            report_time: reportTime,
-            maintenance_type: maintType,
-            failure_type: failureType,
-            machine_stopped: parseInt(machineStopped),
-            technician_id: technicianIdVal ? parseInt(technicianIdVal) : null,
-            description: description,
-            priority: machineStopped == '1' ? 'ALTA' : 'MEDIA'
-        };
-
-        let newOrder = null;
-        try {
-            const res = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) {
-                const data = await res.json();
-                payload.id = data.order_id;
-                payload.order_number = data.order_number;
-                payload.status = 'PENDIENTE';
-                payload.machine_name = selectedMachine.name;
-                payload.machine_code = selectedMachine.code;
-                payload.machine_location = selectedMachine.location || '';
-                newOrder = payload;
-            }
-        } catch (netErr) {
-            console.warn("Offline/Vercel fallback for order creation:", netErr);
-        }
-
-        // Local fallback if offline
-        if (!newOrder) {
-            const tempId = Date.now();
-            newOrder = {
-                id: tempId,
-                order_number: `OT-2026-${String(state.orders.length + 1).padStart(4, '0')}`,
-                ...payload,
-                status: 'PENDIENTE',
-                machine_name: selectedMachine.name,
-                machine_code: selectedMachine.code,
-                machine_location: selectedMachine.location || '',
-                repair_duration_seconds: 0,
-                total_downtime_minutes: 0,
-                parts: []
-            };
-        }
-
-        // Add to local state & storage
-        state.orders.unshift(newOrder);
-        localStorage.setItem('sm_orders', JSON.stringify(state.orders));
-
-        // Update machine status if stopped
-        if (newOrder.machine_stopped) {
-            const m = state.machines.find(item => item.id == newOrder.machine_id);
-            if (m) m.status = 'PARADA';
-        }
-
-        showToast(`¡Reporte registrado exitosamente! Orden: ${newOrder.order_number}`, 'success');
-
-        // Reset form
-        document.getElementById('incident-form').reset();
-        setCurrentDateTime();
-        const infoBadge = document.getElementById('form-machine-info');
-        if (infoBadge) infoBadge.classList.add('hidden');
-        renderQuickMachineChips();
-
-        // Switch to orders view and open modal
-        navigateTo('orders');
-        openOrderDetailModal(newOrder.id);
-
-    } catch (err) {
-        console.error("Error submitting report:", err);
-        showToast('Error al procesar el reporte', 'error');
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fa-solid fa-paper-plane text-xl"></i> <span>REGISTRAR Y GENERAR ORDEN DE TRABAJO</span>`;
-        }
-    }
-}
-
-// -------------------------------------------------------------
-// VIEW 3: ORDERS LIST & FILTERS
-// -------------------------------------------------------------
-
-let searchDebounceTimeout = null;
-function debounceOrdersSearch() {
-    clearTimeout(searchDebounceTimeout);
-    searchDebounceTimeout = setTimeout(() => {
-        loadOrdersList();
-    }, 250);
-}
-
-function resetOrdersFilters() {
-    const fStatus = document.getElementById('filter-status');
-    const fFailure = document.getElementById('filter-failure');
-    const fMachine = document.getElementById('filter-machine');
-    const fSearch = document.getElementById('filter-search');
-
-    if (fStatus) fStatus.value = '';
-    if (fFailure) fFailure.value = '';
-    if (fMachine) fMachine.value = '';
-    if (fSearch) fSearch.value = '';
-
-    loadOrdersList();
-}
-
-function filterOrdersByStopped() {
-    navigateTo('orders');
-    const fStatus = document.getElementById('filter-status');
-    if (fStatus) fStatus.value = 'EN_PROCESO';
-    loadOrdersList();
-}
-
-async function loadOrdersList(updateUI = true) {
-    const container = document.getElementById('orders-container');
-
-    const statusVal = document.getElementById('filter-status')?.value || '';
-    const failureVal = document.getElementById('filter-failure')?.value || '';
-    const machineVal = document.getElementById('filter-machine')?.value || '';
-    const searchVal = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
-
-    try {
-        const params = new URLSearchParams();
-        if (statusVal) params.append('status', statusVal);
-        if (failureVal) params.append('failure', failureVal);
-        if (machineVal) params.append('machine_id', machineVal);
-        if (searchVal) params.append('search', searchVal);
-
-        const res = await fetch(`/api/orders?${params.toString()}`);
-        if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data)) {
-                state.orders = data;
-                localStorage.setItem('sm_orders', JSON.stringify(data));
-            }
-        }
-    } catch (err) {
-        console.warn("Using local orders list:", err);
-    }
-
-    if (!updateUI || !container) return;
-
-    // Filter local orders
-    let filtered = state.orders || [];
-    if (statusVal) filtered = filtered.filter(o => o.status === statusVal);
-    if (failureVal) filtered = filtered.filter(o => o.failure_type === failureVal);
-    if (machineVal) filtered = filtered.filter(o => o.machine_id == machineVal);
-    if (searchVal) {
-        filtered = filtered.filter(o => 
-            (o.order_number || '').toLowerCase().includes(searchVal) ||
-            (o.operator_name || '').toLowerCase().includes(searchVal) ||
-            (o.machine_name || '').toLowerCase().includes(searchVal) ||
-            (o.description || '').toLowerCase().includes(searchVal)
-        );
-    }
-
-    if (filtered.length === 0) {
-        container.innerHTML = `
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500">
-                <i class="fa-solid fa-clipboard-question text-3xl mb-3 text-slate-600"></i>
-                <p class="font-bold text-slate-400 text-base">No hay órdenes que coincidan</p>
-                <p class="text-xs text-slate-500 mt-1">Prueba cambiando los filtros o reporta una nueva falla.</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = filtered.map(o => renderOrderCard(o)).join('');
-}
-
-function renderOrderCard(o) {
-    const statusBadge = getStatusBadge(o.status);
-    const failureBadge = getFailureBadge(o.failure_type);
-    
-    const isStopped = o.machine_stopped == 1;
-    const stoppedIndicator = isStopped
-        ? `<div class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold">
-             <i class="fa-solid fa-hand-paper"></i> 
-             <span>Máquina Parada (Downtime: <span class="downtime-counter" data-order-id="${o.id}">${o.current_live_downtime_minutes || o.total_downtime_minutes || 0} min</span>)</span>
-           </div>`
-        : `<div class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-800/60 text-slate-400 text-xs font-medium">
-             <i class="fa-solid fa-check"></i> <span>Máquina Operando</span>
-           </div>`;
-
-    const isRunning = o.is_timer_running == 1;
-    const timerClass = isRunning ? 'text-emerald-400 pulse-timer font-bold' : 'text-slate-400 font-medium';
-    const timerText = formatSeconds(o.current_live_duration_seconds || o.repair_duration_seconds || 0);
-
-    return `
-        <div class="bg-slate-900 border ${isRunning ? 'border-blue-500/50 shadow-blue-500/10' : 'border-slate-800'} rounded-2xl p-5 shadow-lg space-y-4 transition-all hover:border-slate-700">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
-                <div class="flex items-center gap-3">
-                    <span class="font-mono text-base font-black text-blue-400">${o.order_number}</span>
-                    <div>${statusBadge}</div>
-                    <span class="text-xs px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-300 uppercase">${o.maintenance_type || 'CORRECTIVO'}</span>
-                </div>
-                <div class="text-xs text-slate-400">
-                    <i class="fa-solid fa-calendar text-slate-500 mr-1"></i> ${o.report_date} a las ${o.report_time}
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Máquina</p>
-                    <p class="text-base font-extrabold text-white mt-0.5">${o.machine_name}</p>
-                    <p class="text-xs text-slate-400"><i class="fa-solid fa-location-dot text-slate-500"></i> ${o.machine_location || ''} (${o.machine_code || ''})</p>
-                </div>
-
-                <div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Reportó Operario</p>
-                    <p class="text-sm font-bold text-slate-200 mt-0.5">${o.operator_name}</p>
-                    <div class="flex items-center gap-2 mt-1">
-                        ${failureBadge}
-                    </div>
-                </div>
-
-                <div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Técnico / Tiempo de Reparación</p>
-                    <p class="text-sm font-bold ${o.technician_name ? 'text-cyan-300' : 'text-slate-500 italic'} mt-0.5">
-                        ${o.technician_name || 'Sin Asignar'}
-                    </p>
-                    <div class="flex items-center gap-2 mt-1 font-mono text-xs ${timerClass}">
-                        <i class="fa-solid fa-stopwatch"></i>
-                        <span class="live-clock" data-order-id="${o.id}" data-running="${isRunning ? '1' : '0'}" data-seconds="${o.current_live_duration_seconds || o.repair_duration_seconds || 0}">
-                            ${timerText}
-                        </span>
-                        ${isRunning ? '<span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-sans">EN VIVO</span>' : ''}
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/80 text-xs text-slate-300">
-                <span class="font-bold text-slate-400">Descripción:</span> ${o.description}
-                ${o.spare_parts_notes ? `<div class="mt-1 text-purple-300 font-semibold"><i class="fa-solid fa-boxes-stacked mr-1"></i> Repuestos: ${o.spare_parts_notes}</div>` : ''}
-            </div>
-
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-                <div>${stoppedIndicator}</div>
-                <div class="flex items-center gap-2">
-                    <button onclick="openOrderDetailModal(${o.id})" class="w-full sm:w-auto px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow">
-                        <i class="fa-solid fa-screwdriver-wrench"></i>
-                        <span>Gestionar Orden / Tiempos</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// -------------------------------------------------------------
-// MODAL: ORDER DETAIL, TIMER & SPARE PARTS
-// -------------------------------------------------------------
-
-async function openOrderDetailModal(orderId) {
-    let order = state.orders.find(o => o.id == orderId);
-
-    try {
-        const res = await fetch(`/api/orders/${orderId}`);
-        if (res.ok) {
-            order = await res.json();
-            // Update in local state
-            const idx = state.orders.findIndex(o => o.id == orderId);
-            if (idx >= 0) state.orders[idx] = order;
-        }
-    } catch (err) {
-        console.warn("Using local order details:", err);
-    }
-
-    if (!order) {
-        showToast('Orden no encontrada', 'error');
-        return;
-    }
-
-    state.activeOrder = order;
-
-    // Set text elements safely
-    document.getElementById('modal-order-number').textContent = order.order_number;
-    
-    // Status Badge (without outerHTML replacement)
-    const statusEl = document.getElementById('modal-order-status-badge');
-    if (statusEl) {
-        statusEl.textContent = order.status;
-        statusEl.className = getStatusBadgeClass(order.status);
-    }
-
-    document.getElementById('modal-machine-name').textContent = order.machine_name;
-    document.getElementById('modal-machine-location').textContent = `${order.machine_location || ''} (${order.machine_code || ''})`;
-    document.getElementById('modal-operator-name').textContent = order.operator_name;
-    document.getElementById('modal-report-timestamp').textContent = `${order.report_date} ${order.report_time}`;
-
-    // Failure Badge
-    const failEl = document.getElementById('modal-failure-type');
-    if (failEl) {
-        failEl.textContent = order.failure_type;
-        failEl.className = getFailureBadgeClass(order.failure_type);
-    }
-
-    // Stopped badge
-    const stoppedBadge = document.getElementById('modal-stopped-badge');
-    if (stoppedBadge) {
-        stoppedBadge.textContent = order.machine_stopped ? '🔴 MÁQUINA PARADA' : '🟢 EN OPERACIÓN';
-        stoppedBadge.className = order.machine_stopped 
-            ? 'px-2 py-0.5 rounded text-xs font-bold bg-rose-500/20 text-rose-300' 
-            : 'px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-300';
-    }
-
-    const downtimeEl = document.getElementById('modal-live-downtime');
-    if (downtimeEl) {
-        if (order.machine_stopped) {
-            downtimeEl.textContent = `Downtime: ${order.current_live_downtime_minutes || order.total_downtime_minutes || 0} min`;
-            downtimeEl.classList.remove('hidden');
-        } else {
-            downtimeEl.classList.add('hidden');
-        }
-    }
-
-    document.getElementById('modal-description').textContent = order.description;
-    document.getElementById('modal-diagnosis').value = order.diagnosis || '';
-    document.getElementById('modal-solution').value = order.solution_notes || '';
-    document.getElementById('modal-spare-parts-notes').value = order.spare_parts_notes || '';
-
-    // Populate modal technician select
-    const techSelect = document.getElementById('modal-technician-select');
-    if (techSelect) {
-        techSelect.innerHTML = '<option value="">-- Sin Asignar --</option>';
-        state.technicians.forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t.id;
-            opt.textContent = `${t.name} (${t.role})`;
-            techSelect.appendChild(opt);
-        });
-        techSelect.value = order.technician_id || '';
-    }
-
-    // Update Live Clock display
-    updateModalTimerDisplay();
-
-    // Render spare parts
-    renderModalSpareParts(order.parts || []);
-
-    // Show modal
-    document.getElementById('order-detail-modal').classList.remove('hidden');
-}
-
-function closeOrderDetailModal() {
-    document.getElementById('order-detail-modal').classList.add('hidden');
-    state.activeOrder = null;
-    loadOrdersList();
-    loadDashboardData();
-}
-
-function updateModalTimerDisplay() {
-    const o = state.activeOrder;
-    if (!o) return;
-
-    const timerDisplay = document.getElementById('modal-timer-display');
-    const timerLabel = document.getElementById('modal-timer-state-label');
-    const btnStart = document.getElementById('btn-timer-start');
-    const btnPause = document.getElementById('btn-timer-pause');
-    const btnFinish = document.getElementById('btn-finish-order');
-
-    const totalSeconds = o.current_live_duration_seconds || o.repair_duration_seconds || 0;
-    if (timerDisplay) timerDisplay.textContent = formatSeconds(totalSeconds);
-
-    if (o.status === 'FINALIZADO') {
-        if (timerLabel) {
-            timerLabel.textContent = `Mantenimiento Finalizado (${formatSeconds(o.repair_duration_seconds || totalSeconds)})`;
-            timerLabel.className = "text-[11px] text-emerald-400 uppercase font-semibold";
-        }
-        if (btnStart) btnStart.classList.add('hidden');
-        if (btnPause) btnPause.classList.add('hidden');
-        if (btnFinish) btnFinish.classList.add('hidden');
-    } else if (o.is_timer_running) {
-        if (timerLabel) {
-            timerLabel.textContent = "Cronómetro Corriendo (En Intervención)";
-            timerLabel.className = "text-[11px] text-emerald-400 uppercase font-bold animate-pulse";
-        }
-        if (btnStart) btnStart.classList.add('hidden');
-        if (btnPause) btnPause.classList.remove('hidden');
-        if (btnFinish) btnFinish.classList.remove('hidden');
-    } else {
-        if (timerLabel) {
-            timerLabel.textContent = totalSeconds > 0 ? "Cronómetro Pausado" : "Cronómetro Detenido";
-            timerLabel.className = "text-[11px] text-slate-400 uppercase font-semibold";
-        }
-        if (btnStart) {
-            btnStart.classList.remove('hidden');
-            btnStart.innerHTML = `<i class="fa-solid fa-play"></i> ${totalSeconds > 0 ? 'Reanudar Cronómetro' : 'Iniciar Cronómetro'}`;
-        }
-        if (btnPause) btnPause.classList.add('hidden');
-        if (btnFinish) btnFinish.classList.remove('hidden');
-    }
-}
-
-async function startModalTimer() {
-    if (!state.activeOrder) return;
-
-    let techId = document.getElementById('modal-technician-select')?.value;
-    
-    // Auto-assign first tech if none chosen
-    if (!techId && state.technicians.length > 0) {
-        techId = state.technicians[0].id;
-        const sel = document.getElementById('modal-technician-select');
-        if (sel) sel.value = techId;
-    }
-
-    try {
-        await fetch(`/api/orders/${state.activeOrder.id}/timer/start`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ technician_id: techId ? parseInt(techId) : null })
-        });
-    } catch (err) {
-        console.warn("Offline timer start:", err);
-    }
-
-    // Update active order state locally
-    state.activeOrder.is_timer_running = 1;
-    state.activeOrder.status = 'EN_PROCESO';
-    state.activeOrder.timer_last_started_at = new Date().toISOString();
-    if (techId) {
-        state.activeOrder.technician_id = parseInt(techId);
-        const t = state.technicians.find(item => item.id == techId);
-        if (t) state.activeOrder.technician_name = t.name;
-    }
-
-    saveActiveOrderLocally();
-    updateModalTimerDisplay();
-    showToast('Cronómetro de reparación iniciado', 'success');
-}
-
-async function pauseModalTimer() {
-    if (!state.activeOrder) return;
-
-    try {
-        await fetch(`/api/orders/${state.activeOrder.id}/timer/pause`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
-    } catch (err) {
-        console.warn("Offline timer pause:", err);
-    }
-
-    state.activeOrder.is_timer_running = 0;
-    state.activeOrder.status = 'PAUSADO';
-    saveActiveOrderLocally();
-    updateModalTimerDisplay();
-    showToast('Cronómetro pausado', 'info');
-}
-
-async function saveOrderProgress() {
-    if (!state.activeOrder) return;
-
-    const diagnosis = document.getElementById('modal-diagnosis')?.value.trim() || '';
-    const solution = document.getElementById('modal-solution')?.value.trim() || '';
-    const spareNotes = document.getElementById('modal-spare-parts-notes')?.value.trim() || '';
-    const techId = document.getElementById('modal-technician-select')?.value;
-
-    try {
-        await fetch(`/api/orders/${state.activeOrder.id}/progress`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                diagnosis,
-                solution_notes: solution,
-                spare_parts_notes: spareNotes,
-                technician_id: techId ? parseInt(techId) : null
-            })
-        });
-    } catch (err) {
-        console.warn("Offline progress saved:", err);
-    }
-
-    state.activeOrder.diagnosis = diagnosis;
-    state.activeOrder.solution_notes = solution;
-    state.activeOrder.spare_parts_notes = spareNotes;
-    if (techId) {
-        state.activeOrder.technician_id = parseInt(techId);
-        const t = state.technicians.find(item => item.id == techId);
-        if (t) state.activeOrder.technician_name = t.name;
-    }
-    saveActiveOrderLocally();
-    showToast('¡Avance guardado! El cronómetro y la orden siguen abiertos.', 'success');
-}
-
-async function finishModalOrder() {
-    if (!state.activeOrder) return;
-
-    const diagnosis = document.getElementById('modal-diagnosis')?.value.trim() || '';
-    const solution = document.getElementById('modal-solution')?.value.trim() || '';
-    const spareNotes = document.getElementById('modal-spare-parts-notes')?.value.trim() || '';
-    const techId = document.getElementById('modal-technician-select')?.value;
-
-    if (!confirm('¿Deseas finalizar este mantenimiento? El cronómetro se detendrá automáticamente y se calculará el tiempo de reparación y parada.')) {
-        return;
-    }
-
-    let result = null;
-    try {
-        const res = await fetch(`/api/orders/${state.activeOrder.id}/finish`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                diagnosis,
-                solution_notes: solution,
-                spare_parts_notes: spareNotes,
-                technician_id: techId ? parseInt(techId) : null
-            })
-        });
-        if (res.ok) {
-            result = await res.json();
-        }
-    } catch (err) {
-        console.warn("Offline finish calculation:", err);
-    }
-
-    // Local finalization fallback
-    const totalSec = state.activeOrder.current_live_duration_seconds || state.activeOrder.repair_duration_seconds || 120;
-    const durationMin = Math.round(totalSec / 60 * 10) / 10;
-    
-    state.activeOrder.status = 'FINALIZADO';
-    state.activeOrder.is_timer_running = 0;
-    state.activeOrder.repair_duration_seconds = totalSec;
-    state.activeOrder.diagnosis = diagnosis;
-    state.activeOrder.solution_notes = solution;
-    state.activeOrder.spare_parts_notes = spareNotes;
-
-    // Release machine to OPERATIVA
-    const m = state.machines.find(item => item.id == state.activeOrder.machine_id);
-    if (m) m.status = 'OPERATIVA';
-
-    saveActiveOrderLocally();
-    localStorage.setItem('sm_machines', JSON.stringify(state.machines));
-
-    showToast(`¡Mantenimiento Finalizado! Tiempo de reparación: ${result ? result.repair_duration_minutes : durationMin} min. Máquina operativa.`, 'success');
-
-    closeOrderDetailModal();
-    loadDashboardData();
-    loadOrdersList();
-}
-
-function saveActiveOrderLocally() {
-    if (!state.activeOrder) return;
-    const idx = state.orders.findIndex(o => o.id == state.activeOrder.id);
-    if (idx >= 0) {
-        state.orders[idx] = { ...state.activeOrder };
-    }
-    localStorage.setItem('sm_orders', JSON.stringify(state.orders));
-}
-
-// -------------------------------------------------------------
-// SPARE PARTS (REPUESTOS) MANAGEMENT
-// -------------------------------------------------------------
-
-function toggleAddPartForm() {
-    const form = document.getElementById('add-part-form');
-    if (form) form.classList.toggle('hidden');
-}
-
-async function saveSparePart() {
-    if (!state.activeOrder) return;
-    const nameInput = document.getElementById('part-name');
-    const name = nameInput ? nameInput.value.trim() : '';
-
-    if (!name) {
-        showToast('Ingresa el nombre del repuesto (Ej: Rodamiento 6204)', 'warning');
-        return;
-    }
-
-    const qty = parseFloat(document.getElementById('part-qty')?.value) || 1;
-    const unit = document.getElementById('part-unit')?.value.trim() || 'unidad';
-    const code = document.getElementById('part-code')?.value.trim() || '';
-    const cost = parseFloat(document.getElementById('part-cost')?.value) || 0;
-
-    const newPart = {
-        id: Date.now(),
-        order_id: state.activeOrder.id,
-        part_name: name,
-        quantity: qty,
-        unit: unit,
-        part_code: code,
-        unit_cost: cost
-    };
-
-    try {
-        await fetch(`/api/orders/${state.activeOrder.id}/parts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newPart)
-        });
-    } catch (err) {
-        console.warn("Offline save part:", err);
-    }
-
-    if (!state.activeOrder.parts) state.activeOrder.parts = [];
-    state.activeOrder.parts.push(newPart);
-
-    // Update notes text
-    const summary = `${name} (x${qty} ${unit})`;
-    const currNotes = state.activeOrder.spare_parts_notes || '';
-    state.activeOrder.spare_parts_notes = currNotes ? `${currNotes}, ${summary}` : summary;
-    const notesInput = document.getElementById('modal-spare-parts-notes');
-    if (notesInput) notesInput.value = state.activeOrder.spare_parts_notes;
-
-    saveActiveOrderLocally();
-    renderModalSpareParts(state.activeOrder.parts);
-
-    // Clean inputs
-    if (nameInput) nameInput.value = '';
-    const codeIn = document.getElementById('part-code');
-    if (codeIn) codeIn.value = '';
-    const costIn = document.getElementById('part-cost');
-    if (costIn) costIn.value = '';
-
-    showToast(`Repuesto agregado: ${name}`, 'success');
-}
-
-async function deleteSparePart(partId) {
-    if (!confirm('¿Eliminar este repuesto?')) return;
-
-    try {
-        await fetch(`/api/parts/${partId}`, { method: 'DELETE' });
-    } catch (err) {
-        console.warn("Offline delete part:", err);
-    }
-
-    if (state.activeOrder && state.activeOrder.parts) {
-        state.activeOrder.parts = state.activeOrder.parts.filter(p => p.id != partId);
-        renderModalSpareParts(state.activeOrder.parts);
-        saveActiveOrderLocally();
-    }
-    showToast('Repuesto eliminado', 'info');
-}
-
-function renderModalSpareParts(parts) {
-    const container = document.getElementById('modal-parts-container');
-    if (!container) return;
-
-    if (!parts || parts.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-500 italic">No se han registrado repuestos utilizados aún.</p>`;
-        return;
-    }
-
-    container.innerHTML = parts.map(p => `
-        <div class="flex items-center justify-between p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-gear text-purple-400"></i>
-                <div>
-                    <span class="font-bold text-white">${p.part_name}</span>
-                    <span class="text-slate-400 ml-1">x${p.quantity} ${p.unit}</span>
-                    ${p.part_code ? `<span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-1 font-mono">${p.part_code}</span>` : ''}
-                </div>
-            </div>
-            <button onclick="deleteSparePart(${p.id})" class="text-slate-500 hover:text-rose-400 p-1" title="Eliminar">
-                <i class="fa-solid fa-trash-can"></i>
-            </button>
-        </div>
-    `).join('');
-}
-
-// -------------------------------------------------------------
-// VIEW 4: MACHINES & QR CODE GENERATION
-// -------------------------------------------------------------
-
-function renderMachinesGrid() {
-    const grid = document.getElementById('machines-grid');
-    if (!grid) return;
-
-    if (state.machines.length === 0) {
-        grid.innerHTML = `<p class="col-span-3 text-center text-slate-500 py-8">No hay máquinas registradas.</p>`;
-        return;
-    }
-
-    grid.innerHTML = state.machines.map(m => {
-        let statusBadge = '';
-        if (m.status === 'PARADA') {
-            statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">🔴 PARADA</span>`;
-        } else if (m.status === 'EN_MANTENIMIENTO') {
-            statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">🟡 EN MANTENIMIENTO</span>`;
-        } else {
-            statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">🟢 OPERATIVA</span>`;
-        }
-
-        return `
-            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-lg flex flex-col justify-between space-y-4 hover:border-slate-700 transition-all">
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="font-mono text-xs font-black text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20">${m.code}</span>
-                        ${statusBadge}
-                    </div>
-
-                    <h3 class="text-xl font-black text-white tracking-tight">${m.name}</h3>
-                    <p class="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
-                        <i class="fa-solid fa-location-dot text-slate-500"></i> ${m.location || 'Planta'}
-                    </p>
-                    ${m.description ? `<p class="text-xs text-slate-500 mt-2 italic">${m.description}</p>` : ''}
-                </div>
-
-                <div class="pt-4 border-t border-slate-800 flex flex-col gap-2">
-                    <button onclick="openQRModal(${m.id})" class="w-full py-2.5 px-3 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center justify-center gap-2 transition-all">
-                        <i class="fa-solid fa-qrcode text-base"></i>
-                        <span>Generar & Imprimir QR</span>
-                    </button>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="openMachineModal(${m.id})" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-pen-to-square"></i> Editar Nombre
-                        </button>
-                        <button onclick="reportForMachine(${m.id})" class="py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow">
-                            <i class="fa-solid fa-plus"></i> Reportar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function reportForMachine(machineId) {
-    navigateTo('report');
-    preselectMachine(machineId);
-}
-
-// Helper to determine QR URL for both Vercel and local
-function getQrTargetUrl(machineId) {
-    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && !window.location.hostname.startsWith('192.168.')) {
-        return `${window.location.origin}/#report?machine_id=${machineId}`;
-    }
-    const host = state.settings.server_ip || window.location.hostname;
-    const port = state.settings.server_port || '5000';
-    return `http://${host}:${port}/#report?machine_id=${machineId}`;
-}
-
-let currentQRDataUrl = '';
-
-function openQRModal(machineId) {
-    const machine = state.machines.find(m => m.id == machineId);
-    if (!machine) return;
-
-    document.getElementById('qr-modal-machine-name').textContent = machine.name;
-    document.getElementById('qr-modal-machine-code').textContent = `CÓDIGO: ${machine.code}`;
-
-    const targetUrl = getQrTargetUrl(machine.id);
-    document.getElementById('qr-modal-url').textContent = targetUrl;
-
-    const container = document.getElementById('qr-code-container');
-    container.innerHTML = '';
-
-    // Render QRCode safely
-    if (typeof QRCode !== 'undefined') {
-        new QRCode(container, {
-            text: targetUrl,
-            width: 180,
-            height: 180,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-        });
-        setTimeout(() => {
-            const canvas = container.querySelector('canvas');
-            if (canvas) {
-                currentQRDataUrl = canvas.toDataURL('image/png');
-            } else {
-                const img = container.querySelector('img');
-                if (img) currentQRDataUrl = img.src;
-            }
-        }, 200);
-    } else {
-        // Fallback if QRCode CDN is not available
-        const fallbackImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(targetUrl)}`;
-        container.innerHTML = `<img src="${fallbackImgUrl}" alt="QR Code" class="mx-auto rounded-lg">`;
-        currentQRDataUrl = fallbackImgUrl;
-    }
-
-    document.getElementById('qr-modal').classList.remove('hidden');
-}
-
-function closeQRModal() {
-    document.getElementById('qr-modal').classList.add('hidden');
-}
-
-function downloadQRImage() {
-    if (!currentQRDataUrl) return;
-    const name = document.getElementById('qr-modal-machine-name').textContent.replace(/\s+/g, '_');
-    const a = document.createElement('a');
-    a.href = currentQRDataUrl;
-    a.download = `QR_${name}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
-
-function printSingleQRCard() {
-    window.print();
-}
-
-function copyQRUrl() {
-    const url = document.getElementById('qr-modal-url').textContent;
-    navigator.clipboard.writeText(url).then(() => {
-        showToast('Enlace directo copiado al portapapeles', 'info');
-    });
-}
-
-function openPrintAllModal() {
-    const container = document.getElementById('all-qr-cards-grid');
-    if (!container) return;
-    container.innerHTML = '';
-
-    state.machines.forEach((m, idx) => {
-        const cardId = `print-qr-${m.id}`;
-        const targetUrl = getQrTargetUrl(m.id);
-
-        const card = document.createElement('div');
-        card.className = "print-qr-sticker bg-white p-5 rounded-2xl border-4 border-slate-900 text-center text-slate-950 shadow-md";
-        card.innerHTML = `
-            <div class="border-b-2 border-slate-900 pb-1 mb-2 flex items-center justify-center gap-1">
-                <i class="fa-solid fa-gears text-blue-600 text-xs"></i>
-                <span class="font-black text-xs text-slate-900">SISTEMA MANTENIMIENTO</span>
-            </div>
-            <h4 class="font-black text-base uppercase text-slate-950">${m.name}</h4>
-            <p class="text-[10px] font-bold text-blue-700 uppercase mb-2">CÓDIGO: ${m.code}</p>
-            <div id="${cardId}" class="flex justify-center my-2"></div>
-            <div class="border-t-2 border-slate-900 pt-1 mt-2">
-                <p class="text-[9px] font-black uppercase text-slate-900">ESCANEÉ CON CELULAR PARA REPORTAR FALLA</p>
-                <p class="text-[7px] text-slate-600 font-mono mt-0.5">${targetUrl}</p>
-            </div>
-        `;
-        container.appendChild(card);
-
-        setTimeout(() => {
-            const qrEl = document.getElementById(cardId);
-            if (qrEl) {
-                if (typeof QRCode !== 'undefined') {
-                    new QRCode(qrEl, {
-                        text: targetUrl,
-                        width: 130,
-                        height: 130,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.M
-                    });
-                } else {
-                    qrEl.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(targetUrl)}" class="mx-auto">`;
-                }
-            }
-        }, 40 * idx);
-    });
-
-    document.getElementById('print-all-modal').classList.remove('hidden');
-}
-
-function closePrintAllModal() {
-    document.getElementById('print-all-modal').classList.add('hidden');
-}
-
-// -------------------------------------------------------------
-// MACHINE CRUD MODAL
-// -------------------------------------------------------------
-
-function openMachineModal(machineId = null) {
-    const title = document.getElementById('machine-modal-title');
-    const idInput = document.getElementById('modal-machine-id');
-    const codeInput = document.getElementById('machine-code-input');
-    const nameInput = document.getElementById('machine-name-input');
-    const locInput = document.getElementById('machine-location-input');
-    const descInput = document.getElementById('machine-desc-input');
-
-    if (machineId) {
-        const m = state.machines.find(item => item.id == machineId);
-        if (m) {
-            title.textContent = 'Editar Máquina';
-            idInput.value = m.id;
-            codeInput.value = m.code;
-            nameInput.value = m.name;
-            locInput.value = m.location || '';
-            descInput.value = m.description || '';
-        }
-    } else {
-        title.textContent = 'Nueva Máquina';
-        idInput.value = '';
-        codeInput.value = `MAQ-${String(state.machines.length + 1).padStart(3, '0')}`;
-        nameInput.value = `Máquina ${state.machines.length + 1}`;
-        locInput.value = 'Planta Principal';
-        descInput.value = '';
-    }
-
-    document.getElementById('machine-modal').classList.remove('hidden');
-}
-
-function closeMachineModal() {
-    document.getElementById('machine-modal').classList.add('hidden');
-}
-
-async function saveMachine(event) {
-    event.preventDefault();
-    const id = document.getElementById('modal-machine-id').value;
-    const code = document.getElementById('machine-code-input').value.trim().toUpperCase();
-    const name = document.getElementById('machine-name-input').value.trim();
-    const loc = document.getElementById('machine-location-input').value.trim();
-    const desc = document.getElementById('machine-desc-input').value.trim();
-
-    const payload = { code, name, location: loc, description: desc };
-
-    try {
-        const url = id ? `/api/machines/${id}` : '/api/machines';
-        const method = id ? 'PUT' : 'POST';
-        await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-    } catch (err) {
-        console.warn("Offline save machine:", err);
-    }
-
-    if (id) {
-        const idx = state.machines.findIndex(m => m.id == id);
-        if (idx >= 0) {
-            state.machines[idx] = { ...state.machines[idx], ...payload };
-        }
-    } else {
-        state.machines.push({
-            id: Date.now(),
-            status: 'OPERATIVA',
-            ...payload
-        });
-    }
-
-    localStorage.setItem('sm_machines', JSON.stringify(state.machines));
-    showToast('Máquina guardada exitosamente', 'success');
-    closeMachineModal();
-    populateFormDropdowns();
-    populateFilterMachines();
-    renderQuickMachineChips();
-    renderMachinesGrid();
-}
-
-// -------------------------------------------------------------
-// VIEW 5: TECHNICIANS CRUD
-// -------------------------------------------------------------
 
 function renderTechniciansGrid() {
     const grid = document.getElementById('technicians-grid');
     if (!grid) return;
-
-    if (state.technicians.length === 0) {
-        grid.innerHTML = `<p class="col-span-4 text-center text-slate-500 py-8">No hay técnicos registrados.</p>`;
-        return;
-    }
-
     grid.innerHTML = state.technicians.map(t => `
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-lg flex flex-col justify-between space-y-4 hover:border-slate-700 transition-all">
-            <div>
-                <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-xl mb-3">
-                    <i class="fa-solid fa-user-gear"></i>
+        <div class="cf-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+            <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center justify-center font-bold text-base">
+                        ${t.name.charAt(0)}
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white">${t.name}</h3>
+                        <p class="text-xs text-purple-300">${t.role}</p>
+                        <p class="text-[11px] text-zinc-400">${t.specialty || ''}</p>
+                    </div>
                 </div>
-                <h3 class="text-lg font-black text-white">${t.name}</h3>
-                <p class="text-xs text-cyan-400 font-semibold mt-0.5">${t.role}</p>
-                ${t.phone ? `<p class="text-xs text-slate-400 mt-2"><i class="fa-solid fa-phone text-slate-500"></i> ${t.phone}</p>` : ''}
+                <div class="flex gap-1">
+                    <button onclick="openTechnicianModal(${t.id})" class="p-1.5 rounded-lg bg-zinc-900 text-zinc-400 hover:text-white text-xs"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteTechnician(${t.id})" class="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 text-xs"><i class="fa-solid fa-trash"></i></button>
+                </div>
             </div>
-
-            <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                <span>Órdenes activas: <strong class="text-white">${t.active_orders || 0}</strong></span>
-                <button onclick="openTechnicianModal(${t.id})" class="text-blue-400 hover:text-blue-300 font-semibold">
-                    Editar
-                </button>
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.06] text-xs">
+                <div class="p-2 rounded-xl bg-zinc-950 text-center">
+                    <span class="text-[10px] text-zinc-500 block">Activas</span>
+                    <strong class="font-mono text-amber-400 text-sm">${t.active_orders || 0}</strong>
+                </div>
+                <div class="p-2 rounded-xl bg-zinc-950 text-center">
+                    <span class="text-[10px] text-zinc-500 block">Finalizadas</span>
+                    <strong class="font-mono text-emerald-400 text-sm">${t.finished_orders || 0}</strong>
+                </div>
             </div>
         </div>
     `).join('');
 }
 
 function openTechnicianModal(techId = null) {
-    const title = document.getElementById('technician-modal-title');
-    const idInput = document.getElementById('modal-technician-id');
-    const nameInput = document.getElementById('tech-name-input');
-    const roleInput = document.getElementById('tech-role-input');
-    const phoneInput = document.getElementById('tech-phone-input');
-
+    document.getElementById('tech-edit-id').value = techId || '';
     if (techId) {
-        const t = state.technicians.find(item => item.id == techId);
+        const t = state.technicians.find(x => x.id == techId);
         if (t) {
-            title.textContent = 'Editar Técnico';
-            idInput.value = t.id;
-            nameInput.value = t.name;
-            roleInput.value = t.role || '';
-            phoneInput.value = t.phone || '';
+            document.getElementById('tech-name-input').value = t.name;
+            document.getElementById('tech-role-input').value = t.role || '';
+            document.getElementById('tech-specialty-input').value = t.specialty || '';
+            document.getElementById('tech-phone-input').value = t.phone || '';
         }
     } else {
-        title.textContent = 'Nuevo Técnico / Ingeniero';
-        idInput.value = '';
-        nameInput.value = `Ingeniero ${state.technicians.length + 1}`;
-        roleInput.value = 'Ingeniero de Mantenimiento';
-        phoneInput.value = '';
+        document.getElementById('tech-name-input').value = '';
+        document.getElementById('tech-role-input').value = 'Especialista de Mantenimiento';
+        document.getElementById('tech-specialty-input').value = 'Electromecánica';
+        document.getElementById('tech-phone-input').value = '';
     }
-
     document.getElementById('technician-modal').classList.remove('hidden');
 }
 
@@ -1616,273 +2361,58 @@ function closeTechnicianModal() {
     document.getElementById('technician-modal').classList.add('hidden');
 }
 
-async function saveTechnician(event) {
-    event.preventDefault();
-    const id = document.getElementById('modal-technician-id').value;
-    const name = document.getElementById('tech-name-input').value.trim();
-    const role = document.getElementById('tech-role-input').value.trim();
-    const phone = document.getElementById('tech-phone-input').value.trim();
-
-    const payload = { name, role, phone };
-
-    try {
-        const url = id ? `/api/technicians/${id}` : '/api/technicians';
-        const method = id ? 'PUT' : 'POST';
-        await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-    } catch (err) {
-        console.warn("Offline save tech:", err);
-    }
-
-    if (id) {
-        const idx = state.technicians.findIndex(t => t.id == id);
-        if (idx >= 0) state.technicians[idx] = { ...state.technicians[idx], ...payload };
-    } else {
-        state.technicians.push({ id: Date.now(), ...payload });
-    }
-
-    localStorage.setItem('sm_technicians', JSON.stringify(state.technicians));
-    showToast('Técnico guardado exitosamente', 'success');
-    closeTechnicianModal();
-    populateFormDropdowns();
-    renderTechniciansGrid();
-}
-
-// -------------------------------------------------------------
-// CAMERA SCANNER & FALLBACK
-// -------------------------------------------------------------
-
-function renderScannerMachineList() {
-    const list = document.getElementById('scanner-machine-quick-list');
-    if (!list) return;
-
-    list.innerHTML = state.machines.map(m => `
-        <button type="button" onclick="selectFromScanner(${m.id})" 
-            class="px-3 py-2 bg-slate-800 hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all border border-slate-700">
-            <i class="fa-solid fa-industry mr-1 text-slate-400"></i>
-            ${m.name}
-        </button>
-    `).join('');
-}
-
-function selectFromScanner(machineId) {
-    closeCameraScannerModal();
-    navigateTo('report');
-    preselectMachine(machineId);
-}
-
-function openCameraScannerModal() {
-    document.getElementById('scanner-modal').classList.remove('hidden');
-    renderScannerMachineList();
-
-    if (typeof Html5Qrcode === 'undefined') {
-        return;
-    }
-
-    try {
-        if (!state.html5QrCode) {
-            state.html5QrCode = new Html5Qrcode("qr-reader");
-        }
-
-        const config = { fps: 10, qrbox: { width: 220, height: 220 } };
-
-        state.html5QrCode.start(
-            { facingMode: "environment" },
-            config,
-            onQrCodeSuccess,
-            onQrCodeError
-        ).catch(err => {
-            console.warn("Camera not accessible:", err);
-            // Non-fatal: user has the quick buttons right below!
-        });
-    } catch (e) {
-        console.warn("Scanner setup skipped:", e);
-    }
-}
-
-function onQrCodeSuccess(decodedText) {
-    showToast(`¡Código QR detectado!`, 'success');
-    closeCameraScannerModal();
-
-    try {
-        const url = new URL(decodedText);
-        const machineId = url.searchParams.get('machine_id');
-        const machineCode = url.searchParams.get('machine_code');
-
-        navigateTo('report');
-        if (machineId) {
-            preselectMachine(machineId);
-        } else if (machineCode) {
-            preselectMachineByCode(machineCode);
-        }
-    } catch (e) {
-        navigateTo('report');
-        preselectMachineByCode(decodedText);
-    }
-}
-
-function onQrCodeError(errorMessage) {}
-
-function closeCameraScannerModal() {
-    if (state.html5QrCode) {
-        state.html5QrCode.stop().catch(() => {}).finally(() => {
-            document.getElementById('scanner-modal')?.classList.add('hidden');
-        });
-    } else {
-        document.getElementById('scanner-modal')?.classList.add('hidden');
-    }
-}
-
-// -------------------------------------------------------------
-// SETTINGS
-// -------------------------------------------------------------
-
-function openSettingsModal() {
-    const sIp = document.getElementById('settings-server-ip');
-    const sPort = document.getElementById('settings-server-port');
-    const sName = document.getElementById('settings-company-name');
-
-    if (sIp) sIp.value = state.settings.server_ip;
-    if (sPort) sPort.value = state.settings.server_port || '5000';
-    if (sName) sName.value = state.settings.company_name;
-
-    document.getElementById('settings-modal').classList.remove('hidden');
-}
-
-function closeSettingsModal() {
-    document.getElementById('settings-modal').classList.add('hidden');
-}
-
-async function saveSettings(event) {
-    event.preventDefault();
-    const server_ip = document.getElementById('settings-server-ip').value.trim();
-    const server_port = document.getElementById('settings-server-port').value.trim();
-    const company_name = document.getElementById('settings-company-name').value.trim();
-
-    try {
-        await fetch('/api/settings', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ server_ip, server_port, company_name })
-        });
-    } catch (err) {}
-
-    state.settings.server_ip = server_ip;
-    state.settings.server_port = server_port;
-    state.settings.company_name = company_name;
-
-    showToast('Configuración guardada', 'success');
-    closeSettingsModal();
-}
-
-// -------------------------------------------------------------
-// LIVE TICK FOR CLOCKS & DOWNTIME
-// -------------------------------------------------------------
-
-function tickLiveClocks() {
-    if (state.activeOrder && state.activeOrder.is_timer_running) {
-        state.activeOrder.current_live_duration_seconds = (state.activeOrder.current_live_duration_seconds || state.activeOrder.repair_duration_seconds || 0) + 1;
-        const timerDisplay = document.getElementById('modal-timer-display');
-        if (timerDisplay) {
-            timerDisplay.textContent = formatSeconds(state.activeOrder.current_live_duration_seconds);
-        }
-    }
-
-    const clocks = document.querySelectorAll('.live-clock[data-running="1"]');
-    clocks.forEach(el => {
-        let sec = parseInt(el.getAttribute('data-seconds') || '0') + 1;
-        el.setAttribute('data-seconds', sec);
-        el.textContent = formatSeconds(sec);
+async function saveTechnicianForm(e) {
+    e.preventDefault();
+    const editId = document.getElementById('tech-edit-id').value;
+    const payload = {
+        name: document.getElementById('tech-name-input').value.trim(),
+        role: document.getElementById('tech-role-input').value.trim(),
+        specialty: document.getElementById('tech-specialty-input').value.trim(),
+        phone: document.getElementById('tech-phone-input').value.trim()
+    };
+    const url = editId ? `/api/technicians/${editId}` : '/api/technicians';
+    const method = editId ? 'PUT' : 'POST';
+    const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
     });
-}
-
-// -------------------------------------------------------------
-// BADGES & FORMATTING
-// -------------------------------------------------------------
-
-function formatSeconds(totalSec) {
-    totalSec = Math.max(0, parseInt(totalSec) || 0);
-    const hours = Math.floor(totalSec / 3600);
-    const minutes = Math.floor((totalSec % 3600) / 60);
-    const seconds = Math.floor(totalSec % 60);
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-}
-
-function getStatusBadge(status) {
-    switch (status) {
-        case 'PENDIENTE':
-            return `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">PENDIENTE</span>`;
-        case 'EN_PROCESO':
-            return `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 animate-pulse">EN PROCESO</span>`;
-        case 'PAUSADO':
-            return `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-700 text-slate-300 border border-slate-600">PAUSADO</span>`;
-        case 'FINALIZADO':
-            return `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">FINALIZADO</span>`;
-        default:
-            return `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400">${status || 'PENDIENTE'}</span>`;
+    if (res.ok) {
+        closeTechnicianModal();
+        await loadTechnicians();
+        showToast('Técnico guardado', 'success');
     }
 }
 
-function getStatusBadgeClass(status) {
-    switch (status) {
-        case 'PENDIENTE': return 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300';
-        case 'EN_PROCESO': return 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 animate-pulse';
-        case 'PAUSADO': return 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-700 text-slate-300';
-        case 'FINALIZADO': return 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300';
-        default: return 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400';
-    }
+async function deleteTechnician(techId) {
+    if (!confirm('¿Desactivar este técnico?')) return;
+    await fetch(`/api/technicians/${techId}`, { method: 'DELETE' });
+    await loadTechnicians();
 }
 
-function getFailureBadge(failureType) {
-    switch (failureType) {
-        case 'ELECTRICA':
-            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30"><i class="fa-solid fa-bolt text-[10px]"></i> Eléctrica</span>`;
-        case 'MECANICA':
-            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30"><i class="fa-solid fa-gear text-[10px]"></i> Mecánica</span>`;
-        case 'AMBAS':
-            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30"><i class="fa-solid fa-bolt text-[10px]"></i><i class="fa-solid fa-gear text-[10px]"></i> Ambas</span>`;
-        default:
-            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700"><i class="fa-solid fa-question text-[10px]"></i> No sabe</span>`;
-    }
-}
-
-function getFailureBadgeClass(failureType) {
-    switch (failureType) {
-        case 'ELECTRICA': return 'px-2 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-300';
-        case 'MECANICA': return 'px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-300';
-        case 'AMBAS': return 'px-2 py-0.5 rounded text-xs font-bold bg-purple-500/20 text-purple-300';
-        default: return 'px-2 py-0.5 rounded text-xs font-bold bg-slate-800 text-slate-300';
-    }
-}
+// ============================================================================
+// TOAST NOTIFICATIONS
+// ============================================================================
 
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
-    const toast = document.createElement('div');
-    toast.className = `p-4 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-3 transition-all transform translate-y-2 pointer-events-auto border max-w-sm`;
+    const colors = {
+        success: 'border-emerald-500/40 bg-zinc-950/95 text-emerald-300',
+        error: 'border-rose-500/40 bg-zinc-950/95 text-rose-300',
+        warning: 'border-amber-500/40 bg-zinc-950/95 text-amber-300',
+        info: 'border-purple-500/40 bg-zinc-950/95 text-purple-200'
+    };
 
-    if (type === 'success') {
-        toast.className += ' bg-emerald-950 text-emerald-200 border-emerald-700';
-        toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-base"></i> <span>${message}</span>`;
-    } else if (type === 'error') {
-        toast.className += ' bg-rose-950 text-rose-200 border-rose-700';
-        toast.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-400 text-base"></i> <span>${message}</span>`;
-    } else if (type === 'warning') {
-        toast.className += ' bg-amber-950 text-amber-200 border-amber-700';
-        toast.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-400 text-base"></i> <span>${message}</span>`;
-    } else {
-        toast.className += ' bg-slate-900 text-slate-200 border-slate-700';
-        toast.innerHTML = `<i class="fa-solid fa-circle-info text-blue-400 text-base"></i> <span>${message}</span>`;
-    }
-
-    container.appendChild(toast);
+    const el = document.createElement('div');
+    el.className = `pointer-events-auto p-3.5 rounded-2xl border shadow-2xl backdrop-blur-xl text-xs font-semibold flex items-center justify-between gap-3 transition-all ${colors[type] || colors.info}`;
+    el.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()" class="text-zinc-500 hover:text-white">&times;</button>
+    `;
+    container.appendChild(el);
     setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+        if (el.parentElement) el.remove();
+    }, 4500);
 }

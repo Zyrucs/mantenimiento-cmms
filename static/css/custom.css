@@ -1,78 +1,168 @@
-/* SistMaint - Custom CSS Styles & Print Sheet */
+/* ==========================================================================
+   SistMaint CMMS 2.0 - MagicUI Codeforge + Toggl Track Web Aesthetic
+   ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+    --bg-obsidian: #09090b;
+    --bg-surface: #101014;
+    --bg-elevated: #16161d;
+    --border-subtle: rgba(255, 255, 255, 0.07);
+    --border-glow: rgba(139, 92, 246, 0.35);
+    --toggl-purple: #a855f7;
+    --toggl-pink: #ec4899;
+    --codeforge-indigo: #6366f1;
+}
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg-obsidian);
+    color: #e4e4e7;
+    overflow-x: hidden;
 }
 
 .font-mono {
     font-family: 'JetBrains Mono', monospace;
 }
 
+/* Codeforge Ambient Background Grid & Radial Spotlight */
+.codeforge-bg {
+    background-color: #09090b;
+    background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -15%, rgba(124, 58, 237, 0.14), transparent),
+        radial-gradient(ellipse 50% 40% at 90% 10%, rgba(59, 130, 246, 0.08), transparent),
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+}
+
+/* Codeforge Bento Card */
+.cf-card {
+    background: linear-gradient(180deg, rgba(24, 24, 30, 0.85) 0%, rgba(15, 15, 20, 0.92) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cf-card:hover {
+    border-color: rgba(255, 255, 255, 0.13);
+}
+
+.cf-card-interactive:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 8px 30px -4px rgba(139, 92, 246, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Toggl Track Style Sidebar Navigation Item */
+.toggl-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: 0.65rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #a1a1aa;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    width: 100%;
+    text-align: left;
+}
+
+.toggl-nav-item:hover {
+    color: #f4f4f5;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.toggl-nav-item.active {
+    color: #ffffff;
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.18) 0%, rgba(99, 102, 241, 0.06) 100%);
+    border-color: rgba(139, 92, 246, 0.32);
+    font-weight: 600;
+}
+
+.toggl-nav-item.active i {
+    color: #c084fc;
+}
+
+/* Toggl Track Live Timer Bar Glow */
+.toggl-timer-active {
+    background: linear-gradient(90deg, rgba(24, 16, 40, 0.95) 0%, rgba(17, 24, 39, 0.95) 50%, rgba(16, 32, 28, 0.95) 100%);
+    border-bottom: 1px solid rgba(168, 85, 247, 0.35);
+}
+
 /* Scrollbar customization */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 ::-webkit-scrollbar-track {
-    background: #0f172a;
+    background: #09090b;
 }
 ::-webkit-scrollbar-thumb {
-    background: #334155;
-    border-radius: 4px;
+    background: #27272a;
+    border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #475569;
+    background: #3f3f46;
 }
 
-/* Animations */
-@keyframes pulseSlow {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.85; transform: scale(0.995); }
+/* Pulsing Status Indicator */
+@keyframes pulse-ring {
+    0% { transform: scale(0.85); opacity: 0.85; }
+    50% { transform: scale(1.2); opacity: 0.35; }
+    100% { transform: scale(0.85); opacity: 0.85; }
 }
 
-.pulse-timer {
-    animation: pulseSlow 2s infinite ease-in-out;
+.timer-pulse {
+    animation: pulse-ring 1.6s infinite ease-in-out;
 }
 
-/* Print Styles for QR Sticker Labels */
+/* 2027 Matrix Month Cell */
+.month-cell {
+    transition: all 0.15s ease;
+    user-select: none;
+}
+.month-cell:hover {
+    transform: translateY(-1px);
+}
+
+/* QR Code Container Styling */
+.qr-container canvas,
+.qr-container img {
+    margin: 0 auto;
+    border-radius: 8px;
+    padding: 8px;
+    background: #ffffff;
+}
+
+/* Print Styles for QR Codes Sheet & Hoja de Vida */
 @media print {
-    body * {
-        visibility: hidden;
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
     }
-    
-    /* When printing a single QR card */
-    #printable-qr-card, #printable-qr-card * {
-        visibility: visible;
+    aside, header, footer, .no-print, #order-detail-modal, #machine-modal, #login-modal, #plan-modal, #category-modal, #notification-drawer {
+        display: none !important;
     }
-    #printable-qr-card {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        box-shadow: none !important;
-        border: 3px solid #000 !important;
-        page-break-inside: avoid;
+    main {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
     }
-
-    /* When printing all QR labels */
-    #print-sheet-container, #print-sheet-container * {
-        visibility: visible;
-    }
-    #print-sheet-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+    #view-machines {
+        display: block !important;
         background: white !important;
         color: black !important;
-        padding: 10mm;
+        padding: 5mm !important;
     }
     #all-qr-cards-grid {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 15mm !important;
+        gap: 10mm !important;
     }
     .print-qr-sticker {
         visibility: visible !important;

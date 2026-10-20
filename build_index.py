@@ -1,4 +1,5 @@
 import os
+import re
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -16,13 +17,19 @@ with open(css_path, 'r', encoding='utf-8') as f:
 with open(js_path, 'r', encoding='utf-8') as f:
     js = f.read()
 
-# Inline CSS
-css_tag = f"<style>\n{css}\n</style>"
-html = html.replace('<link rel="stylesheet" href="/static/css/custom.css">', css_tag)
+# Inline CSS via markers or link tag
+css_block = f"<!-- INLINE_CSS_START -->\n    <style>\n{css}\n    </style>\n    <!-- INLINE_CSS_END -->"
+if '<!-- INLINE_CSS_START -->' in html:
+    html = re.sub(r'<!-- INLINE_CSS_START -->.*?<!-- INLINE_CSS_END -->', lambda m: css_block, html, flags=re.DOTALL)
+else:
+    html = html.replace('<link rel="stylesheet" href="/static/css/custom.css">', css_block)
 
-# Inline JS
-js_tag = f"<script>\n{js}\n</script>"
-html = html.replace('<script src="/static/js/app.js"></script>', js_tag)
+# Inline JS via markers or script tag
+js_block = f"<!-- INLINE_JS_START -->\n    <script>\n{js}\n    </script>\n    <!-- INLINE_JS_END -->"
+if '<!-- INLINE_JS_START -->' in html:
+    html = re.sub(r'<!-- INLINE_JS_START -->.*?<!-- INLINE_JS_END -->', lambda m: js_block, html, flags=re.DOTALL)
+else:
+    html = html.replace('<script src="/static/js/app.js"></script>', js_block)
 
 with open(root_index_path, 'w', encoding='utf-8') as f:
     f.write(html)
@@ -30,4 +37,4 @@ with open(root_index_path, 'w', encoding='utf-8') as f:
 with open(template_path, 'w', encoding='utf-8') as f:
     f.write(html)
 
-print("SUCCESS: index.html created at root and templates with inlined assets!")
+print("SUCCESS: index.html and templates/index.html built with inlined v2 assets!")
