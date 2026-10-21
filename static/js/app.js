@@ -314,6 +314,7 @@ function applyRoleUI() {
 
     // Show/hide sections based on authentication & operator QR form state
     const heroSection = document.getElementById('hero');
+    const portalCards = document.getElementById('homepage-portal-cards');
     const demoSection = document.getElementById('demo');
     const demoTabsBar = document.getElementById('demo-tabs-bar');
     const operatorStandaloneBar = document.getElementById('operator-standalone-bar');
@@ -330,13 +331,19 @@ function applyRoleUI() {
         // Unauthenticated (Operario): Either locked Homepage OR standalone QR Report Form
         if (state.operatorFormOpen) {
             if (heroSection) heroSection.classList.add('hidden');
+            if (portalCards) portalCards.classList.add('hidden');
             if (demoSection) demoSection.classList.remove('hidden');
             if (demoTabsBar) demoTabsBar.classList.add('hidden');
             if (operatorStandaloneBar) operatorStandaloneBar.classList.remove('hidden');
         } else {
             if (heroSection) {
                 heroSection.classList.remove('hidden');
-                heroSection.classList.add('min-h-[calc(100vh-8.5rem)]');
+                heroSection.classList.add('flex-1', 'py-16', 'md:py-24');
+                heroSection.classList.remove('py-10', 'md:py-12');
+            }
+            if (portalCards) {
+                portalCards.classList.remove('hidden');
+                portalCards.classList.add('grid');
             }
             if (demoSection) demoSection.classList.add('hidden');
         }
@@ -364,8 +371,12 @@ function applyRoleUI() {
     } else {
         // Authenticated (Técnico or Jefe): Full workspace unlocked!
         if (heroSection) {
-            heroSection.classList.remove('hidden');
-            heroSection.classList.remove('min-h-[calc(100vh-8.5rem)]');
+            heroSection.classList.remove('hidden', 'flex-1', 'py-16', 'md:py-24');
+            heroSection.classList.add('py-10', 'md:py-12');
+        }
+        if (portalCards) {
+            portalCards.classList.add('hidden');
+            portalCards.classList.remove('grid');
         }
         if (demoSection) demoSection.classList.remove('hidden');
         if (demoTabsBar) {

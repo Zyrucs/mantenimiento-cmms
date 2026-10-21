@@ -146,16 +146,23 @@ body {
     transform: translateY(-1px);
 }
 
-/* Codeforge Dual Radial Violet Bloom Hero Glow (exact match to codeforge #hero) */
+/* Codeforge Dual Radial Violet Bloom Hero Glow (smooth fade, zero rectangular clipping) */
 .cf-violet-radial-1 {
-    background: radial-gradient(ellipse 65% 55% at 50% 88%, rgba(112, 51, 255, 0.38) 0%, rgba(140, 92, 255, 0.08) 55%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 100%);
+    background: radial-gradient(circle at 50% 42%, rgba(112, 51, 255, 0.32) 0%, rgba(140, 92, 255, 0.10) 38%, transparent 72%);
 }
 
 .cf-violet-radial-2 {
-    background: radial-gradient(ellipse 50% 45% at 50% 72%, rgba(140, 92, 255, 0.55) 0%, rgba(229, 124, 216, 0.12) 50%, transparent 100%);
-    filter: blur(48px);
+    background: radial-gradient(circle at 50% 38%, rgba(140, 92, 255, 0.28) 0%, rgba(229, 124, 216, 0.08) 42%, transparent 70%);
+}
+
+/* Architectural Grid with Radial Fade Mask for Hero */
+.cf-hero-grid {
+    background-size: 48px 48px;
+    background-image: 
+        linear-gradient(to right, rgba(140, 92, 255, 0.07) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(140, 92, 255, 0.07) 1px, transparent 1px);
+    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, #000 25%, transparent 80%);
+    mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, #000 25%, transparent 80%);
 }
 
 /* Codeforge Gradient Headline Text */
@@ -410,24 +417,17 @@ body {
     <!-- ===================================================================== -->
     <!-- CODEFORGE ARCHITECTURAL OUTER FRAME (max-w-7xl mx-auto border-x)      -->
     <!-- ===================================================================== -->
-    <div class="max-w-7xl mx-auto border-x cf-border">
-        <div class="flex flex-col cf-divide-y pt-16">
+    <div class="max-w-7xl mx-auto border-x cf-border min-h-screen flex flex-col justify-between relative">
+        <div class="flex flex-col cf-divide-y pt-16 flex-1">
 
             <!-- ============================================================= -->
             <!-- SECTION 1: CODEFORGE HERO SECTION (#hero) WITH VIOLET BLOOM   -->
             <!-- ============================================================= -->
-            <section id="hero" class="relative flex flex-col items-center justify-center px-4 py-16 md:py-24 min-h-[calc(100vh-8.5rem)] overflow-hidden no-print">
-                <!-- Exact 8-Div Corner Crosshairs (+) from codeforge-magicui.vercel.app -->
-                <div class="h-px absolute w-3 bg-current z-40 -bottom-px -left-3 opacity-40"></div>
-                <div class="h-px absolute w-3 bg-current z-40 -bottom-px left-0 opacity-40"></div>
-                <div class="w-px absolute h-3 bg-current z-40 -bottom-3 -left-px opacity-40"></div>
-                <div class="w-px absolute h-3 bg-current z-40 bottom-0 -left-px opacity-40"></div>
-                <div class="h-px absolute w-3 bg-current z-40 -bottom-px -right-3 opacity-40"></div>
-                <div class="h-px absolute w-3 bg-current z-40 -bottom-px right-0 opacity-40"></div>
-                <div class="w-px absolute h-3 bg-current z-40 -bottom-3 -right-px opacity-40"></div>
-                <div class="w-px absolute h-3 bg-current z-40 bottom-0 -right-px opacity-40"></div>
+            <section id="hero" class="relative flex flex-col items-center justify-center px-4 py-16 md:py-24 flex-1 no-print">
+                <!-- Architectural Grid with Radial Fade Mask (Zero hard edges!) -->
+                <div class="absolute inset-0 -z-10 h-full w-full cf-hero-grid pointer-events-none"></div>
 
-                <!-- Dual Violet Bloom Radial Glow Layers -->
+                <!-- Dual Violet Bloom Radial Glow Layers (Smooth circular fade, never clipped!) -->
                 <div class="
                     absolute inset-0 -z-10 h-full w-full cf-violet-radial-1 pointer-events-none
                 "></div>
@@ -436,38 +436,109 @@ body {
                 "></div>
 
                 <!-- Centered Hero Content -->
-                <div class="relative z-10 flex flex-col items-center justify-center text-center space-y-5 max-w-4xl mx-auto">
+                <div class="relative z-10 flex flex-col items-center justify-center text-center space-y-6 max-w-4xl mx-auto w-full">
                     
                     <!-- Codeforge Shadow-Badge Pill -->
-                    <div class="flex items-center gap-2 px-4 py-1.5 rounded-full shadow-badge">
+                    <div class="flex items-center gap-2.5 px-4 py-1.5 rounded-full shadow-badge backdrop-blur-md">
                         <span class="shrink-0 w-4 h-4 text-[#8c5cff]">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-4">
                                 <path d="M7.62758 1.09876C7.74088 1.03404 7.8691 1 7.99958 1C8.13006 1 8.25828 1.03404 8.37158 1.09876L13.6216 4.09876C13.7363 4.16438 13.8316 4.25915 13.8979 4.37347C13.9642 4.48779 13.9992 4.6176 13.9992 4.74976C13.9992 4.88191 13.9642 5.01172 13.8979 5.12604C13.8316 5.24036 13.7363 5.33513 13.6216 5.40076L8.37158 8.40076C8.25828 8.46548 8.13006 8.49952 7.99958 8.49952C7.8691 8.49952 7.74088 8.46548 7.62758 8.40076L2.37758 5.40076C2.26287 5.33513 2.16753 5.24036 2.10123 5.12604C2.03492 5.01172 2 4.88191 2 4.74976C2 4.6176 2.03492 4.48779 2.10123 4.37347C2.16753 4.25915 2.26287 4.16438 2.37758 4.09876L7.62758 1.09876Z" fill="currentColor"></path>
                             </svg>
                         </span>
                         <span id="header-view-title" class="text-xs sm:text-sm font-medium">Reportar Falla por QR</span>
-                        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#8c5cff]/20 text-[#8c5cff] font-bold">CLOUD LIVE</span>
+                        <span class="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-[#8c5cff]/20 text-[#8c5cff] font-bold">CLOUD LIVE</span>
                     </div>
 
                     <!-- Codeforge Display Headline -->
-                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-semibold tracking-tighter text-balance leading-[1.08]">
+                    <h1 class="text-4xl sm:text-6xl lg:text-[4.25rem] font-bold tracking-tighter text-balance leading-[1.06]">
                         Control de mantenimiento para <span class="vb-gradient-text">cada activo industrial</span>
                     </h1>
 
-                    <p id="header-view-subtitle" class="text-[var(--muted-foreground)] text-sm md:text-base text-center text-balance max-w-2xl mx-auto">
-                        Formulario rápido de planta para reportar averías en máquinas
+                    <p id="header-view-subtitle" class="text-[var(--muted-foreground)] text-sm sm:text-base md:text-lg text-center text-balance max-w-2xl mx-auto">
+                        Formulario rápido de planta para reportar averías en máquinas, con sincronización en tiempo real en Supabase Cloud.
                     </p>
 
                     <!-- Codeforge Dual Hero CTA Buttons (QR Report + Iniciar Sesión) -->
-                    <div id="hero-cta-buttons" class="flex flex-wrap items-center justify-center gap-3 pt-1">
-                        <button onclick="openOperatorQrForm(true)" class="vb-btn-primary rounded-full px-7 py-3 text-xs sm:text-sm font-semibold flex items-center gap-2">
-                            <i class="fa-solid fa-qrcode"></i>
+                    <div id="hero-cta-buttons" class="flex flex-wrap items-center justify-center gap-3.5 pt-2">
+                        <button onclick="openOperatorQrForm(true)" class="vb-btn-primary rounded-full px-8 py-3.5 text-xs sm:text-sm font-semibold flex items-center gap-2.5">
+                            <i class="fa-solid fa-qrcode text-sm"></i>
                             <span>Escanear QR / Reportar Falla</span>
                         </button>
-                        <button id="hero-login-btn" onclick="openLoginModal()" class="rounded-full px-7 py-3 text-xs sm:text-sm font-medium shadow-badge hover:border-[#8c5cff]/50 transition-all flex items-center gap-2">
+                        <button id="hero-login-btn" onclick="openLoginModal()" class="rounded-full px-8 py-3.5 text-xs sm:text-sm font-semibold shadow-badge hover:border-[#8c5cff]/60 transition-all flex items-center gap-2.5">
                             <i class="fa-solid fa-right-to-bracket text-[#8c5cff]"></i>
                             <span>Iniciar Sesión</span>
                         </button>
+                    </div>
+
+                    <!-- Homepage Architectural Access Portal Cards (Visible on Locked Homepage) -->
+                    <div id="homepage-portal-cards" class="w-full max-w-4xl pt-10 grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                        
+                        <!-- Card 1: Operario QR -->
+                        <div onclick="openOperatorQrForm(false)" class="group p-5 rounded-2xl cf-card shadow-badge hover:border-[#8c5cff]/50 cursor-pointer transition-all flex flex-col justify-between gap-4">
+                            <div class="flex items-center justify-between">
+                                <div class="w-10 h-10 rounded-xl bg-[#8c5cff]/15 border border-[#8c5cff]/30 text-[#8c5cff] flex items-center justify-center">
+                                    <i class="fa-solid fa-qrcode text-base"></i>
+                                </div>
+                                <span class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                    ACCESO LIBRE QR
+                                </span>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold group-hover:text-[#8c5cff] transition-colors">1. Operario de Planta</h3>
+                                <p class="text-xs text-[var(--muted-foreground)] mt-1 leading-relaxed">
+                                    Escanea el código QR de la máquina y envía el formulario de avería en segundos.
+                                </p>
+                            </div>
+                            <div class="pt-2 border-t cf-border flex items-center justify-between text-[11px] font-mono text-[#8c5cff] font-semibold">
+                                <span>Abrir Formulario QR</span>
+                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Técnico -->
+                        <div onclick="fillDemoLogin('tecnico', '1234'); openLoginModal();" class="group p-5 rounded-2xl cf-card shadow-badge hover:border-[#8c5cff]/50 cursor-pointer transition-all flex flex-col justify-between gap-4">
+                            <div class="flex items-center justify-between">
+                                <div class="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
+                                    <i class="fa-solid fa-stopwatch text-base"></i>
+                                </div>
+                                <span class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#8c5cff]/15 text-[#8c5cff] border border-[#8c5cff]/30">
+                                    REQUIERE LOGIN
+                                </span>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold group-hover:text-[#8c5cff] transition-colors">2. Técnico de Planta</h3>
+                                <p class="text-xs text-[var(--muted-foreground)] mt-1 leading-relaxed">
+                                    Visualiza máquinas dañadas, activa el cronómetro en vivo, consulta Hojas de Vida y Plan 2027.
+                                </p>
+                            </div>
+                            <div class="pt-2 border-t cf-border flex items-center justify-between text-[11px] font-mono text-[#8c5cff] font-semibold">
+                                <span>Entrar como Técnico</span>
+                                <i class="fa-solid fa-lock text-[10px]"></i>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Jefe de Mantenimiento -->
+                        <div onclick="fillDemoLogin('jefe', '1234'); openLoginModal();" class="group p-5 rounded-2xl cf-card shadow-badge hover:border-[#8c5cff]/50 cursor-pointer transition-all flex flex-col justify-between gap-4">
+                            <div class="flex items-center justify-between">
+                                <div class="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+                                    <i class="fa-solid fa-crown text-base"></i>
+                                </div>
+                                <span class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                    ADMIN / JEFE
+                                </span>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold group-hover:text-[#8c5cff] transition-colors">3. Jefe de Mantenimiento</h3>
+                                <p class="text-xs text-[var(--muted-foreground)] mt-1 leading-relaxed">
+                                    Dashboard ejecutivo de KPIs, clasificación de mantenimiento, asignación de técnicos y edición.
+                                </p>
+                            </div>
+                            <div class="pt-2 border-t cf-border flex items-center justify-between text-[11px] font-mono text-[#8c5cff] font-semibold">
+                                <span>Entrar como Jefe</span>
+                                <i class="fa-solid fa-lock text-[10px]"></i>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </section>
@@ -2080,6 +2151,7 @@ function applyRoleUI() {
 
     // Show/hide sections based on authentication & operator QR form state
     const heroSection = document.getElementById('hero');
+    const portalCards = document.getElementById('homepage-portal-cards');
     const demoSection = document.getElementById('demo');
     const demoTabsBar = document.getElementById('demo-tabs-bar');
     const operatorStandaloneBar = document.getElementById('operator-standalone-bar');
@@ -2096,13 +2168,19 @@ function applyRoleUI() {
         // Unauthenticated (Operario): Either locked Homepage OR standalone QR Report Form
         if (state.operatorFormOpen) {
             if (heroSection) heroSection.classList.add('hidden');
+            if (portalCards) portalCards.classList.add('hidden');
             if (demoSection) demoSection.classList.remove('hidden');
             if (demoTabsBar) demoTabsBar.classList.add('hidden');
             if (operatorStandaloneBar) operatorStandaloneBar.classList.remove('hidden');
         } else {
             if (heroSection) {
                 heroSection.classList.remove('hidden');
-                heroSection.classList.add('min-h-[calc(100vh-8.5rem)]');
+                heroSection.classList.add('flex-1', 'py-16', 'md:py-24');
+                heroSection.classList.remove('py-10', 'md:py-12');
+            }
+            if (portalCards) {
+                portalCards.classList.remove('hidden');
+                portalCards.classList.add('grid');
             }
             if (demoSection) demoSection.classList.add('hidden');
         }
@@ -2130,8 +2208,12 @@ function applyRoleUI() {
     } else {
         // Authenticated (Técnico or Jefe): Full workspace unlocked!
         if (heroSection) {
-            heroSection.classList.remove('hidden');
-            heroSection.classList.remove('min-h-[calc(100vh-8.5rem)]');
+            heroSection.classList.remove('hidden', 'flex-1', 'py-16', 'md:py-24');
+            heroSection.classList.add('py-10', 'md:py-12');
+        }
+        if (portalCards) {
+            portalCards.classList.add('hidden');
+            portalCards.classList.remove('grid');
         }
         if (demoSection) demoSection.classList.remove('hidden');
         if (demoTabsBar) {

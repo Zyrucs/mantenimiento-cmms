@@ -105,16 +105,23 @@ body {
     transform: translateY(-1px);
 }
 
-/* Codeforge Dual Radial Violet Bloom Hero Glow (exact match to codeforge #hero) */
+/* Codeforge Dual Radial Violet Bloom Hero Glow (smooth fade, zero rectangular clipping) */
 .cf-violet-radial-1 {
-    background: radial-gradient(ellipse 65% 55% at 50% 88%, rgba(112, 51, 255, 0.38) 0%, rgba(140, 92, 255, 0.08) 55%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 100%);
+    background: radial-gradient(circle at 50% 42%, rgba(112, 51, 255, 0.32) 0%, rgba(140, 92, 255, 0.10) 38%, transparent 72%);
 }
 
 .cf-violet-radial-2 {
-    background: radial-gradient(ellipse 50% 45% at 50% 72%, rgba(140, 92, 255, 0.55) 0%, rgba(229, 124, 216, 0.12) 50%, transparent 100%);
-    filter: blur(48px);
+    background: radial-gradient(circle at 50% 38%, rgba(140, 92, 255, 0.28) 0%, rgba(229, 124, 216, 0.08) 42%, transparent 70%);
+}
+
+/* Architectural Grid with Radial Fade Mask for Hero */
+.cf-hero-grid {
+    background-size: 48px 48px;
+    background-image: 
+        linear-gradient(to right, rgba(140, 92, 255, 0.07) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(140, 92, 255, 0.07) 1px, transparent 1px);
+    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, #000 25%, transparent 80%);
+    mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, #000 25%, transparent 80%);
 }
 
 /* Codeforge Gradient Headline Text */
