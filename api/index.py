@@ -28,9 +28,19 @@ class VercelPathFixer:
             else:
                 remaining_params.append((k, v))
 
+        if not override_path:
+            route_matches = environ.get('HTTP_X_NOW_ROUTE_MATCHES', '')
+            if route_matches:
+                for mk, mv in parse_qsl(route_matches):
+                    if mk in ('1', 'path', '__path') and mv:
+                        override_path = '/api/' + mv.lstrip('/')
+                        break
+
         if override_path:
             if not override_path.startswith('/'):
                 override_path = '/' + override_path
+            if not override_path.startswith('/api/'):
+                override_path = '/api' + override_path
             environ['PATH_INFO'] = override_path
             environ['QUERY_STRING'] = urlencode(remaining_params)
         else:
@@ -43,6 +53,9 @@ class VercelPathFixer:
                     path = raw_uri.split('?')[0]
                 else:
                     path = '/'
+            elif path and path != '/' and not path.startswith('/api/') and not path.startswith('/static/'):
+                path = '/api/' + path.lstrip('/')
+
             if not path.startswith('/'):
                 path = '/' + path
             environ['PATH_INFO'] = path

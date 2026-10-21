@@ -1135,8 +1135,8 @@ def create_order():
         description = f"Reporte de falla ({failure_type} {failure_subcategory}) reportado por {operator_name}"
 
     year = now.strftime('%Y')
-    count_row = conn.execute("SELECT COUNT(*) FROM maintenance_orders WHERE order_number LIKE ?", (f"OT-{year}-%",)).fetchone()
-    next_num = count_row[0] + 1
+    max_row = conn.execute("SELECT COALESCE(MAX(id), 0) FROM maintenance_orders").fetchone()
+    next_num = (max_row[0] if max_row else 0) + 1
     order_number = f"OT-{year}-{str(next_num).zfill(4)}"
 
     downtime_start = now.isoformat() if machine_stopped else None
@@ -1147,7 +1147,7 @@ def create_order():
             order_number, machine_id, maintenance_type, operator_name,
             report_date, report_time, failure_type, failure_subcategory, machine_stopped,
             downtime_start, priority, description, status, technician_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', ?)
     """, (
         order_number, machine_id, maint_type, operator_name,
         report_date, report_time, failure_type, failure_subcategory, machine_stopped,

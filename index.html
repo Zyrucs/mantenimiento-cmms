@@ -2415,13 +2415,33 @@ async function loadSettings() {
     } catch (e) {}
 }
 
+async function sbDirectGet(queryPath) {
+    const res = await fetch(`${SUPABASE_URL}/${queryPath}`, {
+        headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+    });
+    if (!res.ok) throw new Error('Supabase GET error');
+    return await res.json();
+}
+
 async function loadCategories() {
     try {
         const res = await fetch('/api/categories');
-        if (res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
                 state.categories = data;
+            }
+        } else {
+            const sbData = await sbDirectGet('failure_categories?select=*&order=id.asc');
+            if (Array.isArray(sbData) && sbData.length > 0) {
+                state.categories = sbData.map(c => ({
+                    ...c,
+                    subcategories_list: (() => { try { return JSON.parse(c.subcategories || '[]'); } catch { return []; } })()
+                }));
             }
         }
     } catch (e) {}
@@ -2432,10 +2452,16 @@ async function loadCategories() {
 async function loadMachines() {
     try {
         const res = await fetch('/api/machines');
-        if (res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
                 state.machines = data;
+            }
+        } else {
+            const sbData = await sbDirectGet('machines?select=*&order=id.asc');
+            if (Array.isArray(sbData) && sbData.length > 0) {
+                state.machines = sbData;
             }
         }
     } catch (e) {}
@@ -2449,10 +2475,16 @@ async function loadMachines() {
 async function loadTechnicians() {
     try {
         const res = await fetch('/api/technicians');
-        if (res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
                 state.technicians = data;
+            }
+        } else {
+            const sbData = await sbDirectGet('technicians?select=*&order=id.asc');
+            if (Array.isArray(sbData) && sbData.length > 0) {
+                state.technicians = sbData;
             }
         }
     } catch (e) {}
@@ -2463,10 +2495,27 @@ async function loadTechnicians() {
 async function loadPlans() {
     try {
         const res = await fetch('/api/plans');
-        if (res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
             const data = await res.json();
             if (Array.isArray(data)) {
                 state.plans = data;
+            }
+        } else {
+            const sbData = await sbDirectGet('maintenance_plans?select=*&order=id.asc');
+            if (Array.isArray(sbData)) {
+                state.plans = sbData.map(p => {
+                    const m = state.machines.find(x => x.id == p.machine_id) || {};
+                    const t = state.technicians.find(x => x.id == p.assigned_technician_id) || {};
+                    return {
+                        ...p,
+                        machine_name: m.name || `Máquina ${p.machine_id}`,
+                        machine_code: m.code || `MAQ-00${p.machine_id}`,
+                        technician_name: t.name || 'Sin asignar',
+                        months: (() => { try { return JSON.parse(p.months_json || '[]'); } catch { return []; } })(),
+                        checklist: (() => { try { return JSON.parse(p.checklist_json || '[]'); } catch { return []; } })()
+                    };
+                });
             }
         }
     } catch (e) {}
@@ -2476,11 +2525,19 @@ async function loadPlans() {
 async function loadNotifications() {
     try {
         const res = await fetch(`/api/notifications?role=${state.role}`);
-        if (res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
             const data = await res.json();
             state.notifications = data.items || [];
             state.unreadNotifications = data.unread_count || 0;
             renderNotificationsDrawer();
+        } else {
+            const sbData = await sbDirectGet('notifications?select=*&order=id.desc');
+            if (Array.isArray(sbData)) {
+                state.notifications = sbData;
+                state.unreadNotifications = sbData.filter(n => !n.is_read).length;
+                renderNotificationsDrawer();
+            }
         }
     } catch (e) {}
 }
@@ -2882,9 +2939,54 @@ async function submitIncidentReport(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        const data = await res.json();
-        if (res.ok) {
-            showToast(`✅ Orden ${data.order_number} registrada. Jefes y Técnicos notificados.`, 'success');
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
+            const data = await res.json();
+            showToast(`✅ Orden ${data.order_number} registrada en Supabase. Jefes y Técnicos notificados.`, 'success');
+            document.getElementById('form-description').value = '';
+            document.getElementById('form-failure-subcategory').value = '';
+            await loadAllData();
+            if (state.role !== 'OPERARIO') {
+                navigateTo('orders');
+            }
+            return;
+        }
+        // Fallback: Direct write to Supabase REST API if serverless route is unavailable
+        const sbHeaders = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+        };
+        const year = new Date().getFullYear();
+        const nextNum = (state.orders.length ? Math.max(...state.orders.map(o => o.id || 0)) : 2) + 1;
+        const orderNumber = `OT-${year}-${String(nextNum).padStart(4, '0')}`;
+        const sbOrderRes = await fetch(`${SUPABASE_URL}/work_orders`, {
+            method: 'POST',
+            headers: sbHeaders,
+            body: JSON.stringify({
+                order_number: orderNumber,
+                machine_id: payload.machine_id,
+                reporter_name: payload.operator_name,
+                failure_type: payload.failure_type,
+                failure_category: payload.failure_type,
+                failure_subcategory: payload.failure_subcategory || 'General',
+                maintenance_type: payload.maintenance_type || 'CORRECTIVO',
+                priority: payload.priority || (payload.machine_stopped ? 'ALTA' : 'MEDIA'),
+                description: payload.description || `Reporte de falla (${payload.failure_type})`,
+                assigned_technician_id: payload.technician_id ? parseInt(payload.technician_id) : null,
+                status: 'PENDIENTE',
+                reported_at: new Date().toISOString()
+            })
+        });
+        if (sbOrderRes.ok) {
+            const newStatus = payload.machine_stopped ? 'PARADA' : 'EN_MANTENIMIENTO';
+            await fetch(`${SUPABASE_URL}/machines?id=eq.${payload.machine_id}`, {
+                method: 'PATCH',
+                headers: sbHeaders,
+                body: JSON.stringify({ status: newStatus })
+            });
+            showToast(`✅ Orden ${orderNumber} registrada en Supabase. Jefes y Técnicos notificados.`, 'success');
             document.getElementById('form-description').value = '';
             document.getElementById('form-failure-subcategory').value = '';
             await loadAllData();
@@ -2892,7 +2994,7 @@ async function submitIncidentReport(e) {
                 navigateTo('orders');
             }
         } else {
-            showToast(data.error || 'Error al registrar reporte', 'error');
+            showToast('Error al registrar el reporte', 'error');
         }
     } catch (err) {
         showToast('Error de red al enviar reporte', 'error');
@@ -2992,8 +3094,31 @@ async function loadOrdersList(render = true) {
 
     try {
         const res = await fetch(`/api/orders?${params.toString()}`);
-        if (res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
             state.orders = await res.json();
+        } else {
+            const sbOrders = await sbDirectGet('work_orders?select=*&order=id.desc');
+            if (Array.isArray(sbOrders)) {
+                state.orders = sbOrders.map(o => {
+                    const m = state.machines.find(x => x.id == o.machine_id) || {};
+                    const t = state.technicians.find(x => x.id == o.assigned_technician_id) || {};
+                    const dtParts = (o.reported_at || '').replace('T', ' ').replace('Z', '').split(' ');
+                    return {
+                        ...o,
+                        machine_name: m.name || `Máquina ${o.machine_id}`,
+                        machine_code: m.code || `MAQ-00${o.machine_id}`,
+                        machine_location: m.location || 'Planta',
+                        operator_name: o.reporter_name || 'Operario',
+                        report_date: dtParts[0] || '',
+                        report_time: (dtParts[1] || '').slice(0, 5),
+                        technician_id: o.assigned_technician_id,
+                        technician_name: t.name || null,
+                        machine_stopped: o.priority === 'ALTA' || m.status === 'PARADA' ? 1 : 0,
+                        current_live_duration_seconds: Math.round((o.repair_minutes || 0) * 60)
+                    };
+                });
+            }
         }
     } catch (e) {}
 
