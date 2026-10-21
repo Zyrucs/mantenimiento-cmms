@@ -705,84 +705,90 @@ def push_to_cloud(conn, event_type="db_updated", summary=""):
         _sb_upsert_and_prune('technicians', tech_rows)
 
         # 5. work_orders (mapped from maintenance_orders + spare_parts_used)
-        orders_db = conn.execute("SELECT * FROM maintenance_orders").fetchall()
+        orders_db = [dict(r) for r in conn.execute("SELECT * FROM maintenance_orders").fetchall()]
         wo_rows = []
         for r in orders_db:
             sp_rows = conn.execute(
                 "SELECT part_name, quantity FROM spare_parts_used WHERE order_id = ?",
                 (r['id'],)
             ).fetchall()
-            sp_str = ", ".join(f"{s['part_name']} (x{s['quantity']})" for s in sp_rows)
-            rep_iso = r['created_at'] or f"{r['report_date']}T{r['report_time']}"
+            sp_str = ", ".join(f"{s['part_name']} (x{int(s['quantity']) if float(s['quantity']).is_integer() else s['quantity']})" for s in sp_rows)
+            if not sp_str and r.get('spare_parts_notes'):
+                sp_str = r.get('spare_parts_notes')
+
+            rep_iso = r.get('created_at') or f"{r.get('report_date', '')}T{r.get('report_time', '00:00:00')}"
             if rep_iso and ' ' in rep_iso and 'T' not in rep_iso:
                 rep_iso = rep_iso.replace(' ', 'T') + 'Z'
-            start_iso = r['start_time']
+            start_iso = r.get('repair_start') or None
             if start_iso and ' ' in start_iso and 'T' not in start_iso:
                 start_iso = start_iso.replace(' ', 'T') + 'Z'
-            end_iso = r['end_time']
+            end_iso = r.get('repair_end') or None
             if end_iso and ' ' in end_iso and 'T' not in end_iso:
                 end_iso = end_iso.replace(' ', 'T') + 'Z'
 
+            repair_mins = round(float(r.get('repair_duration_seconds') or 0) / 60.0, 2)
             wo_rows.append({
                 'id': r['id'],
                 'order_number': r['order_number'],
                 'machine_id': r['machine_id'],
-                'reporter_name': r['operator_name'],
-                'failure_type': r['failure_type'] or 'NO_SABE',
-                'failure_category': r['failure_category'] or 'Por Diagnosticar',
-                'failure_subcategory': r['failure_subcategory'] or 'General',
-                'maintenance_type': r['maintenance_type'] or 'CORRECTIVO',
-                'priority': r['priority'] or 'MEDIA',
-                'description': r['description'] or '',
-                'assigned_technician_id': r['technician_id'],
-                'status': r['status'] or 'REPORTADA',
+                'reporter_name': r.get('operator_name') or 'Operario',
+                'failure_type': r.get('failure_type') or 'NO_SABE',
+                'failure_category': r.get('failure_type') or 'Por Diagnosticar',
+                'failure_subcategory': r.get('failure_subcategory') or 'General',
+                'maintenance_type': r.get('maintenance_type') or 'CORRECTIVO',
+                'priority': r.get('priority') or 'MEDIA',
+                'description': r.get('description') or '',
+                'assigned_technician_id': r.get('technician_id'),
+                'status': r.get('status') or 'PENDIENTE',
                 'reported_at': rep_iso,
                 'started_at': start_iso,
                 'completed_at': end_iso,
-                'downtime_minutes': float(r['downtime_minutes'] or 0),
-                'repair_minutes': float(r['repair_time_minutes'] or 0),
-                'solution_notes': r['work_performed'] or '',
-                'spare_parts_used': sp_str
+                'downtime_minutes': float(r.get('total_downtime_minutes') or 0),
+                'repair_minutes': repair_mins,
+                'solution_notes': r.get('solution_notes') or '',
+                'spare_parts_used': sp_str or ''
             })
         _sb_upsert_and_prune('work_orders', wo_rows)
 
         # 6. maintenance_plans
+        plans_db = [dict(r) for r in conn.execute("SELECT * FROM maintenance_plans").fetchall()]
         plan_rows = [
             {
                 'id': r['id'],
                 'plan_code': r['plan_code'],
                 'machine_id': r['machine_id'],
                 'title': r['title'],
-                'maintenance_type': r['maintenance_type'] or 'PREVENTIVO',
-                'frequency': r['frequency'] or 'MENSUAL',
-                'year': int(r['year'] or 2027),
-                'months_json': r['months'] or '[]',
-                'scheduled_date': r['scheduled_date'] or '2027-01-15',
-                'estimated_minutes': int(r['estimated_minutes'] or 90),
-                'assigned_technician_id': r['assigned_technician_id'],
-                'checklist_json': r['checklist'] or '[]',
-                'status': r['status'] or 'PROGRAMADO',
-                'notes': r['notes'] or ''
+                'maintenance_type': r.get('maintenance_type') or 'PREVENTIVO',
+                'frequency': r.get('frequency') or 'MENSUAL',
+                'year': int(r.get('year') or 2027),
+                'months_json': r.get('months_json') or '[]',
+                'scheduled_date': r.get('scheduled_date') or '2027-01-15',
+                'estimated_minutes': int(r.get('estimated_minutes') or 90),
+                'assigned_technician_id': r.get('assigned_technician_id'),
+                'checklist_json': r.get('checklist_json') or '[]',
+                'status': r.get('status') or 'PROGRAMADO',
+                'notes': r.get('description') or ''
             }
-            for r in conn.execute("SELECT * FROM maintenance_plans").fetchall()
+            for r in plans_db
         ]
         _sb_upsert_and_prune('maintenance_plans', plan_rows)
 
         # 7. notifications
         mach_map = {m['id']: m['name'] for m in mach_rows}
+        notifs_db = [dict(r) for r in conn.execute("SELECT * FROM notifications").fetchall()]
         notif_rows = [
             {
                 'id': r['id'],
-                'target_role': r['target_role'] or 'ALL',
-                'machine_id': r['machine_id'],
-                'machine_name': mach_map.get(r['machine_id'], ''),
+                'target_role': r.get('target_role') or 'ALL',
+                'machine_id': r.get('machine_id'),
+                'machine_name': mach_map.get(r.get('machine_id'), ''),
                 'title': r['title'],
                 'message': r['message'],
-                'notif_type': r['category'] or 'HOJA_DE_VIDA',
-                'severity': r['severity'] or 'INFO',
-                'is_read': bool(r['is_read'])
+                'notif_type': r.get('category') or 'HOJA_DE_VIDA',
+                'severity': r.get('severity') or 'INFO',
+                'is_read': bool(r.get('is_read'))
             }
-            for r in conn.execute("SELECT * FROM notifications").fetchall()
+            for r in notifs_db
         ]
         _sb_upsert_and_prune('notifications', notif_rows)
 
@@ -889,30 +895,38 @@ def pull_from_cloud(conn):
                 rep_time = parts_dt[1] if len(parts_dt) > 1 else datetime.now().strftime('%H:%M:%S')
                 st_time = (o.get('started_at') or '').replace('T', ' ').replace('Z', '')[:19] or None
                 end_time = (o.get('completed_at') or '').replace('T', ' ').replace('Z', '')[:19] or None
+                rep_secs = int(round(float(o.get('repair_minutes') or 0) * 60.0))
+                status_val = o.get('status') or 'PENDIENTE'
+                is_running = 1 if status_val == 'EN_PROCESO' and st_time and not end_time else 0
+                stopped_flag = 1 if status_val in ('PENDIENTE', 'EN_PROCESO', 'PAUSADA', 'REPORTADA') else 0
 
                 cursor.execute("""
                     INSERT INTO maintenance_orders (
                         id, order_number, machine_id, maintenance_type, operator_name,
-                        report_date, report_time, failure_type, failure_category, failure_subcategory,
-                        description, priority, status, technician_id,
-                        start_time, end_time, work_performed, downtime_minutes, repair_time_minutes, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        report_date, report_time, failure_type, failure_subcategory,
+                        machine_stopped, downtime_start, downtime_end, total_downtime_minutes,
+                        priority, description, status, technician_id,
+                        repair_start, repair_end, repair_duration_seconds,
+                        is_timer_running, timer_last_started_at,
+                        spare_parts_notes, solution_notes, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     o['id'], o['order_number'], o['machine_id'],
                     o.get('maintenance_type') or 'CORRECTIVO',
                     o.get('reporter_name') or 'Operario',
                     rep_date, rep_time,
                     o.get('failure_type') or 'NO_SABE',
-                    o.get('failure_category') or 'Por Diagnosticar',
                     o.get('failure_subcategory') or 'General',
-                    o.get('description') or '',
+                    stopped_flag, rep_at, end_time,
+                    int(round(float(o.get('downtime_minutes') or 0))),
                     o.get('priority') or 'MEDIA',
-                    o.get('status') or 'REPORTADA',
+                    o.get('description') or '',
+                    status_val,
                     o.get('assigned_technician_id'),
-                    st_time, end_time,
+                    st_time, end_time, rep_secs,
+                    is_running, st_time if is_running else None,
+                    o.get('spare_parts_used') or '',
                     o.get('solution_notes') or '',
-                    float(o.get('downtime_minutes') or 0),
-                    float(o.get('repair_minutes') or 0),
                     rep_at
                 ))
                 sp_used = (o.get('spare_parts_used') or '').strip()
@@ -942,8 +956,8 @@ def pull_from_cloud(conn):
                 cursor.execute("""
                     INSERT INTO maintenance_plans (
                         id, plan_code, machine_id, title, maintenance_type, frequency,
-                        year, months, scheduled_date, estimated_minutes, assigned_technician_id,
-                        status, checklist, notes
+                        year, months_json, scheduled_date, estimated_minutes, assigned_technician_id,
+                        status, checklist_json, description
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     p['id'], p['plan_code'], p['machine_id'], p['title'],
