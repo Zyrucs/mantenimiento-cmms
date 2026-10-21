@@ -1708,7 +1708,7 @@ body {
     <!-- MODAL 7: INICIAR SESIÓN (JEFE Y TÉCNICO DE MANTENIMIENTO)             -->
     <!-- ===================================================================== -->
     <div id="login-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 no-print">
-        <div class="bg-[var(--background)] border cf-border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5">
+        <div class="bg-[var(--background)] border cf-border rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-5">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
                     <div class="w-9 h-9 rounded-xl bg-[#8c5cff]/15 border border-[#8c5cff]/40 text-[#8c5cff] flex items-center justify-center">
@@ -1722,32 +1722,14 @@ body {
                 <button onclick="closeLoginModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <div class="p-3 rounded-xl bg-[#8c5cff]/10 border border-[#8c5cff]/30 space-y-2">
-                <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#8c5cff]">Cuentas Iniciales de Prueba (Clic para rellenar):</p>
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" onclick="fillDemoLogin('tecnico', '1234')" class="p-2 rounded-lg bg-[var(--card)] hover:border-[#8c5cff] border cf-border text-left transition-all">
-                        <p class="text-xs font-bold">🔧 Técnico</p>
-                        <p class="text-[10px] font-mono text-[#8c5cff]">tecnico / 1234</p>
-                    </button>
-                    <button type="button" onclick="fillDemoLogin('jefe', '1234')" class="p-2 rounded-lg bg-[var(--card)] hover:border-[#8c5cff] border cf-border text-left transition-all">
-                        <p class="text-xs font-bold">👑 Jefe Planta</p>
-                        <p class="text-[10px] font-mono text-[#8c5cff]">jefe / 1234</p>
-                    </button>
-                    <button type="button" onclick="fillDemoLogin('admin', 'admin123')" class="p-2 rounded-lg bg-[var(--card)] hover:border-[#8c5cff] border cf-border text-left transition-all">
-                        <p class="text-xs font-bold">🛡️ Supervisor</p>
-                        <p class="text-[10px] font-mono text-[#8c5cff]">admin / admin123</p>
-                    </button>
-                </div>
-            </div>
-
             <form onsubmit="submitLoginForm(event)" class="space-y-3 text-xs">
                 <div>
                     <label class="block text-[var(--muted-foreground)] font-bold mb-1">Usuario</label>
-                    <input type="text" id="login-username" required value="jefe" class="w-full bg-[var(--card)] border cf-border rounded-lg px-3.5 py-2.5 font-mono">
+                    <input type="text" id="login-username" required placeholder="Ingresa tu usuario" autocomplete="username" class="w-full bg-[var(--card)] border cf-border rounded-lg px-3.5 py-2.5 font-mono">
                 </div>
                 <div>
                     <label class="block text-[var(--muted-foreground)] font-bold mb-1">Contraseña / PIN</label>
-                    <input type="password" id="login-password" required value="1234" class="w-full bg-[var(--card)] border cf-border rounded-lg px-3.5 py-2.5 font-mono">
+                    <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password" class="w-full bg-[var(--card)] border cf-border rounded-lg px-3.5 py-2.5 font-mono">
                 </div>
                 <button type="submit" class="vb-btn-primary w-full py-3 rounded-full font-bold">
                     Entrar al Sistema
