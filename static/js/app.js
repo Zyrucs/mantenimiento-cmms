@@ -1188,20 +1188,28 @@ async function submitIncidentReport(e) {
             }
             return;
         }
-        // Fallback: Direct write to Supabase REST API if serverless route is unavailable
+        // Direct write to Supabase REST API with explicit next ID (avoids PostgreSQL sequence collision)
         const sbHeaders = {
             'apikey': SUPABASE_KEY,
             'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
+            'Prefer': 'return=representation,resolution=merge-duplicates'
         };
+        let nextId = (state.orders.length ? Math.max(...state.orders.map(o => Number(o.id) || 0)) : 2) + 1;
+        try {
+            const maxRows = await sbDirectGet('work_orders?select=id&order=id.desc&limit=1');
+            if (Array.isArray(maxRows) && maxRows.length > 0) {
+                nextId = Math.max(nextId, Number(maxRows[0].id) + 1);
+            }
+        } catch (e) {}
+
         const year = new Date().getFullYear();
-        const nextNum = (state.orders.length ? Math.max(...state.orders.map(o => o.id || 0)) : 2) + 1;
-        const orderNumber = `OT-${year}-${String(nextNum).padStart(4, '0')}`;
+        const orderNumber = `OT-${year}-${String(nextId).padStart(4, '0')}`;
         const sbOrderRes = await fetch(`${SUPABASE_URL}/work_orders`, {
             method: 'POST',
             headers: sbHeaders,
             body: JSON.stringify({
+                id: nextId,
                 order_number: orderNumber,
                 machine_id: payload.machine_id,
                 reporter_name: payload.operator_name,
@@ -1223,6 +1231,27 @@ async function submitIncidentReport(e) {
                 headers: sbHeaders,
                 body: JSON.stringify({ status: newStatus })
             });
+            try {
+                const machObj = state.machines.find(m => m.id == payload.machine_id) || {};
+                const maxNotif = await sbDirectGet('notifications?select=id&order=id.desc&limit=1');
+                const nextNotifId = (Array.isArray(maxNotif) && maxNotif.length > 0 ? Number(maxNotif[0].id) : 3) + 1;
+                await fetch(`${SUPABASE_URL}/notifications`, {
+                    method: 'POST',
+                    headers: sbHeaders,
+                    body: JSON.stringify({
+                        id: nextNotifId,
+                        target_role: 'ALL',
+                        machine_id: payload.machine_id,
+                        machine_name: machObj.name || `Máquina ${payload.machine_id}`,
+                        title: `${payload.machine_stopped ? '🛑 MÁQUINA PARADA' : '⚠️ Máquina en Falla'}: ${machObj.code || ''} ${machObj.name || ''} (${orderNumber})`,
+                        message: `Operario ${payload.operator_name} reportó falla ${payload.failure_type} (${payload.failure_subcategory || 'General'}): ${payload.description}`,
+                        notif_type: 'FALLA_MAQUINA',
+                        severity: payload.machine_stopped ? 'CRITICAL' : 'WARNING',
+                        is_read: false
+                    })
+                });
+            } catch (e) {}
+
             showToast(`✅ Orden ${orderNumber} registrada en Supabase. Jefes y Técnicos notificados.`, 'success');
             document.getElementById('form-description').value = '';
             document.getElementById('form-failure-subcategory').value = '';
@@ -1231,7 +1260,9 @@ async function submitIncidentReport(e) {
                 navigateTo('orders');
             }
         } else {
-            showToast('Error al registrar el reporte', 'error');
+            const errTxt = await sbOrderRes.text();
+            console.error('Supabase work_orders error:', errTxt);
+            showToast('Error al registrar el reporte en Supabase', 'error');
         }
     } catch (err) {
         showToast('Error de red al enviar reporte', 'error');
