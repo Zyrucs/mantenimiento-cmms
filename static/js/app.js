@@ -9,8 +9,11 @@
  *  - Real-time Cloud Sync (Phone <-> PC on Vercel & Local)
  */
 
-const CLOUD_OBJECT_ID = 'ff808181a09d98f701a15b90d54134d5';
-const CLOUD_API_URL = `https://api.restful-api.dev/objects/${CLOUD_OBJECT_ID}`;
+const SUPABASE_PROJECT_ID = 'yijualgkrcxkqqphpzll';
+const SUPABASE_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/rest/v1`;
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpanVhbGdrcmN4a3FxcGhwemxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NDAwMDcsImV4cCI6MjEwODExNjAwN30.V5B5yRIZZhKCOTujMCmOCmWZJThQQAv3b3AQBb7wRvg';
+const CLOUD_OBJECT_ID = SUPABASE_PROJECT_ID;
+const CLOUD_API_URL = SUPABASE_URL;
 const NTFY_TOPIC = 'sistmaint_cmms_v2_live';
 const MONTH_NAMES_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 

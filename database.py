@@ -13,8 +13,13 @@ from datetime import datetime, timedelta
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IS_VERCEL = bool(os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'))
 
-CLOUD_OBJECT_ID = os.environ.get('CMMS_CLOUD_ID', 'ff808181a09d98f701a15b90d54134d5')
-CLOUD_API_URL = f"https://api.restful-api.dev/objects/{CLOUD_OBJECT_ID}"
+SUPABASE_PROJECT_ID = os.environ.get('SUPABASE_PROJECT_ID', 'yijualgkrcxkqqphpzll')
+CLOUD_OBJECT_ID = SUPABASE_PROJECT_ID
+SUPABASE_URL = os.environ.get('SUPABASE_URL', f"https://{SUPABASE_PROJECT_ID}.supabase.co/rest/v1")
+SUPABASE_KEY = os.environ.get(
+    'SUPABASE_KEY',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpanVhbGdrcmN4a3FxcGhwemxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NDAwMDcsImV4cCI6MjEwODExNjAwN30.V5B5yRIZZhKCOTujMCmOCmWZJThQQAv3b3AQBb7wRvg'
+)
 NTFY_TOPIC = os.environ.get('CMMS_NTFY_TOPIC', 'sistmaint_cmms_v2_live')
 NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
 
@@ -34,15 +39,15 @@ def get_db_connection(pull_cloud_if_needed=True):
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
 
-    # On Vercel, pull latest cloud state if cold or older than 4 seconds
-    if pull_cloud_if_needed and IS_VERCEL:
+    # Pull latest state from Supabase if older than 3 seconds (keeps Vercel, Phone & PC synced)
+    if pull_cloud_if_needed:
         now_ts = datetime.now().timestamp()
-        if now_ts - _last_cloud_pull > 4.0:
+        if now_ts - _last_cloud_pull > 3.0:
             try:
                 pull_from_cloud(conn)
                 _last_cloud_pull = now_ts
             except Exception as e:
-                print(f"[CloudSync] Pull warning: {e}")
+                print(f"[SupabaseSync] Pull warning: {e}")
     return conn
 
 
@@ -577,110 +582,410 @@ def import_db_snapshot(conn, snapshot):
         cursor.execute("PRAGMA foreign_keys = ON")
 
 
-def push_to_cloud(conn, event_type="db_updated", summary=""):
-    """Pushes full SQLite state to Cloud Store (ntfy attachment + restful-api pointer) and broadcasts live event"""
-    global _last_cloud_pull
-    try:
-        snapshot = export_db_snapshot(conn)
-        snapshot["event_type"] = event_type
-        snapshot["summary"] = summary
-        raw_bytes = json.dumps(snapshot, ensure_ascii=False).encode('utf-8')
+def _sb_headers(prefer=None):
+    h = {
+        'apikey': SUPABASE_KEY,
+        'Authorization': f'Bearer {SUPABASE_KEY}',
+        'Content-Type': 'application/json',
+        'User-Agent': 'SistMaint-CMMS/2.0'
+    }
+    if prefer:
+        h['Prefer'] = prefer
+    return h
 
-        # 1. Upload full JSON snapshot to ntfy cloud store (supports up to 15MB & triggers live SSE)
-        store_url = f"https://ntfy.sh/{NTFY_TOPIC}"
+
+def _sb_get(table_and_query):
+    url = f"{SUPABASE_URL}/{table_and_query}"
+    req = urllib.request.Request(url, headers=_sb_headers(), method='GET')
+    resp = urllib.request.urlopen(req, timeout=6)
+    return json.loads(resp.read().decode('utf-8'))
+
+
+def _sb_upsert_and_prune(table, rows):
+    """Upserts rows into a Supabase PostgreSQL table and deletes any remote rows removed locally"""
+    if rows:
+        url = f"{SUPABASE_URL}/{table}"
+        payload = json.dumps(rows, ensure_ascii=False).encode('utf-8')
         req = urllib.request.Request(
-            store_url,
-            data=raw_bytes,
-            headers={
-                'User-Agent': 'Mozilla/5.0 (SistMaint-CMMS/2.0)',
-                'Filename': 'db_snapshot.json',
-                'Title': event_type
-            },
-            method='PUT'
+            url,
+            data=payload,
+            headers=_sb_headers('resolution=merge-duplicates,return=minimal'),
+            method='POST'
         )
-        resp = urllib.request.urlopen(req, timeout=8)
-        meta = json.loads(resp.read().decode('utf-8'))
-        att_url = (meta.get('attachment') or {}).get('url', '')
+        urllib.request.urlopen(req, timeout=7)
 
-        # 2. Save lightweight pointer in restful-api object store
-        if att_url:
-            ptr_payload = json.dumps({
-                "name": "sistmaint_cmms_v2_cloud_db",
-                "data": {
-                    "initialized": "true",
-                    "snapshot_url": att_url,
-                    "updated_at": snapshot["updated_at"],
-                    "event_type": event_type
-                }
-            }).encode('utf-8')
-            ptr_req = urllib.request.Request(
-                CLOUD_API_URL,
-                data=ptr_payload,
-                headers={
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'Mozilla/5.0 (SistMaint-CMMS/2.0)'
-                },
-                method='PUT'
-            )
+        ids_csv = ",".join(str(int(r['id'])) for r in rows if r.get('id') is not None)
+        if ids_csv:
+            del_url = f"{SUPABASE_URL}/{table}?id=not.in.({ids_csv})"
+            del_req = urllib.request.Request(del_url, headers=_sb_headers(), method='DELETE')
             try:
-                urllib.request.urlopen(ptr_req, timeout=5)
+                urllib.request.urlopen(del_req, timeout=5)
             except Exception:
                 pass
+    else:
+        del_url = f"{SUPABASE_URL}/{table}?id=gt.0"
+        del_req = urllib.request.Request(del_url, headers=_sb_headers(), method='DELETE')
+        try:
+            urllib.request.urlopen(del_req, timeout=5)
+        except Exception:
+            pass
+
+
+def push_to_cloud(conn, event_type="db_updated", summary=""):
+    """Pushes full relational state directly to Supabase PostgreSQL tables"""
+    global _last_cloud_pull
+    try:
+        # 1. users
+        users_rows = [
+            {
+                'id': r['id'],
+                'username': r['username'],
+                'password': r['password'],
+                'full_name': r['full_name'],
+                'role': r['role'] or 'JEFE'
+            }
+            for r in conn.execute("SELECT * FROM users").fetchall()
+        ]
+        _sb_upsert_and_prune('users', users_rows)
+
+        # 2. failure_categories
+        cat_rows = [
+            {
+                'id': r['id'],
+                'code': r['code'],
+                'name': r['name'],
+                'subcategories': r['subcategories'] or '[]',
+                'color': r['color'] or '#8c5cff',
+                'icon': r['icon'] or 'fa-triangle-exclamation',
+                'description': r['description'] or ''
+            }
+            for r in conn.execute("SELECT * FROM failure_categories").fetchall()
+        ]
+        _sb_upsert_and_prune('failure_categories', cat_rows)
+
+        # 3. machines
+        mach_rows = [
+            {
+                'id': r['id'],
+                'code': r['code'],
+                'name': r['name'],
+                'location': r['location'] or 'Planta Principal',
+                'status': r['status'] or 'OPERATIVA',
+                'description': r['description'] or '',
+                'brand': r['brand'] or '',
+                'model': r['model'] or '',
+                'serial_number': r['serial_number'] or '',
+                'install_date': r['install_date'] or '',
+                'voltage': r['voltage'] or '220V / 440V',
+                'power_kw': r['power_kw'] or '',
+                'criticality': r['criticality'] or 'ALTA',
+                'supplier': r['supplier'] or '',
+                'critical_parts': r['critical_parts'] or '',
+                'preventive_interval_days': int(r['preventive_interval_days'] or 30),
+                'last_maintenance_date': r['last_maintenance_date'] or '',
+                'next_maintenance_date': r['next_maintenance_date'] or '',
+                'life_notes': r['life_notes'] or ''
+            }
+            for r in conn.execute("SELECT * FROM machines").fetchall()
+        ]
+        _sb_upsert_and_prune('machines', mach_rows)
+
+        # 4. technicians
+        tech_rows = [
+            {
+                'id': r['id'],
+                'name': r['name'],
+                'role': r['role'] or 'Técnico de Mantenimiento',
+                'specialty': r['specialty'] or 'Multidisciplinario',
+                'phone': r['phone'] or '',
+                'active': bool(r['active'])
+            }
+            for r in conn.execute("SELECT * FROM technicians").fetchall()
+        ]
+        _sb_upsert_and_prune('technicians', tech_rows)
+
+        # 5. work_orders (mapped from maintenance_orders + spare_parts_used)
+        orders_db = conn.execute("SELECT * FROM maintenance_orders").fetchall()
+        wo_rows = []
+        for r in orders_db:
+            sp_rows = conn.execute(
+                "SELECT part_name, quantity FROM spare_parts_used WHERE order_id = ?",
+                (r['id'],)
+            ).fetchall()
+            sp_str = ", ".join(f"{s['part_name']} (x{s['quantity']})" for s in sp_rows)
+            rep_iso = r['created_at'] or f"{r['report_date']}T{r['report_time']}"
+            if rep_iso and ' ' in rep_iso and 'T' not in rep_iso:
+                rep_iso = rep_iso.replace(' ', 'T') + 'Z'
+            start_iso = r['start_time']
+            if start_iso and ' ' in start_iso and 'T' not in start_iso:
+                start_iso = start_iso.replace(' ', 'T') + 'Z'
+            end_iso = r['end_time']
+            if end_iso and ' ' in end_iso and 'T' not in end_iso:
+                end_iso = end_iso.replace(' ', 'T') + 'Z'
+
+            wo_rows.append({
+                'id': r['id'],
+                'order_number': r['order_number'],
+                'machine_id': r['machine_id'],
+                'reporter_name': r['operator_name'],
+                'failure_type': r['failure_type'] or 'NO_SABE',
+                'failure_category': r['failure_category'] or 'Por Diagnosticar',
+                'failure_subcategory': r['failure_subcategory'] or 'General',
+                'maintenance_type': r['maintenance_type'] or 'CORRECTIVO',
+                'priority': r['priority'] or 'MEDIA',
+                'description': r['description'] or '',
+                'assigned_technician_id': r['technician_id'],
+                'status': r['status'] or 'REPORTADA',
+                'reported_at': rep_iso,
+                'started_at': start_iso,
+                'completed_at': end_iso,
+                'downtime_minutes': float(r['downtime_minutes'] or 0),
+                'repair_minutes': float(r['repair_time_minutes'] or 0),
+                'solution_notes': r['work_performed'] or '',
+                'spare_parts_used': sp_str
+            })
+        _sb_upsert_and_prune('work_orders', wo_rows)
+
+        # 6. maintenance_plans
+        plan_rows = [
+            {
+                'id': r['id'],
+                'plan_code': r['plan_code'],
+                'machine_id': r['machine_id'],
+                'title': r['title'],
+                'maintenance_type': r['maintenance_type'] or 'PREVENTIVO',
+                'frequency': r['frequency'] or 'MENSUAL',
+                'year': int(r['year'] or 2027),
+                'months_json': r['months'] or '[]',
+                'scheduled_date': r['scheduled_date'] or '2027-01-15',
+                'estimated_minutes': int(r['estimated_minutes'] or 90),
+                'assigned_technician_id': r['assigned_technician_id'],
+                'checklist_json': r['checklist'] or '[]',
+                'status': r['status'] or 'PROGRAMADO',
+                'notes': r['notes'] or ''
+            }
+            for r in conn.execute("SELECT * FROM maintenance_plans").fetchall()
+        ]
+        _sb_upsert_and_prune('maintenance_plans', plan_rows)
+
+        # 7. notifications
+        mach_map = {m['id']: m['name'] for m in mach_rows}
+        notif_rows = [
+            {
+                'id': r['id'],
+                'target_role': r['target_role'] or 'ALL',
+                'machine_id': r['machine_id'],
+                'machine_name': mach_map.get(r['machine_id'], ''),
+                'title': r['title'],
+                'message': r['message'],
+                'notif_type': r['category'] or 'HOJA_DE_VIDA',
+                'severity': r['severity'] or 'INFO',
+                'is_read': bool(r['is_read'])
+            }
+            for r in conn.execute("SELECT * FROM notifications").fetchall()
+        ]
+        _sb_upsert_and_prune('notifications', notif_rows)
 
         _last_cloud_pull = datetime.now().timestamp()
         return True
     except Exception as e:
-        print(f"[CloudSync] Push error: {e}")
+        print(f"[SupabaseSync] Push error: {e}")
         return False
 
 
 def pull_from_cloud(conn):
-    """Pulls latest snapshot from Cloud Store into local/serverless SQLite"""
+    """Pulls latest relational rows from Supabase PostgreSQL tables into local/serverless SQLite"""
     global _last_cloud_pull
-    snapshot_url = None
-
-    # 1. Try getting latest attachment from ntfy topic history first
     try:
-        hist_url = f"https://ntfy.sh/{NTFY_TOPIC}/json?poll=1&since=12h"
-        req = urllib.request.Request(hist_url, headers={'User-Agent': 'Mozilla/5.0 (SistMaint-CMMS/2.0)'}, method='GET')
-        resp = urllib.request.urlopen(req, timeout=5)
-        lines = resp.read().decode('utf-8').strip().splitlines()
-        for line in reversed(lines):
-            if not line.strip():
-                continue
-            msg = json.loads(line)
-            att = msg.get('attachment') or {}
-            if att.get('url'):
-                snapshot_url = att['url']
-                break
-    except Exception:
-        pass
-
-    # 2. Fallback to restful-api pointer
-    if not snapshot_url:
-        try:
-            req = urllib.request.Request(CLOUD_API_URL, headers={'User-Agent': 'Mozilla/5.0 (SistMaint-CMMS/2.0)'}, method='GET')
-            resp = urllib.request.urlopen(req, timeout=5)
-            body = json.loads(resp.read().decode('utf-8'))
-            data = body.get('data') or {}
-            if data.get('snapshot_url'):
-                snapshot_url = data['snapshot_url']
-        except Exception:
-            pass
-
-    if not snapshot_url:
+        sb_machines = _sb_get("machines?select=*&order=id.asc")
+    except Exception as e:
+        print(f"[SupabaseSync] Could not reach Supabase: {e}")
         return False
 
-    # 3. Download and import the snapshot JSON
-    snap_req = urllib.request.Request(snapshot_url, headers={'User-Agent': 'Mozilla/5.0 (SistMaint-CMMS/2.0)'}, method='GET')
-    snap_resp = urllib.request.urlopen(snap_req, timeout=6)
-    snap_data = json.loads(snap_resp.read().decode('utf-8'))
-    if snap_data.get('initialized') and 'tables' in snap_data:
-        ok = import_db_snapshot(conn, snap_data)
-        if ok:
-            _last_cloud_pull = datetime.now().timestamp()
-        return ok
-    return False
+    # If Supabase is completely empty (e.g., right after creating tables), seed Supabase from local seed!
+    if isinstance(sb_machines, list) and len(sb_machines) == 0:
+        local_count = conn.execute("SELECT COUNT(*) FROM machines").fetchone()[0]
+        if local_count > 0:
+            push_to_cloud(conn, event_type="initial_supabase_seed", summary="Seeded 2 objects into Supabase")
+        return False
+
+    try:
+        sb_users = _sb_get("users?select=*&order=id.asc")
+        sb_cats = _sb_get("failure_categories?select=*&order=id.asc")
+        sb_techs = _sb_get("technicians?select=*&order=id.asc")
+        sb_orders = _sb_get("work_orders?select=*&order=id.asc")
+        sb_plans = _sb_get("maintenance_plans?select=*&order=id.asc")
+        sb_notifs = _sb_get("notifications?select=*&order=id.asc")
+
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA foreign_keys = OFF")
+
+        # 1. users
+        if isinstance(sb_users, list) and len(sb_users) > 0:
+            cursor.execute("DELETE FROM users")
+            for u in sb_users:
+                cursor.execute("""
+                    INSERT INTO users (id, username, password, full_name, role, active)
+                    VALUES (?, ?, ?, ?, ?, 1)
+                """, (u['id'], u['username'], u['password'], u['full_name'], u.get('role') or 'JEFE'))
+
+        # 2. failure_categories
+        if isinstance(sb_cats, list) and len(sb_cats) > 0:
+            cursor.execute("DELETE FROM failure_categories")
+            for c in sb_cats:
+                cursor.execute("""
+                    INSERT INTO failure_categories (id, code, name, color, icon, subcategories, description, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                """, (
+                    c['id'], c['code'], c['name'], c.get('color') or '#8c5cff',
+                    c.get('icon') or 'fa-triangle-exclamation', c.get('subcategories') or '[]',
+                    c.get('description') or ''
+                ))
+
+        # 3. machines
+        if isinstance(sb_machines, list) and len(sb_machines) > 0:
+            cursor.execute("DELETE FROM machines")
+            for m in sb_machines:
+                cursor.execute("""
+                    INSERT INTO machines (
+                        id, code, name, location, status, description,
+                        brand, model, serial_number, install_date, voltage, power_kw,
+                        criticality, supplier, critical_parts, preventive_interval_days,
+                        last_maintenance_date, next_maintenance_date, life_notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    m['id'], m['code'], m['name'], m.get('location') or 'Planta Principal',
+                    m.get('status') or 'OPERATIVA', m.get('description') or '',
+                    m.get('brand') or '', m.get('model') or '', m.get('serial_number') or '',
+                    m.get('install_date') or '', m.get('voltage') or '220V / 440V',
+                    m.get('power_kw') or '', m.get('criticality') or 'ALTA',
+                    m.get('supplier') or '', m.get('critical_parts') or '',
+                    int(m.get('preventive_interval_days') or 30),
+                    m.get('last_maintenance_date') or '', m.get('next_maintenance_date') or '',
+                    m.get('life_notes') or ''
+                ))
+
+        # 4. technicians
+        if isinstance(sb_techs, list) and len(sb_techs) > 0:
+            cursor.execute("DELETE FROM technicians")
+            for t in sb_techs:
+                cursor.execute("""
+                    INSERT INTO technicians (id, name, role, specialty, phone, email, active)
+                    VALUES (?, ?, ?, ?, ?, '', ?)
+                """, (
+                    t['id'], t['name'], t.get('role') or 'Técnico',
+                    t.get('specialty') or 'General', t.get('phone') or '',
+                    1 if t.get('active', True) else 0
+                ))
+
+        # 5. work_orders -> maintenance_orders & spare_parts_used
+        if isinstance(sb_orders, list):
+            cursor.execute("DELETE FROM spare_parts_used")
+            cursor.execute("DELETE FROM maintenance_orders")
+            for o in sb_orders:
+                rep_at = (o.get('reported_at') or datetime.now().isoformat()).replace('T', ' ').replace('Z', '')[:19]
+                parts_dt = rep_at.split(' ')
+                rep_date = parts_dt[0] if len(parts_dt) > 0 else datetime.now().strftime('%Y-%m-%d')
+                rep_time = parts_dt[1] if len(parts_dt) > 1 else datetime.now().strftime('%H:%M:%S')
+                st_time = (o.get('started_at') or '').replace('T', ' ').replace('Z', '')[:19] or None
+                end_time = (o.get('completed_at') or '').replace('T', ' ').replace('Z', '')[:19] or None
+
+                cursor.execute("""
+                    INSERT INTO maintenance_orders (
+                        id, order_number, machine_id, maintenance_type, operator_name,
+                        report_date, report_time, failure_type, failure_category, failure_subcategory,
+                        description, priority, status, technician_id,
+                        start_time, end_time, work_performed, downtime_minutes, repair_time_minutes, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    o['id'], o['order_number'], o['machine_id'],
+                    o.get('maintenance_type') or 'CORRECTIVO',
+                    o.get('reporter_name') or 'Operario',
+                    rep_date, rep_time,
+                    o.get('failure_type') or 'NO_SABE',
+                    o.get('failure_category') or 'Por Diagnosticar',
+                    o.get('failure_subcategory') or 'General',
+                    o.get('description') or '',
+                    o.get('priority') or 'MEDIA',
+                    o.get('status') or 'REPORTADA',
+                    o.get('assigned_technician_id'),
+                    st_time, end_time,
+                    o.get('solution_notes') or '',
+                    float(o.get('downtime_minutes') or 0),
+                    float(o.get('repair_minutes') or 0),
+                    rep_at
+                ))
+                sp_used = (o.get('spare_parts_used') or '').strip()
+                if sp_used:
+                    for item in sp_used.split(','):
+                        item = item.strip()
+                        if not item:
+                            continue
+                        qty = 1
+                        name = item
+                        if '(x' in item and item.endswith(')'):
+                            try:
+                                name_part, q_part = item.rsplit('(x', 1)
+                                name = name_part.strip()
+                                qty = int(q_part[:-1])
+                            except Exception:
+                                pass
+                        cursor.execute("""
+                            INSERT INTO spare_parts_used (order_id, part_name, quantity)
+                            VALUES (?, ?, ?)
+                        """, (o['id'], name, qty))
+
+        # 6. maintenance_plans
+        if isinstance(sb_plans, list):
+            cursor.execute("DELETE FROM maintenance_plans")
+            for p in sb_plans:
+                cursor.execute("""
+                    INSERT INTO maintenance_plans (
+                        id, plan_code, machine_id, title, maintenance_type, frequency,
+                        year, months, scheduled_date, estimated_minutes, assigned_technician_id,
+                        status, checklist, notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    p['id'], p['plan_code'], p['machine_id'], p['title'],
+                    p.get('maintenance_type') or 'PREVENTIVO',
+                    p.get('frequency') or 'MENSUAL',
+                    int(p.get('year') or 2027),
+                    p.get('months_json') or '[]',
+                    p.get('scheduled_date') or '2027-01-15',
+                    int(p.get('estimated_minutes') or 90),
+                    p.get('assigned_technician_id'),
+                    p.get('status') or 'PROGRAMADO',
+                    p.get('checklist_json') or '[]',
+                    p.get('notes') or ''
+                ))
+
+        # 7. notifications
+        if isinstance(sb_notifs, list):
+            cursor.execute("DELETE FROM notifications")
+            for n in sb_notifs:
+                created = (n.get('created_at') or datetime.now().isoformat()).replace('T', ' ').replace('Z', '')[:19]
+                cursor.execute("""
+                    INSERT INTO notifications (
+                        id, target_role, severity, category, machine_id, title, message, is_read, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    n['id'], n.get('target_role') or 'ALL',
+                    n.get('severity') or 'INFO',
+                    n.get('notif_type') or 'HOJA_DE_VIDA',
+                    n.get('machine_id'),
+                    n['title'], n['message'],
+                    1 if n.get('is_read') else 0,
+                    created
+                ))
+
+        conn.commit()
+        cursor.execute("PRAGMA foreign_keys = ON")
+        _last_cloud_pull = datetime.now().timestamp()
+        return True
+    except Exception as e:
+        conn.rollback()
+        print(f"[SupabaseSync] Import error: {e}")
+        return False
 
 
 def create_notification(conn, title, message, severity="INFO", category="HOJA_DE_VIDA",
