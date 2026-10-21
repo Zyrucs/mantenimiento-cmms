@@ -112,9 +112,11 @@ const DEFAULT_PLANS = [
 ];
 
 // Global App State
+const savedUser = JSON.parse(localStorage.getItem('sm_v2_boss_user') || 'null');
 const state = {
-    role: localStorage.getItem('sm_v2_role') || 'OPERARIO', // 'OPERARIO' | 'TECNICO' | 'JEFE'
-    bossUser: JSON.parse(localStorage.getItem('sm_v2_boss_user') || 'null'),
+    role: savedUser ? (savedUser.role || 'TECNICO') : 'OPERARIO', // 'OPERARIO' | 'TECNICO' | 'JEFE'
+    bossUser: savedUser,
+    operatorFormOpen: false,
     currentView: 'report',
     machines: DEFAULT_MACHINES,
     technicians: DEFAULT_TECHS,
@@ -199,16 +201,21 @@ function handleInitialRoute() {
     const machineCode = urlParams.get('machine_code');
     const hash = (window.location.hash || '').replace('#', '');
 
+    // If user arrived via QR scan (?machine_id=... or ?machine_code=...), open the standalone Operator Form directly!
     if (machineId || machineCode) {
-        navigateTo('report');
+        openOperatorQrForm(false);
         if (machineId) preselectMachine(machineId);
         else if (machineCode) preselectMachineByCode(machineCode);
         return;
     }
 
-    if (state.role === 'OPERARIO') {
-        navigateTo('report');
-    } else if (state.role === 'TECNICO') {
+    // If not logged in, stay on the locked Homepage (only Hero visible)
+    if (!state.bossUser) {
+        returnToLockedHomepage();
+        return;
+    }
+
+    if (state.role === 'TECNICO') {
         if (['orders', 'machines', 'plans', 'report'].includes(hash)) {
             navigateTo(hash);
         } else {
@@ -224,102 +231,190 @@ function handleInitialRoute() {
 }
 
 function handleLogoClick() {
-    if (state.role === 'JEFE') navigateTo('dashboard');
-    else if (state.role === 'TECNICO') navigateTo('orders');
-    else navigateTo('report');
+    if (!state.bossUser) {
+        returnToLockedHomepage();
+    } else if (state.role === 'JEFE') {
+        navigateTo('dashboard');
+    } else if (state.role === 'TECNICO') {
+        navigateTo('orders');
+    }
+}
+
+function openOperatorQrForm(startCamera = false) {
+    state.operatorFormOpen = true;
+    applyRoleUI();
+    navigateTo('report');
+    if (startCamera) {
+        const container = document.getElementById('qr-scanner-container');
+        if (container && container.classList.contains('hidden')) {
+            toggleQrScanner();
+        }
+    }
+}
+
+function returnToLockedHomepage() {
+    stopQrScanner();
+    state.operatorFormOpen = false;
+    window.history.replaceState({}, document.title, window.location.pathname);
+    applyRoleUI();
+    const titleEl = document.getElementById('header-view-title');
+    const subEl = document.getElementById('header-view-subtitle');
+    if (titleEl) titleEl.textContent = 'Reportar Falla por QR';
+    if (subEl) subEl.textContent = 'Formulario rápido de planta para reportar averías en máquinas';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function switchRole(targetRole) {
-    if (targetRole === 'JEFE') {
-        if (!state.bossUser) {
-            openLoginModal();
-            return;
-        }
+    if (!state.bossUser) {
+        openLoginModal();
+        return;
+    }
+    if (targetRole === 'JEFE' && state.bossUser.role !== 'JEFE') {
+        openLoginModal();
+        return;
     }
     state.role = targetRole;
     localStorage.setItem('sm_v2_role', targetRole);
     applyRoleUI();
 
-    if (targetRole === 'OPERARIO') {
-        navigateTo('report');
-        showToast('Modo Operario activo: Reporte rápido por QR', 'info');
-    } else if (targetRole === 'TECNICO') {
+    if (targetRole === 'TECNICO') {
         navigateTo('orders');
-        showToast('Modo Técnico activo: Visualización de máquinas dañadas, cronómetro y hojas de vida', 'info');
     } else if (targetRole === 'JEFE') {
         navigateTo('dashboard');
-        showToast(`Modo Jefe activo (${state.bossUser?.full_name || 'Admin'})`, 'success');
     }
 }
 
 function applyRoleUI() {
-    const isBoss = state.role === 'JEFE' && !!state.bossUser;
-    const isTech = state.role === 'TECNICO';
-    const isOp = !isBoss && !isTech;
+    const isAuthenticated = !!state.bossUser;
+    const isBoss = isAuthenticated && state.bossUser.role === 'JEFE';
+    const isTech = isAuthenticated && state.bossUser.role === 'TECNICO';
+    const isOp = !isAuthenticated;
 
-    if (state.role === 'JEFE' && !state.bossUser) {
+    if (!isAuthenticated) {
         state.role = 'OPERARIO';
+    } else {
+        state.role = state.bossUser.role || 'TECNICO';
     }
 
-    // Update Sidebar Role Badge
+    // Update top navbar session pill
+    const authPill = document.getElementById('auth-session-pill');
     const roleTitle = document.getElementById('sidebar-role-title');
-    const roleIcon = document.getElementById('role-avatar-icon');
-    if (roleTitle && roleIcon) {
-        if (isBoss) {
-            roleTitle.textContent = state.bossUser.full_name || 'Jefe de Mantenimiento';
-            roleIcon.className = 'w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/40 text-purple-300 flex items-center justify-center flex-shrink-0 text-xs';
-            roleIcon.innerHTML = '<i class="fa-solid fa-crown"></i>';
-        } else if (isTech) {
-            roleTitle.textContent = 'Técnico de Planta (Sin Cuenta)';
-            roleIcon.className = 'w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 flex items-center justify-center flex-shrink-0 text-xs';
-            roleIcon.innerHTML = '<i class="fa-solid fa-wrench"></i>';
+    if (authPill && roleTitle) {
+        if (isAuthenticated) {
+            authPill.classList.remove('hidden');
+            authPill.classList.add('inline-flex');
+            roleTitle.textContent = isBoss
+                ? `👑 ${state.bossUser.full_name || 'Jefe de Mantenimiento'}`
+                : `🔧 ${state.bossUser.full_name || 'Técnico de Planta'}`;
         } else {
-            roleTitle.textContent = 'Operario (Escaneo QR)';
-            roleIcon.className = 'w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center flex-shrink-0 text-xs';
-            roleIcon.innerHTML = '<i class="fa-solid fa-helmet-safety"></i>';
+            authPill.classList.add('hidden');
+            authPill.classList.remove('inline-flex');
         }
     }
 
-    // Highlight active role button in top navbar capsule switcher
-    ['OPERARIO', 'TECNICO', 'JEFE'].forEach(r => {
-        const btn = document.getElementById(`role-btn-${r}`);
-        if (!btn) return;
-        if (state.role === r) {
-            btn.className = 'px-3 py-1 rounded-full text-xs font-semibold vb-btn-primary transition-all flex items-center gap-1.5';
-        } else {
-            btn.className = 'px-3 py-1 rounded-full text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-all flex items-center gap-1.5';
-        }
-    });
-
-    // Show/hide nav items based on role
+    // Show/hide sections based on authentication & operator QR form state
+    const heroSection = document.getElementById('hero');
+    const demoSection = document.getElementById('demo');
+    const demoTabsBar = document.getElementById('demo-tabs-bar');
+    const operatorStandaloneBar = document.getElementById('operator-standalone-bar');
+    const companySection = document.getElementById('company');
+    const bentoSection = document.getElementById('workflow-bento');
     const bossSection = document.getElementById('sidebar-boss-section');
     const logoutBtn = document.getElementById('logout-boss-btn');
     const headerLoginBtn = document.getElementById('header-login-btn');
     const headerNotifBtn = document.getElementById('header-notif-btn');
+    const headerSyncBtn = document.getElementById('header-sync-btn');
     const togglWidget = document.getElementById('toggl-live-timer-widget');
 
-    if (bossSection) {
-        bossSection.classList.toggle('hidden', !isBoss);
-        bossSection.classList.toggle('grid', isBoss);
-    }
-    if (logoutBtn) logoutBtn.classList.toggle('hidden', !isBoss);
-    if (headerNotifBtn) headerNotifBtn.classList.toggle('hidden', isOp);
-    if (togglWidget) {
-        if (isOp) {
+    if (!isAuthenticated) {
+        // Unauthenticated (Operario): Either locked Homepage OR standalone QR Report Form
+        if (state.operatorFormOpen) {
+            if (heroSection) heroSection.classList.add('hidden');
+            if (demoSection) demoSection.classList.remove('hidden');
+            if (demoTabsBar) demoTabsBar.classList.add('hidden');
+            if (operatorStandaloneBar) operatorStandaloneBar.classList.remove('hidden');
+        } else {
+            if (heroSection) {
+                heroSection.classList.remove('hidden');
+                heroSection.classList.add('min-h-[calc(100vh-8.5rem)]');
+            }
+            if (demoSection) demoSection.classList.add('hidden');
+        }
+        if (companySection) {
+            companySection.classList.add('hidden');
+            companySection.classList.remove('flex');
+        }
+        if (bentoSection) bentoSection.classList.add('hidden');
+        if (bossSection) {
+            bossSection.classList.add('hidden');
+            bossSection.classList.remove('grid');
+        }
+        if (headerNotifBtn) {
+            headerNotifBtn.classList.add('hidden');
+            headerNotifBtn.classList.remove('flex');
+        }
+        if (headerSyncBtn) {
+            headerSyncBtn.classList.add('hidden');
+            headerSyncBtn.classList.remove('sm:flex');
+        }
+        if (togglWidget) {
             togglWidget.classList.add('hidden');
             togglWidget.classList.remove('lg:flex');
-        } else {
+        }
+    } else {
+        // Authenticated (Técnico or Jefe): Full workspace unlocked!
+        if (heroSection) {
+            heroSection.classList.remove('hidden');
+            heroSection.classList.remove('min-h-[calc(100vh-8.5rem)]');
+        }
+        if (demoSection) demoSection.classList.remove('hidden');
+        if (demoTabsBar) {
+            demoTabsBar.classList.remove('hidden');
+            demoTabsBar.classList.add('grid');
+        }
+        if (operatorStandaloneBar) operatorStandaloneBar.classList.add('hidden');
+        if (companySection) {
+            companySection.classList.remove('hidden');
+            companySection.classList.add('flex');
+        }
+        if (bentoSection) bentoSection.classList.remove('hidden');
+        if (bossSection) {
+            bossSection.classList.toggle('hidden', !isBoss);
+            bossSection.classList.toggle('grid', isBoss);
+        }
+        if (logoutBtn) logoutBtn.classList.toggle('hidden', !isBoss);
+        if (headerNotifBtn) {
+            headerNotifBtn.classList.remove('hidden');
+            headerNotifBtn.classList.add('flex');
+        }
+        if (headerSyncBtn) {
+            headerSyncBtn.classList.remove('hidden');
+            headerSyncBtn.classList.add('sm:flex');
+        }
+        if (togglWidget) {
+            togglWidget.classList.remove('hidden');
             togglWidget.classList.add('lg:flex');
         }
     }
 
+    // Update top right & hero login/logout buttons
+    const heroLoginBtn = document.getElementById('hero-login-btn');
     if (headerLoginBtn) {
-        if (isBoss) {
-            headerLoginBtn.innerHTML = `<i class="fa-solid fa-crown text-[11px]"></i><span class="hidden sm:inline">${state.bossUser.full_name || 'Jefe Activo'}</span>`;
-            headerLoginBtn.onclick = () => navigateTo('dashboard');
+        if (isAuthenticated) {
+            headerLoginBtn.innerHTML = `<i class="fa-solid fa-right-from-bracket text-[11px]"></i><span>Cerrar Sesión</span>`;
+            headerLoginBtn.onclick = () => logoutBoss();
         } else {
-            headerLoginBtn.innerHTML = `<i class="fa-solid fa-lock text-[11px]"></i><span class="hidden sm:inline">Acceso Jefe</span>`;
+            headerLoginBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket text-[11px]"></i><span>Iniciar Sesión</span>`;
             headerLoginBtn.onclick = () => openLoginModal();
+        }
+    }
+    if (heroLoginBtn) {
+        if (isAuthenticated) {
+            heroLoginBtn.innerHTML = `<i class="fa-solid fa-right-from-bracket text-rose-400"></i><span>Cerrar Sesión (${state.bossUser.username})</span>`;
+            heroLoginBtn.onclick = () => logoutBoss();
+        } else {
+            heroLoginBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket text-[#8c5cff]"></i><span>Iniciar Sesión</span>`;
+            heroLoginBtn.onclick = () => openLoginModal();
         }
     }
 
@@ -340,25 +435,24 @@ function applyRoleUI() {
 }
 
 function navigateTo(viewName) {
-    // If Operario clicks one of the open Técnico tabs (orders, machines, plans), seamlessly switch to Técnico (since Técnico requires no account!)
-    if (state.role === 'OPERARIO' && ['orders', 'machines', 'plans'].includes(viewName)) {
-        state.role = 'TECNICO';
-        localStorage.setItem('sm_v2_role', 'TECNICO');
-        applyRoleUI();
-    }
+    const isAuthenticated = !!state.bossUser;
+    const isBoss = isAuthenticated && state.bossUser.role === 'JEFE';
 
-    const isBoss = state.role === 'JEFE' && !!state.bossUser;
-    const isTech = state.role === 'TECNICO';
-
-    // Guard Boss-only views
-    if (!isBoss && ['dashboard', 'categories', 'technicians'].includes(viewName)) {
-        showToast('Esa sección requiere cuenta de Jefe de Mantenimiento', 'warning');
-        openLoginModal();
+    // If unauthenticated (Operario), they can ONLY view 'report'!
+    if (!isAuthenticated) {
+        if (viewName !== 'report') {
+            openLoginModal();
+            return;
+        }
+    } else if (!isBoss && ['dashboard', 'categories', 'technicians'].includes(viewName)) {
+        showToast('Esa sección es exclusiva para la cuenta de Jefe de Mantenimiento', 'warning');
         return;
     }
 
     state.currentView = viewName;
-    window.location.hash = viewName;
+    if (isAuthenticated) {
+        window.location.hash = viewName;
+    }
 
     const views = ['report', 'orders', 'machines', 'plans', 'categories', 'dashboard', 'technicians'];
     views.forEach(v => {
@@ -403,16 +497,8 @@ function navigateTo(viewName) {
     }
 }
 
-function toggleMobileSidebar() {
-    const sidebar = document.getElementById('app-sidebar');
-    const backdrop = document.getElementById('sidebar-backdrop');
-    if (!sidebar) return;
-    sidebar.classList.toggle('-translate-x-full');
-    if (backdrop) backdrop.classList.toggle('hidden');
-}
-
 // ============================================================================
-// LOGIN & AUTHENTICATION (JEFE)
+// LOGIN & AUTHENTICATION (JEFE Y TÉCNICO)
 // ============================================================================
 
 function openLoginModal() {
@@ -434,6 +520,7 @@ async function submitLoginForm(e) {
     e.preventDefault();
     const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value.trim();
+    const lowerUser = username.toLowerCase();
 
     try {
         const res = await fetch('/api/auth/login', {
@@ -443,9 +530,10 @@ async function submitLoginForm(e) {
         });
         const data = await res.json();
         if (!res.ok) {
-            // Fallback demo check if offline
-            if ((username.toLowerCase() === 'jefe' && password === '1234') || (username.toLowerCase() === 'admin' && password === 'admin123')) {
-                state.bossUser = { username, full_name: 'Jefe de Mantenimiento', role: 'JEFE' };
+            if ((lowerUser === 'jefe' && password === '1234') || (lowerUser === 'admin' && password === 'admin123')) {
+                state.bossUser = { username: lowerUser, full_name: 'Jefe de Mantenimiento', role: 'JEFE' };
+            } else if (lowerUser === 'tecnico' && password === '1234') {
+                state.bossUser = { username: 'tecnico', full_name: 'Técnico de Planta', role: 'TECNICO' };
             } else {
                 showToast(data.error || 'Credenciales incorrectas', 'error');
                 return;
@@ -453,27 +541,41 @@ async function submitLoginForm(e) {
         } else {
             state.bossUser = data.user;
         }
-
-        localStorage.setItem('sm_v2_boss_user', JSON.stringify(state.bossUser));
-        closeLoginModal();
-        switchRole('JEFE');
     } catch (err) {
-        if ((username.toLowerCase() === 'jefe' && password === '1234') || (username.toLowerCase() === 'admin' && password === 'admin123')) {
-            state.bossUser = { username, full_name: 'Jefe de Mantenimiento', role: 'JEFE' };
-            localStorage.setItem('sm_v2_boss_user', JSON.stringify(state.bossUser));
-            closeLoginModal();
-            switchRole('JEFE');
+        if ((lowerUser === 'jefe' && password === '1234') || (lowerUser === 'admin' && password === 'admin123')) {
+            state.bossUser = { username: lowerUser, full_name: 'Jefe de Mantenimiento', role: 'JEFE' };
+        } else if (lowerUser === 'tecnico' && password === '1234') {
+            state.bossUser = { username: 'tecnico', full_name: 'Técnico de Planta', role: 'TECNICO' };
         } else {
             showToast('Error al iniciar sesión', 'error');
+            return;
         }
+    }
+
+    state.role = state.bossUser.role || 'TECNICO';
+    state.operatorFormOpen = false;
+    localStorage.setItem('sm_v2_boss_user', JSON.stringify(state.bossUser));
+    localStorage.setItem('sm_v2_role', state.role);
+    closeLoginModal();
+    applyRoleUI();
+
+    if (state.role === 'JEFE') {
+        navigateTo('dashboard');
+        showToast(`Sesión iniciada: ${state.bossUser.full_name} (Jefe)`, 'success');
+    } else {
+        navigateTo('orders');
+        showToast(`Sesión iniciada: ${state.bossUser.full_name} (Técnico)`, 'success');
     }
 }
 
 function logoutBoss() {
     state.bossUser = null;
+    state.role = 'OPERARIO';
+    state.operatorFormOpen = false;
     localStorage.removeItem('sm_v2_boss_user');
-    switchRole('TECNICO');
-    showToast('Sesión de Jefe cerrada', 'info');
+    localStorage.setItem('sm_v2_role', 'OPERARIO');
+    returnToLockedHomepage();
+    showToast('Sesión cerrada correctamente', 'info');
 }
 
 // ============================================================================

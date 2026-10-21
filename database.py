@@ -305,10 +305,11 @@ def seed_v2_data(cursor):
     # Reset SQLite autoincrement counters
     cursor.execute("DELETE FROM sqlite_sequence")
 
-    # 1. Seed Users (Cuentas iniciales de prueba para el Jefe)
+    # 1. Seed Users (Cuentas iniciales de prueba para Jefe y Técnico)
     users = [
         ("jefe", "1234", "Jefe de Mantenimiento (Admin)", "JEFE", 1),
-        ("admin", "admin123", "Supervisor de Planta", "JEFE", 1)
+        ("admin", "admin123", "Supervisor de Planta", "JEFE", 1),
+        ("tecnico", "1234", "Técnico de Planta", "TECNICO", 1)
     ]
     cursor.executemany("""
         INSERT INTO users (username, password, full_name, role, active)

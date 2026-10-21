@@ -151,7 +151,7 @@ def auth_login():
     conn.close()
 
     if not user:
-        return jsonify({"error": "Credenciales inválidas. Prueba con usuario: jefe / clave: 1234"}), 401
+        return jsonify({"error": "Credenciales inválidas. Prueba con jefe / 1234 o tecnico / 1234"}), 401
 
     return jsonify({
         "message": f"Bienvenido, {user['full_name']}",
