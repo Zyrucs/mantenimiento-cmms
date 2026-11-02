@@ -1457,10 +1457,58 @@ function renderDamagedMachinesBanner() {
                     <button type="button" onclick="openMachineDossier(${m.id})" class="py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all">
                         <i class="fa-solid fa-book-medical text-purple-400"></i> Hoja de Vida
                     </button>
+                    <button type="button" onclick="markMachineOperational(${m.id})" class="py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all" title="Sacar la máquina de mantenimiento/parada y dejarla operativa">
+                        <i class="fa-solid fa-circle-check"></i> Marcar operativa
+                    </button>
+                    <a href="${hojaVidaUrl(m)}" target="_blank" rel="noopener" class="py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all" title="Abrir hoja de vida en Google Sheets">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-emerald-400"></i> Hoja (Excel)
+                    </a>
                 </div>
             </div>
         `;
     }).join('');
+}
+
+// Hoja de vida oficial (Google Sheets: HOJAS_DE_VIDA_GILPA_MODERNIZADO_V2 · FO-MTO-HV003)
+const HOJA_VIDA_SHEET_ID = '1TFAZk9rc7KwF0gJnKSCf9DAjfsDF3RIu';
+// Si se conoce la pestaña (gid) de una máquina, se agrega aquí por código: { 'GIL-041': 123456789 }
+const HOJA_VIDA_GIDS = {};
+function hojaVidaUrl(m) {
+    const gid = m && HOJA_VIDA_GIDS[m.code];
+    return `https://docs.google.com/spreadsheets/d/${HOJA_VIDA_SHEET_ID}/edit` + (gid !== undefined ? `#gid=${gid}` : '');
+}
+
+async function markMachineOperational(machineId) {
+    const m = state.machines.find(x => x.id == machineId);
+    if (!m) return;
+    const open = state.orders.filter(o => o.machine_id == machineId && !['FINALIZADO', 'CERRADA'].includes(o.status));
+    const extra = open.length ? `\n\nOJO: tiene ${open.length} orden(es) abierta(s) (${open.map(o => o.order_number).join(', ')}). Seguirán abiertas; ciérralas desde Órdenes si ya terminaron.` : '';
+    if (!confirm(`¿Marcar ${m.code} · ${m.name} como OPERATIVA?${extra}`)) return;
+    try {
+        let done = false;
+        try {
+            const res = await fetch(`/api/machines/${machineId}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'OPERATIVA' })
+            });
+            done = res.ok && (res.headers.get('content-type') || '').includes('application/json');
+        } catch (e) {}
+        if (!done) await sbDirectPatch('machines', `id=eq.${machineId}`, { status: 'OPERATIVA' });
+        try {
+            await sbDirectInsert('machine_life_events', {
+                machine_id: parseInt(machineId), event_type: 'ESTADO',
+                title: 'Máquina marcada como OPERATIVA',
+                description: `Estado cambiado de ${m.status} a OPERATIVA manualmente desde SistMaint.`,
+                severity: 'INFO', created_by: (state.bossUser && state.bossUser.username) || 'Sistema'
+            });
+        } catch (e) {}
+        await loadAllData();
+        renderDamagedMachinesBanner();
+        if (typeof renderMachinesGrid === 'function') renderMachinesGrid();
+        showToast(`${m.code} marcada como OPERATIVA`, 'success');
+    } catch (err) {
+        showToast('No se pudo cambiar el estado de la máquina', 'error');
+    }
 }
 
 async function attendDamagedMachine(machineId) {
@@ -2287,6 +2335,10 @@ function renderMachinesGrid() {
                         <button onclick="downloadMachineQR(${m.id}, '${m.code}')" class="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 text-xs font-semibold">
                             <i class="fa-solid fa-download"></i> QR
                         </button>
+                        <a href="${hojaVidaUrl(m)}" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1.5" title="Abrir hoja de vida en Google Sheets">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Hoja (Excel)
+                        </a>
+                        ${m.status !== 'OPERATIVA' ? `<button onclick="markMachineOperational(${m.id})" class="px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Marcar operativa</button>` : ''}
                     </div>
 
                     ${isBoss ? `
@@ -2374,6 +2426,7 @@ async function openMachineDossier(machineId) {
     const kpis = data.kpis || {};
 
     document.getElementById('dossier-code').textContent = m.code || '';
+    { const dl = document.getElementById('dossier-sheet-link'); if (dl) dl.href = hojaVidaUrl(m); }
     document.getElementById('dossier-name').textContent = `Hoja de Vida: ${m.name || ''}`;
     document.getElementById('dossier-subtitle').textContent = `${m.location || ''} • ${m.description || m.life_notes || ''}`;
     document.getElementById('dossier-criticality').textContent = `CRITICIDAD ${m.criticality || 'ALTA'}`;
