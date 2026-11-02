@@ -138,8 +138,12 @@ const state = {
     sseConnection: null,
     charts: {
         failures: null,
-        maintenance: null
-    }
+        maintenance: null,
+        groups: null,
+        monthly: null
+    },
+    dashOrders: [],
+    orderSubFilter: ''
 };
 
 // ============================================================================
@@ -1453,10 +1457,58 @@ function renderDamagedMachinesBanner() {
                     <button type="button" onclick="openMachineDossier(${m.id})" class="py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all">
                         <i class="fa-solid fa-book-medical text-purple-400"></i> Hoja de Vida
                     </button>
+                    <button type="button" onclick="markMachineOperational(${m.id})" class="py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all" title="Sacar la máquina de mantenimiento/parada y dejarla operativa">
+                        <i class="fa-solid fa-circle-check"></i> Marcar operativa
+                    </button>
+                    <a href="${hojaVidaUrl(m)}" target="_blank" rel="noopener" class="py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all" title="Abrir hoja de vida en Google Sheets">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-emerald-400"></i> Hoja (Excel)
+                    </a>
                 </div>
             </div>
         `;
     }).join('');
+}
+
+// Hoja de vida oficial (Google Sheets: HOJAS_DE_VIDA_GILPA_MODERNIZADO_V2 · FO-MTO-HV003)
+const HOJA_VIDA_SHEET_ID = '1TFAZk9rc7KwF0gJnKSCf9DAjfsDF3RIu';
+// Si se conoce la pestaña (gid) de una máquina, se agrega aquí por código: { 'GIL-041': 123456789 }
+const HOJA_VIDA_GIDS = {};
+function hojaVidaUrl(m) {
+    const gid = m && HOJA_VIDA_GIDS[m.code];
+    return `https://docs.google.com/spreadsheets/d/${HOJA_VIDA_SHEET_ID}/edit` + (gid !== undefined ? `#gid=${gid}` : '');
+}
+
+async function markMachineOperational(machineId) {
+    const m = state.machines.find(x => x.id == machineId);
+    if (!m) return;
+    const open = state.orders.filter(o => o.machine_id == machineId && !['FINALIZADO', 'CERRADA'].includes(o.status));
+    const extra = open.length ? `\n\nOJO: tiene ${open.length} orden(es) abierta(s) (${open.map(o => o.order_number).join(', ')}). Seguirán abiertas; ciérralas desde Órdenes si ya terminaron.` : '';
+    if (!confirm(`¿Marcar ${m.code} · ${m.name} como OPERATIVA?${extra}`)) return;
+    try {
+        let done = false;
+        try {
+            const res = await fetch(`/api/machines/${machineId}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'OPERATIVA' })
+            });
+            done = res.ok && (res.headers.get('content-type') || '').includes('application/json');
+        } catch (e) {}
+        if (!done) await sbDirectPatch('machines', `id=eq.${machineId}`, { status: 'OPERATIVA' });
+        try {
+            await sbDirectInsert('machine_life_events', {
+                machine_id: parseInt(machineId), event_type: 'ESTADO',
+                title: 'Máquina marcada como OPERATIVA',
+                description: `Estado cambiado de ${m.status} a OPERATIVA manualmente desde SistMaint.`,
+                severity: 'INFO', created_by: (state.bossUser && state.bossUser.username) || 'Sistema'
+            });
+        } catch (e) {}
+        await loadAllData();
+        renderDamagedMachinesBanner();
+        if (typeof renderMachinesGrid === 'function') renderMachinesGrid();
+        showToast(`${m.code} marcada como OPERATIVA`, 'success');
+    } catch (err) {
+        showToast('No se pudo cambiar el estado de la máquina', 'error');
+    }
 }
 
 async function attendDamagedMachine(machineId) {
@@ -1589,10 +1641,30 @@ async function loadOrdersList(render = true) {
     if (badge) badge.textContent = activeCount;
 
     if (render) {
-        renderOrdersTable('all-orders-tbody', state.orders);
+        const subFilter = state.orderSubFilter || '';
+        const shown = subFilter
+            ? state.orders.filter(o => (o.failure_subcategory || 'General') === subFilter)
+            : state.orders;
+        renderOrdersTable('all-orders-tbody', shown);
         renderDamagedMachinesBanner();
+        updateOrderSubFilterChip();
     }
     updateTopTogglTimerBar();
+}
+
+function updateOrderSubFilterChip() {
+    const chip = document.getElementById('orders-sub-filter-chip');
+    const txt = document.getElementById('orders-sub-filter-text');
+    if (!chip || !txt) return;
+    const sub = state.orderSubFilter || '';
+    chip.classList.toggle('hidden', !sub);
+    chip.classList.toggle('inline-flex', !!sub);
+    txt.textContent = sub ? `Falla: ${sub}` : '';
+}
+
+function clearOrderSubFilter() {
+    state.orderSubFilter = '';
+    loadOrdersList();
 }
 
 function renderOrdersTable(tbodyId, ordersList) {
@@ -2263,6 +2335,10 @@ function renderMachinesGrid() {
                         <button onclick="downloadMachineQR(${m.id}, '${m.code}')" class="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 text-xs font-semibold">
                             <i class="fa-solid fa-download"></i> QR
                         </button>
+                        <a href="${hojaVidaUrl(m)}" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1.5" title="Abrir hoja de vida en Google Sheets">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Hoja (Excel)
+                        </a>
+                        ${m.status !== 'OPERATIVA' ? `<button onclick="markMachineOperational(${m.id})" class="px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Marcar operativa</button>` : ''}
                     </div>
 
                     ${isBoss ? `
@@ -2350,6 +2426,7 @@ async function openMachineDossier(machineId) {
     const kpis = data.kpis || {};
 
     document.getElementById('dossier-code').textContent = m.code || '';
+    { const dl = document.getElementById('dossier-sheet-link'); if (dl) dl.href = hojaVidaUrl(m); }
     document.getElementById('dossier-name').textContent = `Hoja de Vida: ${m.name || ''}`;
     document.getElementById('dossier-subtitle').textContent = `${m.location || ''} • ${m.description || m.life_notes || ''}`;
     document.getElementById('dossier-criticality').textContent = `CRITICIDAD ${m.criticality || 'ALTA'}`;
@@ -3184,6 +3261,7 @@ function updateDashboardUI(data) {
 
     renderDashboardCharts(data);
     renderRecentOrdersDashboard(data.recent_orders || []);
+    refreshDashboardExtras();
 }
 
 function renderRecentOrdersDashboard(orders) {
@@ -3270,6 +3348,232 @@ function renderDashboardCharts(data) {
             }
         });
     }
+}
+
+// ----------------------------------------------------------------------------
+// DASHBOARD: cuadro resumen, top fallas, torta mecánica/electrónica, gráfica mensual
+// ----------------------------------------------------------------------------
+
+const DASH_MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const DASH_MECH_CODES = ['MECANICA', 'HIDRAULICA_NEUMATICA', 'LUBRICACION'];
+const DASH_ELEC_CODES = ['ELECTRICA', 'ELECTRONICA_CONTROL'];
+
+// Cálculo puro (sin DOM) para poder probarlo aparte.
+// Resumen, top y torta usan todas las órdenes (y la máquina elegida); el año solo afecta la gráfica mensual.
+function computeDashboardExtras(orders, machineId, year) {
+    const scoped = (orders || []).filter(o => !machineId || String(o.machine_id) === String(machineId));
+    const yearScoped = year ? scoped.filter(o => String(o.report_date || '').slice(0, 4) === String(year)) : scoped;
+    const isClosed = o => o.status === 'FINALIZADO' || o.status === 'CERRADA';
+
+    const total = scoped.length;
+    const closed = scoped.filter(isClosed).length;
+    const open = total - closed;
+    const compliance = total ? Math.round((closed / total) * 1000) / 10 : 0;
+
+    const groups = { mech: 0, elec: 0, both: 0, other: 0 };
+    scoped.forEach(o => {
+        const t = o.failure_type;
+        if (DASH_MECH_CODES.includes(t)) groups.mech++;
+        else if (DASH_ELEC_CODES.includes(t)) groups.elec++;
+        else if (t === 'AMBAS') groups.both++;
+        else groups.other++;
+    });
+
+    const topMap = {};
+    scoped.forEach(o => {
+        const code = o.failure_type || 'NO_SABE';
+        const sub = o.failure_subcategory || 'General';
+        const key = `${code}||${sub}`;
+        if (!topMap[key]) topMap[key] = { code, sub, count: 0 };
+        topMap[key].count++;
+    });
+    const top = Object.values(topMap).sort((a, b) => b.count - a.count || a.sub.localeCompare(b.sub)).slice(0, 5);
+
+    const monthly = { closed: Array(12).fill(0), open: Array(12).fill(0) };
+    yearScoped.forEach(o => {
+        const m = parseInt(String(o.report_date || '').slice(5, 7), 10);
+        if (m >= 1 && m <= 12) monthly[isClosed(o) ? 'closed' : 'open'][m - 1]++;
+    });
+
+    return { total, closed, open, compliance, groups, top, monthly };
+}
+
+async function fetchAllOrdersForDashboard() {
+    try {
+        const res = await fetch('/api/orders');
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
+            const raw = await res.json();
+            if (Array.isArray(raw)) return raw.map(mapSupabaseOrder);
+        }
+    } catch (e) {}
+    try {
+        const sb = await sbDirectGet('work_orders?select=*&order=id.desc');
+        if (Array.isArray(sb)) return sb.map(mapSupabaseOrder);
+    } catch (e) {}
+    return state.orders || [];
+}
+
+async function refreshDashboardExtras() {
+    state.dashOrders = await fetchAllOrdersForDashboard();
+    renderDashboardExtras();
+}
+
+function populateDashboardFilters() {
+    const mSel = document.getElementById('dash-machine');
+    if (mSel) {
+        const curr = mSel.value;
+        mSel.innerHTML = '<option value="">Todas las máquinas</option>' +
+            (state.machines || []).map(m => `<option value="${m.id}">${m.code} - ${m.name}</option>`).join('');
+        if (curr) mSel.value = curr;
+    }
+    const ySel = document.getElementById('dash-year');
+    if (ySel) {
+        const curr = ySel.value;
+        const thisYear = new Date().getFullYear();
+        const years = new Set([thisYear]);
+        (state.dashOrders || []).forEach(o => {
+            const y = parseInt(String(o.report_date || '').slice(0, 4), 10);
+            if (y) years.add(y);
+        });
+        const sorted = [...years].sort((a, b) => b - a);
+        ySel.innerHTML = sorted.map(y => `<option value="${y}">${y}</option>`).join('');
+        ySel.value = curr && sorted.includes(Number(curr)) ? curr : String(thisYear);
+    }
+}
+
+function renderDashboardExtras() {
+    if (!document.getElementById('dash-kpi-total')) return;
+    populateDashboardFilters();
+    const machineId = document.getElementById('dash-machine')?.value || '';
+    const year = document.getElementById('dash-year')?.value || '';
+    const r = computeDashboardExtras(state.dashOrders || [], machineId, year);
+
+    const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setText('dash-kpi-total', r.total);
+    setText('dash-kpi-open', r.open);
+    setText('dash-kpi-closed', r.closed);
+    setText('dash-kpi-compliance', `${r.compliance}%`);
+    setText('dash-kpi-goal', 'Por definir');
+    setText('dash-compliance-label', `${r.closed} de ${r.total}`);
+    const bar = document.getElementById('dash-compliance-bar');
+    if (bar) bar.style.width = `${Math.min(100, r.compliance)}%`;
+
+    renderTopFailures(r.top, r.total);
+    renderFailureGroupChart(r.groups);
+    renderMonthlyOrdersChart(r.monthly, year);
+}
+
+function renderTopFailures(top, total) {
+    const box = document.getElementById('top-failures-list');
+    if (!box) return;
+    if (!top.length) {
+        box.innerHTML = '<p class="text-xs text-zinc-500 py-4">Sin fallas registradas para este filtro.</p>';
+        return;
+    }
+    const max = top[0].count || 1;
+    box.innerHTML = top.map((t, i) => {
+        const cat = getCategoryMeta(t.code);
+        const pct = total ? Math.round((t.count / total) * 100) : 0;
+        const w = Math.max(6, Math.round((t.count / max) * 100));
+        return `
+        <button type="button" onclick="goToOrdersByFailure('${t.code}', '${encodeURIComponent(t.sub)}')"
+            class="w-full text-left p-3 rounded-xl border border-white/[0.07] bg-zinc-950/60 hover:border-[#8c5cff]/60 transition-all cursor-pointer">
+            <div class="flex items-center justify-between gap-3 text-xs">
+                <span class="font-bold text-white truncate">${i + 1}. ${t.sub}</span>
+                <span class="font-mono text-zinc-300 flex-shrink-0">${t.count} <span class="text-zinc-500">(${pct}%)</span></span>
+            </div>
+            <div class="flex items-center justify-between gap-3 mt-1">
+                <span class="text-[10px] font-semibold" style="color:${cat.color}">● ${cat.name}</span>
+                <span class="text-[10px] text-[#8c5cff] font-mono">Ver órdenes &rarr;</span>
+            </div>
+            <div class="h-1 rounded-full bg-zinc-800 mt-2 overflow-hidden">
+                <div class="h-full rounded-full" style="width:${w}%; background-color:${cat.color}"></div>
+            </div>
+        </button>`;
+    }).join('');
+}
+
+// Lleva a la hoja de órdenes de trabajo ya filtrada por la falla elegida.
+function goToOrdersByFailure(code, subEncoded) {
+    const sub = subEncoded ? decodeURIComponent(subEncoded) : '';
+    state.orderSubFilter = sub === 'General' ? '' : sub;
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    set('filter-status', '');
+    set('filter-search', '');
+    set('filter-failure', code || '');
+    set('filter-machine', document.getElementById('dash-machine')?.value || '');
+    navigateTo('orders');
+    setTimeout(() => {
+        document.getElementById('filter-failure')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 200);
+}
+
+function renderFailureGroupChart(g) {
+    const ctx = document.getElementById('failureGroupChart');
+    if (!ctx || typeof Chart === 'undefined') return;
+    if (state.charts.groups) state.charts.groups.destroy();
+
+    const rows = [
+        { name: 'Mecánica', n: g.mech, color: '#3b82f6' },
+        { name: 'Electrónica / Eléctrica', n: g.elec, color: '#f59e0b' },
+        { name: 'Ambas', n: g.both, color: '#ec4899' },
+        { name: 'Por diagnosticar', n: g.other, color: '#71717a' }
+    ].filter(r => r.n > 0);
+    const total = rows.reduce((a, r) => a + r.n, 0);
+    const pct = n => (total ? Math.round((n / total) * 1000) / 10 : 0);
+
+    state.charts.groups = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: rows.length ? rows.map(r => `${r.name}: ${r.n} (${pct(r.n)}%)`) : ['Sin datos'],
+            datasets: [{
+                data: rows.length ? rows.map(r => r.n) : [1],
+                backgroundColor: rows.length ? rows.map(r => r.color) : ['#27272a'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { color: '#d4d4d8', font: { size: 11 } } },
+                tooltip: {
+                    callbacks: {
+                        label: c => rows.length ? ` ${rows[c.dataIndex].name}: ${rows[c.dataIndex].n} (${pct(rows[c.dataIndex].n)}%)` : ' Sin datos'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderMonthlyOrdersChart(monthly, year) {
+    const ctx = document.getElementById('monthlyOrdersChart');
+    if (!ctx || typeof Chart === 'undefined') return;
+    if (state.charts.monthly) state.charts.monthly.destroy();
+    const title = document.getElementById('monthly-chart-title');
+    if (title) title.textContent = `ÓRDENES POR MES — ${year || 'TODOS LOS AÑOS'}`;
+
+    state.charts.monthly = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: DASH_MONTHS,
+            datasets: [
+                { label: 'Cerradas', data: monthly.closed, backgroundColor: '#34d399', borderRadius: 6 },
+                { label: 'Abiertas', data: monthly.open, backgroundColor: '#fbbf24', borderRadius: 6 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#d4d4d8', font: { size: 11 } } } },
+            scales: {
+                x: { stacked: true, ticks: { color: '#d4d4d8' }, grid: { display: false } },
+                y: { stacked: true, beginAtZero: true, ticks: { color: '#71717a', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' } }
+            }
+        }
+    });
 }
 
 function renderTechniciansGrid() {
