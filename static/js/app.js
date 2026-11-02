@@ -223,13 +223,13 @@ function handleInitialRoute() {
     }
 
     if (state.role === 'TECNICO') {
-        if (['orders', 'machines', 'plans', 'report'].includes(hash)) {
+        if (['orders', 'machines', 'calendar', 'plans', 'report'].includes(hash)) {
             navigateTo(hash);
         } else {
             navigateTo('orders');
         }
     } else if (state.role === 'JEFE') {
-        if (['dashboard', 'orders', 'machines', 'plans', 'categories', 'technicians', 'report'].includes(hash)) {
+        if (['dashboard', 'orders', 'machines', 'calendar', 'plans', 'categories', 'technicians', 'report'].includes(hash)) {
             navigateTo(hash);
         } else {
             navigateTo('dashboard');
@@ -472,7 +472,7 @@ function navigateTo(viewName) {
         window.location.hash = viewName;
     }
 
-    const views = ['report', 'orders', 'machines', 'plans', 'categories', 'dashboard', 'technicians'];
+    const views = ['report', 'orders', 'machines', 'calendar', 'plans', 'categories', 'dashboard', 'technicians'];
     views.forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.classList.toggle('hidden', v !== viewName);
@@ -488,6 +488,7 @@ function navigateTo(viewName) {
         report: ['Reportar Falla por QR', 'Formulario rápido de planta para reportar averías en máquinas'],
         orders: ['Máquinas Dañadas & Órdenes de Trabajo', 'Control de tiempos con cronómetro en vivo y estado de planta'],
         machines: ['Hojas de Vida de Máquinas & Códigos QR', 'Ficha técnica, bitácora histórica, alertas y etiquetas QR'],
+        calendar: ['Calendario Principal de Mantenimiento', 'Día → máquinas con actividades → página de la máquina'],
         plans: ['Planes de Mantenimiento & Preventivo 2027', 'Cronograma anual 2027 y rutinas preventivas/predictivas'],
         categories: ['Categorización de Fallas', 'Catálogo de tipos y subcategorías de fallas técnicas'],
         dashboard: ['Dashboard Ejecutivo de Planta (Jefe)', 'Métricas en tiempo real, MTTR, paros y distribución de fallas'],
@@ -505,6 +506,7 @@ function navigateTo(viewName) {
         renderDamagedMachinesBanner();
         loadOrdersList();
     } else if (viewName === 'machines') renderMachinesGrid();
+    else if (viewName === 'calendar') renderCalendarView();
     else if (viewName === 'plans') renderPlansView();
     else if (viewName === 'categories') renderCategoriesGrid();
     else if (viewName === 'technicians') renderTechniciansGrid();
@@ -3765,4 +3767,210 @@ function showToast(message, type = 'info') {
     setTimeout(() => {
         if (el.parentElement) el.remove();
     }, 4500);
+}
+
+
+// ============================================================================
+// CALENDARIO PRINCIPAL  (día -> máquinas con actividades -> página de la máquina)
+// Datos: tabla Supabase `maintenance_schedule` (cronograma del plan de mantenimiento)
+// ============================================================================
+const CAL_FREQS = [
+    { key: 'Inspección', label: 'Inspección (diaria/semanal)', color: '#22c55e' },
+    { key: 'Quincenal',  label: 'Quincenal',  color: '#3b82f6' },
+    { key: 'Mensual',    label: 'Mensual',    color: '#facc15' },
+    { key: 'Trimestral', label: 'Trimestral', color: '#fb923c' },
+    { key: 'Semestral',  label: 'Semestral',  color: '#ef4444' },
+    { key: 'Anual',      label: 'Anual',      color: '#a855f7' }
+];
+const CAL_MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const calState = { loaded: false, loading: false, error: '', items: [], byDate: {}, areas: [], year: null, month: null, selected: null, area: '',
+                   machineId: null, machineTab: 'calendario', mYear: null, mMonth: null, mSelected: null, minDate: null, maxDate: null };
+
+function calEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function calKey(y, m, d) { return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`; }
+function calLong(key) { const [y, m, d] = key.split('-').map(Number); return `${d} de ${CAL_MONTHS[m - 1].toLowerCase()} de ${y}`; }
+function calFreq(k) { return CAL_FREQS.find(f => f.key === k) || { key: k, label: k, color: '#71717a' }; }
+function calRank(k) { const i = CAL_FREQS.findIndex(f => f.key === k); return i < 0 ? -1 : i; }
+function calAddDays(key, n) { const [y, m, d] = key.split('-').map(Number); const dt = new Date(Date.UTC(y, m - 1, d + n)); return dt.toISOString().slice(0, 10); }
+
+function calBuildIndex(items) {
+    const byDate = {};
+    items.forEach(it => {
+        const n = Math.max(1, parseInt(it.days) || 1);
+        for (let i = 0; i < n; i++) {
+            const k = calAddDays(String(it.scheduled_date).slice(0, 10), i);
+            (byDate[k] = byDate[k] || []).push({ ...it, dayNo: i + 1, daysTotal: n });
+        }
+    });
+    return byDate;
+}
+
+async function calLoadSchedule(force) {
+    if (calState.loading || (calState.loaded && !force)) return;
+    calState.loading = true; calState.error = '';
+    try {
+        let all = [], off = 0;
+        for (let guard = 0; guard < 40; guard++) {
+            const page = await sbDirectGet(`maintenance_schedule?select=machine_id,scheduled_date,frequency,area,days,activity,status&order=scheduled_date.asc,id.asc&limit=1000&offset=${off}`);
+            if (!Array.isArray(page)) throw new Error('respuesta inválida');
+            all = all.concat(page);
+            if (page.length < 1000) break;
+            off += 1000;
+        }
+        calState.items = all;
+        calState.byDate = calBuildIndex(all);
+        calState.areas = [...new Set(all.map(i => i.area).filter(Boolean))].sort();
+        calState.minDate = all.length ? String(all[0].scheduled_date).slice(0, 10) : null;
+        calState.maxDate = all.length ? String(all[all.length - 1].scheduled_date).slice(0, 10) : null;
+        calState.loaded = true;
+        if (calState.year == null) {
+            const today = new Date();
+            const tk = calKey(today.getFullYear(), today.getMonth(), today.getDate());
+            const ref = (calState.minDate && tk >= calState.minDate && tk <= calState.maxDate) ? tk : (calState.minDate || tk);
+            calState.year = parseInt(ref.slice(0, 4)); calState.month = parseInt(ref.slice(5, 7)) - 1;
+        }
+    } catch (e) {
+        calState.error = 'No se pudo leer el cronograma (tabla maintenance_schedule). Verifica que esté creada y cargada en Supabase.';
+        calState.loaded = false;
+    }
+    calState.loading = false;
+}
+
+async function renderCalendarView() {
+    const st = document.getElementById('cal-status');
+    if (!calState.loaded) {
+        if (st) st.textContent = 'Cargando cronograma…';
+        await calLoadSchedule();
+    }
+    if (calState.machineId != null) { renderCalMachinePage(); return; }
+    document.getElementById('cal-main')?.classList.remove('hidden');
+    document.getElementById('cal-machine-root')?.classList.add('hidden');
+    if (st) st.textContent = calState.error || (calState.items.length ? '' : 'Aún no hay mantenimientos cargados en el cronograma.');
+    const sel = document.getElementById('cal-area');
+    if (sel) {
+        sel.innerHTML = '<option value="">Todas las áreas</option>' + calState.areas.map(a => `<option value="${calEsc(a)}" ${a === calState.area ? 'selected' : ''}>${calEsc(a)}</option>`).join('');
+    }
+    document.getElementById('cal-legend').innerHTML = CAL_FREQS.map(f => `<span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm" style="background:${f.color}"></span>${f.label}</span>`).join('');
+    if (calState.year == null) { const t = new Date(); calState.year = t.getFullYear(); calState.month = t.getMonth(); }
+    document.getElementById('cal-month-label').textContent = `${CAL_MONTHS[calState.month]} ${calState.year}`;
+    document.getElementById('cal-grid').innerHTML = calMonthGrid(calState.year, calState.month, e => !calState.area || e.area === calState.area, 'calSelectDay', calState.selected);
+    renderCalDayPanel();
+}
+
+function calMonthGrid(y, m, filterFn, clickFn, selected) {
+    const first = (new Date(y, m, 1).getDay() + 6) % 7;
+    const days = new Date(y, m + 1, 0).getDate();
+    const head = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => `<div class="text-center text-[10px] font-mono font-bold text-[var(--muted-foreground)] py-1">${d}</div>`).join('');
+    let cells = '';
+    for (let i = 0; i < first; i++) cells += '<div></div>';
+    for (let d = 1; d <= days; d++) {
+        const key = calKey(y, m, d);
+        const ents = (calState.byDate[key] || []).filter(filterFn);
+        const top = ents.reduce((a, e) => Math.max(a, calRank(e.frequency)), -1);
+        const machines = new Set(ents.map(e => e.machine_id)).size;
+        const color = top >= 0 ? CAL_FREQS[top].color : null;
+        const isSel = key === selected;
+        const dark = color && ['#facc15', '#22c55e'].includes(color);
+        cells += `<button type="button" ${machines ? `onclick="${clickFn}('${key}')"` : 'disabled'}
+            class="relative h-14 sm:h-16 rounded-lg border text-sm font-bold flex flex-col items-center justify-center transition ${isSel ? 'ring-2 ring-white' : ''} ${machines ? 'cursor-pointer hover:brightness-110' : 'cursor-default opacity-60'}"
+            style="${color ? `background:${color};border-color:${color};color:${dark ? '#111' : '#fff'}` : 'border-color:rgba(255,255,255,.08)'}">
+            <span>${d}</span>${machines ? `<span class="text-[9px] font-mono font-semibold opacity-90">${machines} máq.</span>` : ''}</button>`;
+    }
+    return `<div class="grid grid-cols-7 gap-1.5">${head}${cells}</div>`;
+}
+
+function calShiftMonth(delta) {
+    let m = calState.month + delta, y = calState.year;
+    if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; }
+    calState.month = m; calState.year = y; calState.selected = null;
+    renderCalendarView();
+}
+function calSetArea(a) { calState.area = a; calState.selected = null; renderCalendarView(); }
+function calSelectDay(key) { calState.selected = key; renderCalendarView(); }
+
+function renderCalDayPanel() {
+    const box = document.getElementById('cal-day-panel');
+    if (!box) return;
+    if (!calState.selected) {
+        box.innerHTML = '<div class="p-6 text-xs text-[var(--muted-foreground)] text-center"><i class="fa-solid fa-hand-pointer text-2xl text-[#8c5cff] mb-2"></i><p>Selecciona un día del calendario para ver las máquinas con actividades programadas.</p></div>';
+        return;
+    }
+    const ents = (calState.byDate[calState.selected] || []).filter(e => !calState.area || e.area === calState.area);
+    const byM = {};
+    ents.forEach(e => { (byM[e.machine_id] = byM[e.machine_id] || []).push(e); });
+    const rows = Object.keys(byM).map(id => {
+        const m = state.machines.find(x => x.id == id) || { name: `Máquina ${id}` };
+        const fr = [...new Set(byM[id].map(e => e.frequency))].sort((a, b) => calRank(b) - calRank(a));
+        return `<button type="button" onclick="openCalMachine(${id}, '${calState.selected}')" class="w-full text-left px-4 py-3 flex items-center justify-between gap-3 border-t cf-border hover:bg-white/5 cursor-pointer">
+            <div><div class="text-sm font-bold">${calEsc(m.name)}</div>
+            <div class="flex flex-wrap gap-1 mt-1">${fr.map(f => `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold" style="background:${calFreq(f).color}22;color:${calFreq(f).color};border:1px solid ${calFreq(f).color}66">${f}</span>`).join('')}</div></div>
+            <i class="fa-solid fa-chevron-right text-xs text-[var(--muted-foreground)]"></i></button>`;
+    }).join('');
+    box.innerHTML = `<div class="px-4 py-3 bg-[#8c5cff]/15"><div class="text-[10px] font-mono uppercase text-[#8c5cff] font-bold">Día seleccionado</div><div class="text-sm font-bold">${calLong(calState.selected)}</div></div>
+        <div class="px-4 py-2 text-xs font-bold">Máquinas con actividades (${Object.keys(byM).length})</div><div class="max-h-[420px] overflow-y-auto">${rows}</div>`;
+}
+
+// ---- Página de la máquina ----
+function openCalMachine(id, dateKey) {
+    calState.machineId = id; calState.machineTab = 'calendario';
+    const ref = dateKey || calState.selected || `${calState.year}-${String(calState.month + 1).padStart(2, '0')}-01`;
+    calState.mYear = parseInt(ref.slice(0, 4)); calState.mMonth = parseInt(ref.slice(5, 7)) - 1; calState.mSelected = dateKey || null;
+    renderCalMachinePage();
+}
+function closeCalMachine() { calState.machineId = null; renderCalendarView(); }
+function calMachineTab(t) { calState.machineTab = t; renderCalMachinePage(); }
+function calMachineShift(d) {
+    let m = calState.mMonth + d, y = calState.mYear;
+    if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; }
+    calState.mMonth = m; calState.mYear = y; calState.mSelected = null; renderCalMachinePage();
+}
+function calMachineSelect(key) { calState.mSelected = key; renderCalMachinePage(); }
+
+function renderCalMachinePage() {
+    const root = document.getElementById('cal-machine-root');
+    if (!root) return;
+    const m = state.machines.find(x => x.id == calState.machineId);
+    if (!m) { closeCalMachine(); return; }
+    document.getElementById('cal-main')?.classList.add('hidden');
+    root.classList.remove('hidden');
+    const mine = e => e.machine_id == m.id;
+    const tabs = [['calendario', 'fa-calendar-days', 'Calendario'], ['actividades', 'fa-list-check', 'Actividades'], ['ficha', 'fa-clipboard-list', 'Ficha técnica'], ['hoja', 'fa-book-medical', 'Hoja de vida']];
+    const side = tabs.map(([k, ic, lb]) => `<button type="button" onclick="calMachineTab('${k}')" class="w-full text-left px-4 py-2.5 text-xs font-semibold flex items-center gap-2 cursor-pointer ${calState.machineTab === k ? 'bg-[#8c5cff]/20 text-white' : 'text-[var(--muted-foreground)] hover:bg-white/5'}"><i class="fa-solid ${ic} w-4"></i>${lb}</button>`).join('');
+    const monthLabel = `${CAL_MONTHS[calState.mMonth]} ${calState.mYear}`;
+    const prefix = `${calState.mYear}-${String(calState.mMonth + 1).padStart(2, '0')}`;
+    const monthItems = Object.keys(calState.byDate).filter(k => k.startsWith(prefix)).sort()
+        .flatMap(k => calState.byDate[k].filter(mine).map(e => ({ ...e, key: k })));
+    let body = '';
+    if (calState.machineTab === 'calendario') {
+        const dayList = calState.mSelected ? (calState.byDate[calState.mSelected] || []).filter(mine) : [];
+        body = `<div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold">Calendario de mantenimiento</h4>
+            <div class="flex items-center gap-1"><button type="button" onclick="calMachineShift(-1)" class="w-8 h-8 rounded-full border cf-border hover:bg-white/5 text-xs"><i class="fa-solid fa-chevron-left"></i></button>
+            <span class="min-w-[130px] text-center text-sm font-bold">${monthLabel}</span>
+            <button type="button" onclick="calMachineShift(1)" class="w-8 h-8 rounded-full border cf-border hover:bg-white/5 text-xs"><i class="fa-solid fa-chevron-right"></i></button></div></div>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-4"><div class="xl:col-span-2">${calMonthGrid(calState.mYear, calState.mMonth, mine, 'calMachineSelect', calState.mSelected)}</div>
+            <div class="rounded-xl border cf-border p-3 text-xs space-y-2"><div class="font-bold">Frecuencia</div>${CAL_FREQS.map(f => `<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:${f.color}"></span>${f.label}</div>`).join('')}</div></div>
+            ${calState.mSelected ? `<div class="mt-4 rounded-xl border cf-border p-4"><div class="text-xs font-bold mb-2">${calLong(calState.mSelected)}</div>${dayList.map(calActivityRow).join('') || '<p class="text-xs text-[var(--muted-foreground)]">Sin actividades.</p>'}</div>` : ''}`;
+    } else if (calState.machineTab === 'actividades') {
+        body = `<div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold">Actividades · ${monthLabel}</h4>
+            <div class="flex items-center gap-1"><button type="button" onclick="calMachineShift(-1)" class="w-8 h-8 rounded-full border cf-border hover:bg-white/5 text-xs"><i class="fa-solid fa-chevron-left"></i></button>
+            <button type="button" onclick="calMachineShift(1)" class="w-8 h-8 rounded-full border cf-border hover:bg-white/5 text-xs"><i class="fa-solid fa-chevron-right"></i></button></div></div>
+            ${monthItems.length ? monthItems.map(e => `<div class="flex gap-3 py-2 border-t cf-border"><div class="w-24 shrink-0 text-xs font-mono text-[var(--muted-foreground)]">${calLong(e.key).replace(/ de \d{4}$/, '')}</div>${calActivityRow(e)}</div>`).join('') : '<p class="text-xs text-[var(--muted-foreground)]">No hay actividades este mes.</p>'}`;
+    } else if (calState.machineTab === 'ficha') {
+        const f = [['Código', m.code], ['Nombre', m.name], ['Ubicación', m.location], ['Marca', m.brand], ['Modelo', m.model], ['N.º de serie', m.serial_number], ['Año / instalación', m.install_date], ['Voltaje', m.voltage], ['Potencia', m.power_kw], ['Proveedor', m.supplier], ['Criticidad', m.criticality], ['Estado', m.status]];
+        body = `<h4 class="text-sm font-bold mb-3">Ficha técnica</h4><div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${f.map(([k, v]) => `<div class="rounded-xl border cf-border p-3"><div class="text-[10px] uppercase font-mono text-[var(--muted-foreground)]">${k}</div><div class="text-sm font-semibold break-words">${calEsc(v || '—')}</div></div>`).join('')}</div>`;
+    } else {
+        body = `<h4 class="text-sm font-bold mb-3">Hoja de vida</h4><p class="text-xs text-[var(--muted-foreground)] mb-4">Formato FO-MTO-HV003 de ${calEsc(m.name)} en Google Sheets, y bitácora de intervenciones registradas en SistMaint.</p>
+            <div class="flex flex-wrap gap-2"><a href="${hojaVidaUrl(m)}" target="_blank" rel="noopener" class="vb-btn-primary px-5 py-2.5 rounded-full text-xs font-semibold"><i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i>Abrir hoja de vida (Google Sheets)</a>
+            <button type="button" onclick="openMachineDossier(${m.id})" class="px-5 py-2.5 rounded-full text-xs font-semibold border cf-border hover:bg-white/5 cursor-pointer"><i class="fa-solid fa-book-medical mr-1.5"></i>Bitácora en SistMaint</button></div>`;
+    }
+    root.innerHTML = `<div class="px-6 sm:px-8 py-4 flex items-center justify-between gap-3 bg-emerald-600/20">
+            <div><div class="text-[10px] font-mono uppercase text-emerald-300 font-bold">${calEsc(m.code)}</div><h3 class="text-xl font-extrabold">${calEsc(m.name)}</h3></div>
+            <button type="button" onclick="closeCalMachine()" class="px-4 py-2 rounded-full bg-white text-zinc-900 text-xs font-bold cursor-pointer"><i class="fa-solid fa-arrow-left mr-1.5"></i>Volver al calendario</button></div>
+        <div class="grid grid-cols-1 md:grid-cols-5 min-h-[420px]"><div class="md:col-span-1 border-r cf-border py-2">${side}</div><div class="md:col-span-4 p-6">${body}</div></div>`;
+}
+
+function calActivityRow(e) {
+    const f = calFreq(e.frequency);
+    return `<div class="flex-1 flex items-start gap-2 py-1"><span class="mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0" style="background:${f.color}22;color:${f.color};border:1px solid ${f.color}66">${calEsc(f.key)}</span>
+        <div class="text-xs"><div>${calEsc(e.activity || '')}</div><div class="text-[10px] text-[var(--muted-foreground)]">${calEsc(e.area || '')}${e.daysTotal > 1 ? ` · día ${e.dayNo} de ${e.daysTotal}` : ''} · ${calEsc(e.status || '')}</div></div></div>`;
 }
