@@ -1470,12 +1470,59 @@ function renderDamagedMachinesBanner() {
 }
 
 // Hoja de vida oficial (Google Sheets: HOJAS_DE_VIDA_GILPA_MODERNIZADO_V2 · FO-MTO-HV003)
-const HOJA_VIDA_SHEET_ID = '1TFAZk9rc7KwF0gJnKSCf9DAjfsDF3RIu';
-// Si se conoce la pestaña (gid) de una máquina, se agrega aquí por código: { 'GIL-041': 123456789 }
-const HOJA_VIDA_GIDS = {};
+// Una pestaña por máquina; se busca por nombre de la máquina (sin espacios ni punto final).
+const HOJA_VIDA_SHEET_ID = '1IjAu_SG2L3JEGyQUdMk7IA83-qGDWez_99b6uOeqjuc';
+const HOJA_VIDA_INDEX_GID = 668224553;
+const HOJA_VIDA_GIDS = {
+    "PELETIZADORA": 1896239520,
+    "MONTADORA 3": 2054943411,
+    "MONTADORA 2": 1225163678,
+    "MONTADORA 1 SOMA": 34845729,
+    "IMPRESORA 7": 1760104040,
+    "IMPRESORA 6": 868713835,
+    "IMPRESORA 5": 2140594075,
+    "IMPRESORA 4": 1459948137,
+    "IMPRESORA 3": 101412369,
+    "IMPRESORA 2": 1096996704,
+    "SELLADORA 2": 1383968120,
+    "SELLADORA 3": 1386416355,
+    "SELLADORA 5": 1411158635,
+    "SELLADORA 6": 83653387,
+    "SELLADORA 10": 1840332398,
+    "SELLADORA 11": 235392035,
+    "SELLADORA 12": 1464336457,
+    "SELLADORA 13": 1373786634,
+    "SELLADORA 14": 1520598978,
+    "SELLADORA 15": 1517129314,
+    "LAMINADORA 1": 784892759,
+    "LAMINADORA 2": 1881930546,
+    "SELLADORA LONGITUDINAL 1": 1236394660,
+    "SELLADORA LONGITUDINAL 2": 187984081,
+    "SELLADORA LONGITUDINAL 3": 47929867,
+    "PRECORTADORA 1": 1295132832,
+    "PRECORTADORA 2": 2009140337,
+    "PRECORTADORA 3": 1736842805,
+    "PRECORTADORA 4": 1590995671,
+    "REFILADORA 1": 1383921315,
+    "REFILADORA 3": 2075283280,
+    "REFILADORA 4": 105966914,
+    "REFILADORA 5": 255213491,
+    "REFILADORA 6": 2020710720,
+    "REFILADORA 7": 281471478,
+    "REFILADORA 8": 359820115,
+    "REFILADORA 9": 1456048781,
+    "REFILADORA 10 DOBLADORA": 707304172,
+    "REFILADORA 11": 1072500883,
+    "REFILADORA 12": 1863017845,
+    "EXTRUDER 1": 1289613644,
+    "EXTRUDER 5": 1945477674,
+    "EXTRUDER 6": 456047666,
+    "EXTRUDER 7": 1712704399
+};
 function hojaVidaUrl(m) {
-    const gid = m && HOJA_VIDA_GIDS[m.code];
-    return `https://docs.google.com/spreadsheets/d/${HOJA_VIDA_SHEET_ID}/edit` + (gid !== undefined ? `#gid=${gid}` : '');
+    const key = String((m && m.name) || '').trim().replace(/[.\s]+$/, '').toUpperCase();
+    const gid = HOJA_VIDA_GIDS[key] !== undefined ? HOJA_VIDA_GIDS[key] : HOJA_VIDA_INDEX_GID;
+    return `https://docs.google.com/spreadsheets/d/${HOJA_VIDA_SHEET_ID}/edit?gid=${gid}#gid=${gid}`;
 }
 
 async function markMachineOperational(machineId) {
