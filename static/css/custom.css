@@ -1,203 +1,301 @@
 /* ==========================================================================
-   SistMaint CMMS 2.0 — Codeforge (codeforge-magicui.vercel.app)
-   + Violet Bloom Theme (21st.dev/@serafimcloud/themes/violet-bloom)
+   SistMaint CMMS — Gilpa Impresores S.A.
+   Sistema de diseño industrial oscuro (azul marino + verde azulado Gilpa)
+   Estado: verde = operativa · ámbar = en mantenimiento · rojo = parada
+   Reglas: contraste >= 4.5:1, foco visible, objetivos táctiles >= 44px,
+           el color nunca es el único indicador, respeta prefers-reduced-motion.
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
-:root {
-    --background: #fdfdfd;
-    --foreground: #09090b;
-    --card: #f8f7fc;
-    --card-foreground: #09090b;
-    --popover: #ffffff;
-    --popover-foreground: #09090b;
-    --primary: #7033ff;
-    --primary-glow: #8c5cff;
-    --primary-foreground: #ffffff;
-    --secondary: #edf0f4;
-    --secondary-foreground: #18181b;
-    --muted: #f3f2f8;
-    --muted-foreground: #646470;
-    --accent: #ede8ff;
-    --accent-foreground: #5b21b6;
-    --border: #e4e2ee;
-    --input: #e4e2ee;
-    --ring: #7033ff;
-    --radius: 1rem;
+:root,
+html.dark {
+    color-scheme: dark;
+
+    /* Superficies */
+    --background: #0a1220;
+    --foreground: #e8eef7;
+    --card: #101a2c;
+    --card-foreground: #e8eef7;
+    --popover: #14213a;
+    --popover-foreground: #e8eef7;
+    --muted: #0d1626;
+    --muted-foreground: #9fb0c6;
+    --secondary: #172338;
+    --secondary-foreground: #e8eef7;
+    --border: #22324d;
+    --input: #22324d;
+
+    /* Marca Gilpa */
+    --primary: #2dd4bf;
+    --primary-strong: #14b8a6;
+    --primary-foreground: #04201d;
+    --accent: #12304a;
+    --accent-foreground: #99f6e4;
+    --ring: #5eead4;
+
+    /* Estado */
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --info: #38bdf8;
+
+    --radius: 0.75rem;
 }
 
-html.dark {
-    --background: #0c0c10;
-    --foreground: #f4f4f6;
-    --card: #13131a;
-    --card-foreground: #f4f4f6;
-    --popover: #16161f;
-    --popover-foreground: #f4f4f6;
-    --primary: #8c5cff;
-    --primary-glow: #7033ff;
-    --primary-foreground: #ffffff;
-    --secondary: #1e1e28;
-    --secondary-foreground: #e4e4e7;
-    --muted: #191922;
-    --muted-foreground: #9494a6;
-    --accent: #231d38;
-    --accent-foreground: #d8b4fe;
-    --border: #242430;
-    --input: #242430;
-    --ring: #8c5cff;
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     background-color: var(--background);
+    background-image: radial-gradient(1100px 420px at 50% -120px, rgba(20, 184, 166, 0.10), transparent 70%);
+    background-repeat: no-repeat;
     color: var(--foreground);
+    font-size: 16px;
+    line-height: 1.5;
     overflow-x: hidden;
-    letter-spacing: -0.015em;
-    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* ==========================================================================
-   CODEFORGE ARCHITECTURAL BORDERS & CROSSHAIRS
-   ========================================================================== */
-
-.cf-border {
-    border-color: var(--border) !important;
+/* ---------- Accesibilidad global ---------- */
+:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+::selection {
+    background: rgba(45, 212, 191, 0.3);
+    color: #ffffff;
+}
+button, a, select, input, textarea, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled), [onclick] {
+    cursor: pointer;
+}
+@media (pointer: coarse) {
+    button, select, input:not([type="checkbox"]):not([type="radio"]), .cf-demo-tab {
+        min-height: 44px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
-.cf-divide-y > :not([hidden]) ~ :not([hidden]) {
-    border-top: 1px solid var(--border);
+/* ---------- Formularios (oscuros por defecto) ---------- */
+input, select, textarea {
+    color-scheme: dark;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
+    background-color: var(--card);
+    color: var(--foreground);
+    border-color: var(--border);
+}
+input::placeholder, textarea::placeholder {
+    color: #7d90aa;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+    border-color: var(--ring);
 }
 
-.cf-divide-x > :not([hidden]) ~ :not([hidden]) {
-    border-left: 1px solid var(--border);
-}
+/* ---------- Bordes y divisores ---------- */
+.cf-border { border-color: var(--border) !important; }
+.cf-divide-y > :not([hidden]) ~ :not([hidden]) { border-top: 1px solid var(--border); }
+.cf-divide-x > :not([hidden]) ~ :not([hidden]) { border-left: 1px solid var(--border); }
 
-/* Codeforge Shadow Badge Pill (from codeforge-magicui.vercel.app) */
+/* ---------- Chips / insignias ---------- */
 .shadow-badge {
     background-color: var(--card);
     border: 1px solid var(--border);
-    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.08), inset 0px 1px 0px 0px rgba(255, 255, 255, 0.08);
 }
 
-/* Codeforge 3D Violet Bloom Skeuomorphic Button */
+/* ---------- Botón primario (verde azulado Gilpa, texto oscuro: 9:1) ---------- */
 .vb-btn-primary {
-    background: linear-gradient(180deg, #8c5cff 0%, #7033ff 100%);
-    color: #ffffff;
-    box-shadow: 
-        0px 1px 2px 0px rgba(0, 0, 0, 0.25),
-        0px 4px 14px 0px rgba(112, 51, 255, 0.35),
-        inset 0px 0px 1.5px #5b21b6,
-        inset 0px 2px 0px rgba(255, 255, 255, 0.25);
-    border: 1px solid #8c5cff;
-    transition: all 0.2s ease;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 700;
+    border: 1px solid var(--primary);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 6px 18px -8px rgba(20, 184, 166, 0.6);
+    transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 .vb-btn-primary:hover {
-    background: linear-gradient(180deg, #9b72ff 0%, #7c4dff 100%);
-    box-shadow: 
-        0px 2px 6px 0px rgba(0, 0, 0, 0.3),
-        0px 6px 22px 0px rgba(140, 92, 255, 0.5),
-        inset 0px 2px 0px rgba(255, 255, 255, 0.32);
+    background: #5eead4;
     transform: translateY(-1px);
 }
+.vb-btn-primary:active { transform: translateY(0); }
+.vb-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
-/* Codeforge Dual Radial Violet Bloom Hero Glow (smooth fade, zero rectangular clipping) */
-.cf-violet-radial-1 {
-    background: radial-gradient(circle at 50% 42%, rgba(112, 51, 255, 0.32) 0%, rgba(140, 92, 255, 0.10) 38%, transparent 72%);
-}
-
-.cf-violet-radial-2 {
-    background: radial-gradient(circle at 50% 38%, rgba(140, 92, 255, 0.28) 0%, rgba(229, 124, 216, 0.08) 42%, transparent 70%);
-}
-
-/* Architectural Grid with Radial Fade Mask for Hero */
-.cf-hero-grid {
-    background-size: 48px 48px;
-    background-image: 
-        linear-gradient(to right, rgba(140, 92, 255, 0.07) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(140, 92, 255, 0.07) 1px, transparent 1px);
-    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, #000 25%, transparent 80%);
-    mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, #000 25%, transparent 80%);
-}
-
-/* Codeforge Gradient Headline Text */
+/* ---------- Texto con degradado (solo portada) ---------- */
 .vb-gradient-text {
-    background: radial-gradient(circle at 50% 20%, #a78bfa 0%, #8c5cff 45%, #e57cd8 100%);
+    background: linear-gradient(90deg, #5eead4 0%, #2dd4bf 45%, #38bdf8 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
 }
 
-/* Codeforge Interactive Showcase Tab Button (#demo tabs) */
-.cf-demo-tab {
-    position: relative;
-    cursor: pointer;
-    overflow: hidden;
-    width: 100%;
-    min-height: 54px;
-    padding: 1rem 1.25rem;
-    font-size: 0.84rem;
-    font-weight: 600;
-    white-space: nowrap;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-    color: var(--muted-foreground);
-    background-color: transparent;
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-}
+/* Portada: brillo sutil en lugar del resplandor violeta */
+.cf-violet-radial-1 { background: radial-gradient(circle at 50% 38%, rgba(20, 184, 166, 0.20) 0%, transparent 62%); }
+.cf-violet-radial-2 { background: radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.10) 0%, transparent 60%); }
+.cf-hero-grid { display: none; }
+.cf-dot-matrix { background-image: none; }
 
-.cf-demo-tab:hover {
-    color: var(--foreground);
-    background-color: rgba(140, 92, 255, 0.04);
-}
-
-.cf-demo-tab.active {
-    color: var(--foreground);
-    background: linear-gradient(180deg, rgba(140, 92, 255, 0.14) 0%, transparent 90%);
-}
-
-/* Animated bottom laser line on active Codeforge tab */
-.cf-demo-tab .tab-laser {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #7033ff 0%, #8c5cff 50%, #e57cd8 100%);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.cf-demo-tab.active .tab-laser {
-    transform: scaleX(1);
-}
-
-/* Dotted Canvas Texture inside Active Tab & Bento Headers */
-.cf-dot-matrix {
-    background-image: radial-gradient(rgba(140, 92, 255, 0.28) 1px, transparent 1px);
-    background-size: 10px 10px;
-}
-
-/* Codeforge Card & Surface Helpers */
+/* ---------- Tarjetas ---------- */
 .cf-card {
     background-color: var(--card);
     border: 1px solid var(--border);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.15s ease;
 }
-.cf-card:hover {
-    border-color: rgba(140, 92, 255, 0.45);
+.cf-card:hover { border-color: rgba(45, 212, 191, 0.45); }
+
+/* ==========================================================================
+   LAYOUT DE LA APLICACIÓN (sesión iniciada): barra lateral + contenido
+   ========================================================================== */
+#top-header-bar {
+    background: rgba(10, 18, 32, 0.92) !important;
+    border-bottom: 1px solid var(--border);
 }
 
-/* Toggl Track Play / Stop Circular Buttons in Violet Bloom */
+#hero { order: 0; }
+#company { order: 1; }
+#demo { order: 2; }
+#workflow-bento { display: none !important; }
+footer { order: 9; }
+
+/* Portada (sin sesión): compacta y legible */
+body:not(.authed) #hero h1 { letter-spacing: -0.02em; }
+
+/* Con sesión: la portada se reduce a un encabezado de página */
+body.authed #hero {
+    align-items: flex-start !important;
+    padding: 1.25rem 1rem 0.5rem !important;
+    flex: 0 0 auto !important;
+}
+body.authed #hero > div.absolute,
+body.authed #hero h1,
+body.authed #hero-cta-buttons,
+body.authed #hero svg { display: none !important; }
+body.authed #hero > div.relative {
+    align-items: flex-start !important;
+    text-align: left !important;
+    max-width: none !important;
+    gap: 0.25rem !important;
+}
+body.authed #hero > div.relative > div:first-child {
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+body.authed #header-view-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+body.authed #header-view-subtitle {
+    margin: 0 !important;
+    max-width: none !important;
+    text-align: left !important;
+    font-size: 0.875rem;
+}
+body.authed #hero .font-mono.rounded-full { display: none; }
+
+/* Franja de indicadores */
+body.authed #company { padding: 0.5rem 1rem; }
+body.authed #company > div { border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); overflow: hidden; }
+
+/* Espacio de trabajo: sin marco decorativo */
+body.authed #demo > div > div:last-child { padding: 0.75rem 1rem 1.5rem !important; background: transparent !important; }
+body.authed #demo > div > div:last-child > div { box-shadow: none !important; border-radius: var(--radius) !important; }
+
+@media (min-width: 1024px) {
+    body.authed #demo > div {
+        display: grid !important;
+        grid-template-columns: 244px minmax(0, 1fr);
+        grid-template-rows: auto 1fr;
+        align-items: start;
+        column-gap: 0;
+        padding: 0 1rem;
+    }
+    body.authed #demo-tabs-bar:not(.hidden),
+    body.authed #sidebar-boss-section:not(.hidden) {
+        display: flex !important;
+        flex-direction: column;
+        grid-column: 1;
+        padding: 0.75rem 0.75rem 0 0;
+        gap: 2px;
+        background: transparent !important;
+        border: 0 !important;
+    }
+    body.authed #demo-tabs-bar { grid-row: 1; position: sticky; top: 72px; z-index: 5; }
+    body.authed #sidebar-boss-section { grid-row: 2; padding-top: 0.5rem; border-top: 1px solid var(--border) !important; margin-right: 0.75rem; }
+    body.authed #demo > div > div:last-child { grid-column: 2; grid-row: 1 / span 2; padding: 0.75rem 0 1.5rem !important; }
+}
+
+/* Móvil / tableta: barra de navegación horizontal desplazable */
+@media (max-width: 1023px) {
+    body.authed #demo-tabs-bar:not(.hidden),
+    body.authed #sidebar-boss-section:not(.hidden) {
+        display: flex !important;
+        overflow-x: auto;
+        gap: 0;
+        scrollbar-width: thin;
+        border-bottom: 1px solid var(--border);
+    }
+    body.authed #demo-tabs-bar .cf-demo-tab,
+    body.authed #sidebar-boss-section .cf-demo-tab { flex: 0 0 auto; width: auto; min-width: 132px; }
+}
+
+/* ---------- Elementos de navegación ---------- */
+.cf-demo-tab {
+    position: relative;
+    width: 100%;
+    min-height: 48px;
+    padding: 0.7rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.7rem;
+    color: var(--muted-foreground);
+    background-color: transparent;
+    border: 0;
+    border-radius: 10px;
+    text-align: left;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.cf-demo-tab i { width: 1.1rem; text-align: center; color: var(--primary); }
+.cf-demo-tab:hover { color: var(--foreground); background-color: rgba(45, 212, 191, 0.07); }
+.cf-demo-tab.active {
+    color: #ffffff;
+    background-color: rgba(45, 212, 191, 0.14);
+    box-shadow: inset 3px 0 0 var(--primary);
+}
+.cf-demo-tab .tab-laser { display: none; }
+.cf-demo-tab.\!text-rose-400 i { color: inherit; }
+@media (max-width: 1023px) {
+    .cf-demo-tab { justify-content: center; border-radius: 0; }
+    .cf-demo-tab.active { box-shadow: inset 0 -3px 0 var(--primary); }
+}
+
+/* ---------- Cronómetro (Toggl) ---------- */
 .toggl-play-btn {
     width: 36px;
     height: 36px;
@@ -205,16 +303,12 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(180deg, #8c5cff 0%, #7033ff 100%);
-    color: #ffffff;
+    background: var(--primary);
+    color: var(--primary-foreground);
     font-size: 0.8rem;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 0 16px rgba(140, 92, 255, 0.45);
+    transition: transform 0.15s ease;
 }
-.toggl-play-btn:hover {
-    transform: scale(1.07);
-}
-
+.toggl-play-btn:hover { transform: scale(1.07); }
 .toggl-stop-btn {
     width: 36px;
     height: 36px;
@@ -222,33 +316,22 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #f43f5e;
+    background: #ef4444;
     color: #ffffff;
     font-size: 0.8rem;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 0 16px rgba(244, 63, 94, 0.45);
+    transition: transform 0.15s ease;
 }
-.toggl-stop-btn:hover {
-    transform: scale(1.07);
-}
+.toggl-stop-btn:hover { transform: scale(1.07); }
 
-/* Pulsing Status Dot */
 @keyframes pulse-ring {
     0% { transform: scale(0.85); opacity: 0.9; }
-    50% { transform: scale(1.25); opacity: 0.35; }
+    50% { transform: scale(1.25); opacity: 0.4; }
     100% { transform: scale(0.85); opacity: 0.9; }
 }
-.timer-pulse {
-    animation: pulse-ring 1.5s infinite ease-in-out;
-}
+.timer-pulse { animation: pulse-ring 1.5s infinite ease-in-out; }
 
-.month-cell {
-    transition: all 0.15s ease;
-    user-select: none;
-}
-.month-cell:hover {
-    transform: translateY(-1px);
-}
+.month-cell { transition: background-color 0.15s ease, transform 0.15s ease; user-select: none; }
+.month-cell:hover { transform: translateY(-1px); }
 
 .qr-container canvas,
 .qr-container img {
@@ -258,21 +341,15 @@ body {
     background: #ffffff;
 }
 
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-::-webkit-scrollbar-track {
-    background: var(--background);
-}
-::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 3px;
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--background); }
+::-webkit-scrollbar-thumb { background: #2b3f60; border-radius: 4px; }
 
+/* ---------- Impresión (etiquetas QR) ---------- */
 @media print {
     body {
         background: #ffffff !important;
+        background-image: none !important;
         color: #000000 !important;
     }
     header, footer, #hero, #company, #workflow-bento, .no-print, #order-detail-modal, #machine-modal, #login-modal, #plan-modal, #category-modal, #notification-drawer {
@@ -296,4 +373,30 @@ body {
         background: white !important;
         color: black !important;
     }
+}
+
+/* ---------- Ajustes móviles de cabecera ---------- */
+@media (max-width: 639px) {
+    #toggl-live-timer-widget { padding-left: 0.5rem; gap: 0.4rem; }
+    #toggl-bar-label { display: none; }
+    #auth-session-pill { display: none !important; }
+    #top-header-bar > div { gap: 0.4rem; padding-left: 0.75rem; padding-right: 0.75rem; }
+    body.authed #company { display: none; }
+    body.authed #header-view-title { font-size: 1.2rem; }
+}
+@media (max-width: 639px) {
+    #top-header-bar img { max-width: none; flex-shrink: 0; }
+    #top-header-bar .cursor-pointer { flex-shrink: 0; }
+    #toggl-live-timer-widget { border-radius: 9999px; padding-right: 0.3rem; }
+    #toggl-bar-dot { display: none; }
+    #toggl-bar-action-btn { width: 32px !important; height: 32px !important; flex-shrink: 0; }
+    #header-login-btn span { font-size: 0.7rem; }
+}
+@media (max-width: 639px) {
+    #top-header-bar > div { flex-wrap: nowrap; }
+    #top-header-bar > div > div { min-width: 0; }
+    #toggl-live-timer-widget { flex-wrap: nowrap; white-space: nowrap; padding: 0.15rem 0.3rem 0.15rem 0.5rem; }
+    #toggl-bar-clock { font-size: 0.7rem; }
+    #top-header-bar span.font-bold.text-base { display: none; }
+    #header-login-btn { padding-left: 0.6rem; padding-right: 0.6rem; white-space: nowrap; }
 }

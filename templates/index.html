@@ -13,11 +13,12 @@
             theme: {
                 extend: {
                     colors: {
-                        violetBloom: '#8c5cff',
-                        violetDeep: '#7033ff',
+                        gilpa: { DEFAULT: '#2dd4bf', deep: '#14b8a6' },
+                        violetBloom: '#2dd4bf',
+                        violetDeep: '#14b8a6',
                     },
                     fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
                     }
                 }
@@ -40,205 +41,303 @@
     <!-- INLINE_CSS_START -->
     <style>
 /* ==========================================================================
-   SistMaint CMMS 2.0 — Codeforge (codeforge-magicui.vercel.app)
-   + Violet Bloom Theme (21st.dev/@serafimcloud/themes/violet-bloom)
+   SistMaint CMMS — Gilpa Impresores S.A.
+   Sistema de diseño industrial oscuro (azul marino + verde azulado Gilpa)
+   Estado: verde = operativa · ámbar = en mantenimiento · rojo = parada
+   Reglas: contraste >= 4.5:1, foco visible, objetivos táctiles >= 44px,
+           el color nunca es el único indicador, respeta prefers-reduced-motion.
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
-:root {
-    --background: #fdfdfd;
-    --foreground: #09090b;
-    --card: #f8f7fc;
-    --card-foreground: #09090b;
-    --popover: #ffffff;
-    --popover-foreground: #09090b;
-    --primary: #7033ff;
-    --primary-glow: #8c5cff;
-    --primary-foreground: #ffffff;
-    --secondary: #edf0f4;
-    --secondary-foreground: #18181b;
-    --muted: #f3f2f8;
-    --muted-foreground: #646470;
-    --accent: #ede8ff;
-    --accent-foreground: #5b21b6;
-    --border: #e4e2ee;
-    --input: #e4e2ee;
-    --ring: #7033ff;
-    --radius: 1rem;
+:root,
+html.dark {
+    color-scheme: dark;
+
+    /* Superficies */
+    --background: #0a1220;
+    --foreground: #e8eef7;
+    --card: #101a2c;
+    --card-foreground: #e8eef7;
+    --popover: #14213a;
+    --popover-foreground: #e8eef7;
+    --muted: #0d1626;
+    --muted-foreground: #9fb0c6;
+    --secondary: #172338;
+    --secondary-foreground: #e8eef7;
+    --border: #22324d;
+    --input: #22324d;
+
+    /* Marca Gilpa */
+    --primary: #2dd4bf;
+    --primary-strong: #14b8a6;
+    --primary-foreground: #04201d;
+    --accent: #12304a;
+    --accent-foreground: #99f6e4;
+    --ring: #5eead4;
+
+    /* Estado */
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --info: #38bdf8;
+
+    --radius: 0.75rem;
 }
 
-html.dark {
-    --background: #0c0c10;
-    --foreground: #f4f4f6;
-    --card: #13131a;
-    --card-foreground: #f4f4f6;
-    --popover: #16161f;
-    --popover-foreground: #f4f4f6;
-    --primary: #8c5cff;
-    --primary-glow: #7033ff;
-    --primary-foreground: #ffffff;
-    --secondary: #1e1e28;
-    --secondary-foreground: #e4e4e7;
-    --muted: #191922;
-    --muted-foreground: #9494a6;
-    --accent: #231d38;
-    --accent-foreground: #d8b4fe;
-    --border: #242430;
-    --input: #242430;
-    --ring: #8c5cff;
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     background-color: var(--background);
+    background-image: radial-gradient(1100px 420px at 50% -120px, rgba(20, 184, 166, 0.10), transparent 70%);
+    background-repeat: no-repeat;
     color: var(--foreground);
+    font-size: 16px;
+    line-height: 1.5;
     overflow-x: hidden;
-    letter-spacing: -0.015em;
-    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* ==========================================================================
-   CODEFORGE ARCHITECTURAL BORDERS & CROSSHAIRS
-   ========================================================================== */
-
-.cf-border {
-    border-color: var(--border) !important;
+/* ---------- Accesibilidad global ---------- */
+:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+::selection {
+    background: rgba(45, 212, 191, 0.3);
+    color: #ffffff;
+}
+button, a, select, input, textarea, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled), [onclick] {
+    cursor: pointer;
+}
+@media (pointer: coarse) {
+    button, select, input:not([type="checkbox"]):not([type="radio"]), .cf-demo-tab {
+        min-height: 44px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
-.cf-divide-y > :not([hidden]) ~ :not([hidden]) {
-    border-top: 1px solid var(--border);
+/* ---------- Formularios (oscuros por defecto) ---------- */
+input, select, textarea {
+    color-scheme: dark;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
+    background-color: var(--card);
+    color: var(--foreground);
+    border-color: var(--border);
+}
+input::placeholder, textarea::placeholder {
+    color: #7d90aa;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+    border-color: var(--ring);
 }
 
-.cf-divide-x > :not([hidden]) ~ :not([hidden]) {
-    border-left: 1px solid var(--border);
-}
+/* ---------- Bordes y divisores ---------- */
+.cf-border { border-color: var(--border) !important; }
+.cf-divide-y > :not([hidden]) ~ :not([hidden]) { border-top: 1px solid var(--border); }
+.cf-divide-x > :not([hidden]) ~ :not([hidden]) { border-left: 1px solid var(--border); }
 
-/* Codeforge Shadow Badge Pill (from codeforge-magicui.vercel.app) */
+/* ---------- Chips / insignias ---------- */
 .shadow-badge {
     background-color: var(--card);
     border: 1px solid var(--border);
-    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.08), inset 0px 1px 0px 0px rgba(255, 255, 255, 0.08);
 }
 
-/* Codeforge 3D Violet Bloom Skeuomorphic Button */
+/* ---------- Botón primario (verde azulado Gilpa, texto oscuro: 9:1) ---------- */
 .vb-btn-primary {
-    background: linear-gradient(180deg, #8c5cff 0%, #7033ff 100%);
-    color: #ffffff;
-    box-shadow: 
-        0px 1px 2px 0px rgba(0, 0, 0, 0.25),
-        0px 4px 14px 0px rgba(112, 51, 255, 0.35),
-        inset 0px 0px 1.5px #5b21b6,
-        inset 0px 2px 0px rgba(255, 255, 255, 0.25);
-    border: 1px solid #8c5cff;
-    transition: all 0.2s ease;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 700;
+    border: 1px solid var(--primary);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 6px 18px -8px rgba(20, 184, 166, 0.6);
+    transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 .vb-btn-primary:hover {
-    background: linear-gradient(180deg, #9b72ff 0%, #7c4dff 100%);
-    box-shadow: 
-        0px 2px 6px 0px rgba(0, 0, 0, 0.3),
-        0px 6px 22px 0px rgba(140, 92, 255, 0.5),
-        inset 0px 2px 0px rgba(255, 255, 255, 0.32);
+    background: #5eead4;
     transform: translateY(-1px);
 }
+.vb-btn-primary:active { transform: translateY(0); }
+.vb-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
-/* Codeforge Dual Radial Violet Bloom Hero Glow (smooth fade, zero rectangular clipping) */
-.cf-violet-radial-1 {
-    background: radial-gradient(circle at 50% 42%, rgba(112, 51, 255, 0.32) 0%, rgba(140, 92, 255, 0.10) 38%, transparent 72%);
-}
-
-.cf-violet-radial-2 {
-    background: radial-gradient(circle at 50% 38%, rgba(140, 92, 255, 0.28) 0%, rgba(229, 124, 216, 0.08) 42%, transparent 70%);
-}
-
-/* Architectural Grid with Radial Fade Mask for Hero */
-.cf-hero-grid {
-    background-size: 48px 48px;
-    background-image: 
-        linear-gradient(to right, rgba(140, 92, 255, 0.07) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(140, 92, 255, 0.07) 1px, transparent 1px);
-    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, #000 25%, transparent 80%);
-    mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, #000 25%, transparent 80%);
-}
-
-/* Codeforge Gradient Headline Text */
+/* ---------- Texto con degradado (solo portada) ---------- */
 .vb-gradient-text {
-    background: radial-gradient(circle at 50% 20%, #a78bfa 0%, #8c5cff 45%, #e57cd8 100%);
+    background: linear-gradient(90deg, #5eead4 0%, #2dd4bf 45%, #38bdf8 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
 }
 
-/* Codeforge Interactive Showcase Tab Button (#demo tabs) */
-.cf-demo-tab {
-    position: relative;
-    cursor: pointer;
-    overflow: hidden;
-    width: 100%;
-    min-height: 54px;
-    padding: 1rem 1.25rem;
-    font-size: 0.84rem;
-    font-weight: 600;
-    white-space: nowrap;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-    color: var(--muted-foreground);
-    background-color: transparent;
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-}
+/* Portada: brillo sutil en lugar del resplandor violeta */
+.cf-violet-radial-1 { background: radial-gradient(circle at 50% 38%, rgba(20, 184, 166, 0.20) 0%, transparent 62%); }
+.cf-violet-radial-2 { background: radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.10) 0%, transparent 60%); }
+.cf-hero-grid { display: none; }
+.cf-dot-matrix { background-image: none; }
 
-.cf-demo-tab:hover {
-    color: var(--foreground);
-    background-color: rgba(140, 92, 255, 0.04);
-}
-
-.cf-demo-tab.active {
-    color: var(--foreground);
-    background: linear-gradient(180deg, rgba(140, 92, 255, 0.14) 0%, transparent 90%);
-}
-
-/* Animated bottom laser line on active Codeforge tab */
-.cf-demo-tab .tab-laser {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #7033ff 0%, #8c5cff 50%, #e57cd8 100%);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.cf-demo-tab.active .tab-laser {
-    transform: scaleX(1);
-}
-
-/* Dotted Canvas Texture inside Active Tab & Bento Headers */
-.cf-dot-matrix {
-    background-image: radial-gradient(rgba(140, 92, 255, 0.28) 1px, transparent 1px);
-    background-size: 10px 10px;
-}
-
-/* Codeforge Card & Surface Helpers */
+/* ---------- Tarjetas ---------- */
 .cf-card {
     background-color: var(--card);
     border: 1px solid var(--border);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.15s ease;
 }
-.cf-card:hover {
-    border-color: rgba(140, 92, 255, 0.45);
+.cf-card:hover { border-color: rgba(45, 212, 191, 0.45); }
+
+/* ==========================================================================
+   LAYOUT DE LA APLICACIÓN (sesión iniciada): barra lateral + contenido
+   ========================================================================== */
+#top-header-bar {
+    background: rgba(10, 18, 32, 0.92) !important;
+    border-bottom: 1px solid var(--border);
 }
 
-/* Toggl Track Play / Stop Circular Buttons in Violet Bloom */
+#hero { order: 0; }
+#company { order: 1; }
+#demo { order: 2; }
+#workflow-bento { display: none !important; }
+footer { order: 9; }
+
+/* Portada (sin sesión): compacta y legible */
+body:not(.authed) #hero h1 { letter-spacing: -0.02em; }
+
+/* Con sesión: la portada se reduce a un encabezado de página */
+body.authed #hero {
+    align-items: flex-start !important;
+    padding: 1.25rem 1rem 0.5rem !important;
+    flex: 0 0 auto !important;
+}
+body.authed #hero > div.absolute,
+body.authed #hero h1,
+body.authed #hero-cta-buttons,
+body.authed #hero svg { display: none !important; }
+body.authed #hero > div.relative {
+    align-items: flex-start !important;
+    text-align: left !important;
+    max-width: none !important;
+    gap: 0.25rem !important;
+}
+body.authed #hero > div.relative > div:first-child {
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+body.authed #header-view-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+body.authed #header-view-subtitle {
+    margin: 0 !important;
+    max-width: none !important;
+    text-align: left !important;
+    font-size: 0.875rem;
+}
+body.authed #hero .font-mono.rounded-full { display: none; }
+
+/* Franja de indicadores */
+body.authed #company { padding: 0.5rem 1rem; }
+body.authed #company > div { border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); overflow: hidden; }
+
+/* Espacio de trabajo: sin marco decorativo */
+body.authed #demo > div > div:last-child { padding: 0.75rem 1rem 1.5rem !important; background: transparent !important; }
+body.authed #demo > div > div:last-child > div { box-shadow: none !important; border-radius: var(--radius) !important; }
+
+@media (min-width: 1024px) {
+    body.authed #demo > div {
+        display: grid !important;
+        grid-template-columns: 244px minmax(0, 1fr);
+        grid-template-rows: auto 1fr;
+        align-items: start;
+        column-gap: 0;
+        padding: 0 1rem;
+    }
+    body.authed #demo-tabs-bar:not(.hidden),
+    body.authed #sidebar-boss-section:not(.hidden) {
+        display: flex !important;
+        flex-direction: column;
+        grid-column: 1;
+        padding: 0.75rem 0.75rem 0 0;
+        gap: 2px;
+        background: transparent !important;
+        border: 0 !important;
+    }
+    body.authed #demo-tabs-bar { grid-row: 1; position: sticky; top: 72px; z-index: 5; }
+    body.authed #sidebar-boss-section { grid-row: 2; padding-top: 0.5rem; border-top: 1px solid var(--border) !important; margin-right: 0.75rem; }
+    body.authed #demo > div > div:last-child { grid-column: 2; grid-row: 1 / span 2; padding: 0.75rem 0 1.5rem !important; }
+}
+
+/* Móvil / tableta: barra de navegación horizontal desplazable */
+@media (max-width: 1023px) {
+    body.authed #demo-tabs-bar:not(.hidden),
+    body.authed #sidebar-boss-section:not(.hidden) {
+        display: flex !important;
+        overflow-x: auto;
+        gap: 0;
+        scrollbar-width: thin;
+        border-bottom: 1px solid var(--border);
+    }
+    body.authed #demo-tabs-bar .cf-demo-tab,
+    body.authed #sidebar-boss-section .cf-demo-tab { flex: 0 0 auto; width: auto; min-width: 132px; }
+}
+
+/* ---------- Elementos de navegación ---------- */
+.cf-demo-tab {
+    position: relative;
+    width: 100%;
+    min-height: 48px;
+    padding: 0.7rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.7rem;
+    color: var(--muted-foreground);
+    background-color: transparent;
+    border: 0;
+    border-radius: 10px;
+    text-align: left;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.cf-demo-tab i { width: 1.1rem; text-align: center; color: var(--primary); }
+.cf-demo-tab:hover { color: var(--foreground); background-color: rgba(45, 212, 191, 0.07); }
+.cf-demo-tab.active {
+    color: #ffffff;
+    background-color: rgba(45, 212, 191, 0.14);
+    box-shadow: inset 3px 0 0 var(--primary);
+}
+.cf-demo-tab .tab-laser { display: none; }
+.cf-demo-tab.\!text-rose-400 i { color: inherit; }
+@media (max-width: 1023px) {
+    .cf-demo-tab { justify-content: center; border-radius: 0; }
+    .cf-demo-tab.active { box-shadow: inset 0 -3px 0 var(--primary); }
+}
+
+/* ---------- Cronómetro (Toggl) ---------- */
 .toggl-play-btn {
     width: 36px;
     height: 36px;
@@ -246,16 +345,12 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(180deg, #8c5cff 0%, #7033ff 100%);
-    color: #ffffff;
+    background: var(--primary);
+    color: var(--primary-foreground);
     font-size: 0.8rem;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 0 16px rgba(140, 92, 255, 0.45);
+    transition: transform 0.15s ease;
 }
-.toggl-play-btn:hover {
-    transform: scale(1.07);
-}
-
+.toggl-play-btn:hover { transform: scale(1.07); }
 .toggl-stop-btn {
     width: 36px;
     height: 36px;
@@ -263,33 +358,22 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #f43f5e;
+    background: #ef4444;
     color: #ffffff;
     font-size: 0.8rem;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 0 16px rgba(244, 63, 94, 0.45);
+    transition: transform 0.15s ease;
 }
-.toggl-stop-btn:hover {
-    transform: scale(1.07);
-}
+.toggl-stop-btn:hover { transform: scale(1.07); }
 
-/* Pulsing Status Dot */
 @keyframes pulse-ring {
     0% { transform: scale(0.85); opacity: 0.9; }
-    50% { transform: scale(1.25); opacity: 0.35; }
+    50% { transform: scale(1.25); opacity: 0.4; }
     100% { transform: scale(0.85); opacity: 0.9; }
 }
-.timer-pulse {
-    animation: pulse-ring 1.5s infinite ease-in-out;
-}
+.timer-pulse { animation: pulse-ring 1.5s infinite ease-in-out; }
 
-.month-cell {
-    transition: all 0.15s ease;
-    user-select: none;
-}
-.month-cell:hover {
-    transform: translateY(-1px);
-}
+.month-cell { transition: background-color 0.15s ease, transform 0.15s ease; user-select: none; }
+.month-cell:hover { transform: translateY(-1px); }
 
 .qr-container canvas,
 .qr-container img {
@@ -299,21 +383,15 @@ body {
     background: #ffffff;
 }
 
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-::-webkit-scrollbar-track {
-    background: var(--background);
-}
-::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 3px;
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--background); }
+::-webkit-scrollbar-thumb { background: #2b3f60; border-radius: 4px; }
 
+/* ---------- Impresión (etiquetas QR) ---------- */
 @media print {
     body {
         background: #ffffff !important;
+        background-image: none !important;
         color: #000000 !important;
     }
     header, footer, #hero, #company, #workflow-bento, .no-print, #order-detail-modal, #machine-modal, #login-modal, #plan-modal, #category-modal, #notification-drawer {
@@ -339,10 +417,36 @@ body {
     }
 }
 
+/* ---------- Ajustes móviles de cabecera ---------- */
+@media (max-width: 639px) {
+    #toggl-live-timer-widget { padding-left: 0.5rem; gap: 0.4rem; }
+    #toggl-bar-label { display: none; }
+    #auth-session-pill { display: none !important; }
+    #top-header-bar > div { gap: 0.4rem; padding-left: 0.75rem; padding-right: 0.75rem; }
+    body.authed #company { display: none; }
+    body.authed #header-view-title { font-size: 1.2rem; }
+}
+@media (max-width: 639px) {
+    #top-header-bar img { max-width: none; flex-shrink: 0; }
+    #top-header-bar .cursor-pointer { flex-shrink: 0; }
+    #toggl-live-timer-widget { border-radius: 9999px; padding-right: 0.3rem; }
+    #toggl-bar-dot { display: none; }
+    #toggl-bar-action-btn { width: 32px !important; height: 32px !important; flex-shrink: 0; }
+    #header-login-btn span { font-size: 0.7rem; }
+}
+@media (max-width: 639px) {
+    #top-header-bar > div { flex-wrap: nowrap; }
+    #top-header-bar > div > div { min-width: 0; }
+    #toggl-live-timer-widget { flex-wrap: nowrap; white-space: nowrap; padding: 0.15rem 0.3rem 0.15rem 0.5rem; }
+    #toggl-bar-clock { font-size: 0.7rem; }
+    #top-header-bar span.font-bold.text-base { display: none; }
+    #header-login-btn { padding-left: 0.6rem; padding-right: 0.6rem; white-space: nowrap; }
+}
+
     </style>
     <!-- INLINE_CSS_END -->
 </head>
-<body class="min-h-screen antialiased px-2 sm:px-4 lg:px-0 overflow-x-hidden selection:bg-[#8c5cff]/30 selection:text-white">
+<body class="min-h-screen antialiased px-2 sm:px-4 lg:px-0 overflow-x-hidden selection:bg-[#2dd4bf]/30 selection:text-white">
 
     <!-- ===================================================================== -->
     <!-- CODEFORGE FIXED TOP NAVBAR (Exact match to codeforge-magicui.vercel.app) -->
@@ -360,9 +464,6 @@ body {
                         <span class="hidden sm:block text-[9px] font-mono font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Gilpa Impresores S.A.</span>
                         <span class="font-bold text-base sm:text-lg tracking-tight">SistMaint</span>
                     </div>
-                    <span class="hidden sm:inline-block text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#8c5cff]/15 text-[#8c5cff] border border-[#8c5cff]/30">
-                        Violet Bloom
-                    </span>
                 </div>
             </div>
 
@@ -370,7 +471,7 @@ body {
             <div class="flex items-center gap-2">
                 <div id="auth-session-pill" class="hidden items-center gap-2 px-3.5 py-1 rounded-full shadow-badge">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span id="sidebar-role-title" class="text-xs font-semibold text-[#8c5cff]">Sesión Activa</span>
+                    <span id="sidebar-role-title" class="text-xs font-semibold text-[#2dd4bf]">Sesión Activa</span>
                 </div>
                 <div id="role-avatar-icon" class="hidden"></div>
             </div>
@@ -388,19 +489,14 @@ body {
                 </div>
 
                 <!-- Cloud Sync Button -->
-                <button id="header-sync-btn" onclick="syncWithCloud(true)" class="hidden h-8 w-8 rounded-full shadow-badge items-center justify-center text-[#8c5cff] hover:scale-105 transition-all" title="Sincronizar con Supabase">
+                <button id="header-sync-btn" onclick="syncWithCloud(true)" class="hidden h-8 w-8 rounded-full shadow-badge items-center justify-center text-[#2dd4bf] hover:scale-105 transition-all" title="Sincronizar con Supabase">
                     <i id="cloud-sync-icon" class="fa-solid fa-cloud text-xs"></i>
-                </button>
-
-                <!-- Light / Dark Theme Toggle (Exact Codeforge Sun/Moon button) -->
-                <button onclick="toggleThemeMode()" class="h-8 w-8 rounded-full shadow-badge flex items-center justify-center hover:scale-105 transition-all" title="Cambiar Tema Claro / Oscuro">
-                    <i id="theme-toggle-icon" class="fa-solid fa-sun text-xs text-[#8c5cff]"></i>
                 </button>
 
                 <!-- Notifications Bell -->
                 <button id="header-notif-btn" onclick="toggleNotificationDrawer()" class="hidden relative h-8 w-8 rounded-full shadow-badge items-center justify-center hover:scale-105 transition-all" title="Notificaciones a Jefes y Técnicos">
                     <i class="fa-solid fa-bell text-xs"></i>
-                    <span id="notif-unread-badge" class="hidden absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[#7033ff] text-white text-[9px] font-mono font-bold flex items-center justify-center">0</span>
+                    <span id="notif-unread-badge" class="hidden absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[#14b8a6] text-white text-[9px] font-mono font-bold flex items-center justify-center">0</span>
                 </button>
 
                 <!-- Primary Violet Bloom CTA / Login -->
@@ -436,13 +532,13 @@ body {
                     
                     <!-- Codeforge Shadow-Badge Pill -->
                     <div class="flex items-center gap-2 px-4 py-1.5 rounded-full shadow-badge">
-                        <span class="shrink-0 w-4 h-4 text-[#8c5cff]">
+                        <span class="shrink-0 w-4 h-4 text-[#2dd4bf]">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-4">
                                 <path d="M7.62758 1.09876C7.74088 1.03404 7.8691 1 7.99958 1C8.13006 1 8.25828 1.03404 8.37158 1.09876L13.6216 4.09876C13.7363 4.16438 13.8316 4.25915 13.8979 4.37347C13.9642 4.48779 13.9992 4.6176 13.9992 4.74976C13.9992 4.88191 13.9642 5.01172 13.8979 5.12604C13.8316 5.24036 13.7363 5.33513 13.6216 5.40076L8.37158 8.40076C8.25828 8.46548 8.13006 8.49952 7.99958 8.49952C7.8691 8.49952 7.74088 8.46548 7.62758 8.40076L2.37758 5.40076C2.26287 5.33513 2.16753 5.24036 2.10123 5.12604C2.03492 5.01172 2 4.88191 2 4.74976C2 4.6176 2.03492 4.48779 2.10123 4.37347C2.16753 4.25915 2.26287 4.16438 2.37758 4.09876L7.62758 1.09876Z" fill="currentColor"></path>
                             </svg>
                         </span>
                         <span id="header-view-title" class="text-xs sm:text-sm font-medium">Reportar Falla por QR</span>
-                        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#8c5cff]/20 text-[#8c5cff] font-bold">CLOUD LIVE</span>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2dd4bf]/20 text-[#2dd4bf] font-bold">CLOUD LIVE</span>
                     </div>
 
                     <!-- Codeforge Display Headline -->
@@ -460,8 +556,8 @@ body {
                             <i class="fa-solid fa-qrcode"></i>
                             <span>Escanear QR / Reportar Falla</span>
                         </button>
-                        <button id="hero-login-btn" onclick="openLoginModal()" class="rounded-full px-7 py-3 text-xs sm:text-sm font-medium shadow-badge hover:border-[#8c5cff]/50 transition-all flex items-center gap-2">
-                            <i class="fa-solid fa-right-to-bracket text-[#8c5cff]"></i>
+                        <button id="hero-login-btn" onclick="openLoginModal()" class="rounded-full px-7 py-3 text-xs sm:text-sm font-medium shadow-badge hover:border-[#2dd4bf]/50 transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-right-to-bracket text-[#2dd4bf]"></i>
                             <span>Iniciar Sesión</span>
                         </button>
                     </div>
@@ -478,39 +574,39 @@ body {
                     <!-- Codeforge 4-Column Flush Interactive Tab Bar (Hidden for unauthenticated Operario!) -->
                     <div id="demo-tabs-bar" class="hidden w-full grid grid-cols-2 lg:grid-cols-5 overflow-hidden no-print">
                         <button type="button" onclick="navigateTo('report')" id="nav-report" class="cf-demo-tab active">
-                            <i class="fa-solid fa-qrcode text-[#8c5cff]"></i>
+                            <i class="fa-solid fa-qrcode text-[#2dd4bf]"></i>
                             <span>Reportar Falla (QR)</span>
                             <span class="tab-laser"></span>
                         </button>
 
                         <button type="button" onclick="navigateTo('orders')" id="nav-orders" class="cf-demo-tab">
-                            <i class="fa-solid fa-stopwatch text-[#8c5cff]"></i>
+                            <i class="fa-solid fa-stopwatch text-[#2dd4bf]"></i>
                             <span>Máquinas Dañadas & Timer</span>
-                            <span id="badge-active-orders" class="px-1.5 py-0.5 text-[10px] font-mono rounded-full bg-[#8c5cff]/20 text-[#8c5cff] font-bold">0</span>
+                            <span id="badge-active-orders" class="px-1.5 py-0.5 text-[10px] font-mono rounded-full bg-[#2dd4bf]/20 text-[#2dd4bf] font-bold">0</span>
                             <span class="tab-laser"></span>
                         </button>
 
                         <button type="button" onclick="navigateTo('machines')" id="nav-machines" class="cf-demo-tab">
-                            <i class="fa-solid fa-book-medical text-[#8c5cff]"></i>
+                            <i class="fa-solid fa-book-medical text-[#2dd4bf]"></i>
                             <span>Hojas de Vida & QR</span>
                             <span class="tab-laser"></span>
                         </button>
 
                         <button type="button" onclick="navigateTo('calendar')" id="nav-calendar" class="cf-demo-tab">
-                            <i class="fa-solid fa-calendar-days text-[#8c5cff]"></i>
+                            <i class="fa-solid fa-calendar-days text-[#2dd4bf]"></i>
                             <span>Calendario</span>
                             <span class="tab-laser"></span>
                         </button>
 
                         <button type="button" onclick="navigateTo('plans')" id="nav-plans" class="cf-demo-tab">
-                            <i class="fa-solid fa-calendar-check text-[#8c5cff]"></i>
+                            <i class="fa-solid fa-calendar-check text-[#2dd4bf]"></i>
                             <span>Plan Preventivo 2027</span>
                             <span class="tab-laser"></span>
                         </button>
                     </div>
 
                     <!-- Boss Exclusive Secondary Flush Tab Bar (Visible only when Jefe is logged in!) -->
-                    <div id="sidebar-boss-section" class="hidden w-full grid grid-cols-2 lg:grid-cols-4 overflow-hidden bg-[#8c5cff]/[0.05] no-print">
+                    <div id="sidebar-boss-section" class="hidden w-full grid grid-cols-2 lg:grid-cols-4 overflow-hidden bg-[#2dd4bf]/[0.05] no-print">
                         <button type="button" onclick="navigateTo('dashboard')" id="nav-dashboard" class="cf-demo-tab">
                             <i class="fa-solid fa-crown text-amber-400"></i>
                             <span>Dashboard Jefe & KPIs</span>
@@ -518,13 +614,13 @@ body {
                         </button>
 
                         <button type="button" onclick="navigateTo('categories')" id="nav-categories" class="cf-demo-tab">
-                            <i class="fa-solid fa-tags text-[#8c5cff]"></i>
+                            <i class="fa-solid fa-tags text-[#2dd4bf]"></i>
                             <span>Categorizar Fallas</span>
                             <span class="tab-laser"></span>
                         </button>
 
                         <button type="button" onclick="navigateTo('technicians')" id="nav-technicians" class="cf-demo-tab">
-                            <i class="fa-solid fa-users-gear text-[#8c5cff]"></i>
+                            <i class="fa-solid fa-users-gear text-[#2dd4bf]"></i>
                             <span>Equipo Técnico</span>
                             <span class="tab-laser"></span>
                         </button>
@@ -536,22 +632,9 @@ body {
                     </div>
 
                     <!-- CODEFORGE INTERACTIVE WORKSPACE FRAME -->
-                    <div class="p-3 sm:p-6 md:p-10 bg-[var(--muted)]/35 cf-dot-matrix">
-                        <div class="rounded-2xl border cf-border bg-[var(--background)] shadow-2xl overflow-hidden">
+                    <div class="p-0 sm:p-1">
+                        <div class="rounded-2xl border cf-border bg-[var(--background)] overflow-hidden">
                             
-                            <!-- Window Frame Top Chrome Bar -->
-                            <div class="px-4 py-3 border-b cf-border bg-[var(--card)] flex items-center justify-between gap-3 no-print">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
-                                    <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
-                                    <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
-                                    <span class="ml-2 text-xs font-mono text-[var(--muted-foreground)]">sistmaint://workspace.cmms.v2</span>
-                                </div>
-                                <div class="flex items-center gap-2 text-xs font-mono text-[var(--muted-foreground)]">
-                                    <span class="w-2 h-2 rounded-full bg-[#8c5cff] animate-pulse"></span>
-                                    <span>2 Objetos Activos en Cloud DB</span>
-                                </div>
-                            </div>
 
                             <!-- ================================================= -->
                             <!-- VIEW 1: REPORTAR FALLA POR QR (OPERARIO / PLANTA) -->
@@ -559,13 +642,13 @@ body {
                             <div id="view-report" class="cf-divide-y">
 
                                 <!-- Operator Standalone Form Header (Visible when unauthenticated Operario opens the QR Form) -->
-                                <div id="operator-standalone-bar" class="p-4 sm:px-6 bg-[#8c5cff]/[0.06] flex flex-wrap items-center justify-between gap-3">
-                                    <button type="button" onclick="returnToLockedHomepage()" class="px-3.5 py-1.5 rounded-full shadow-badge text-xs font-semibold hover:border-[#8c5cff] transition-all flex items-center gap-1.5">
-                                        <i class="fa-solid fa-arrow-left text-[#8c5cff]"></i>
+                                <div id="operator-standalone-bar" class="p-4 sm:px-6 bg-[#2dd4bf]/[0.06] flex flex-wrap items-center justify-between gap-3">
+                                    <button type="button" onclick="returnToLockedHomepage()" class="px-3.5 py-1.5 rounded-full shadow-badge text-xs font-semibold hover:border-[#2dd4bf] transition-all flex items-center gap-1.5">
+                                        <i class="fa-solid fa-arrow-left text-[#2dd4bf]"></i>
                                         <span>Volver al Inicio</span>
                                     </button>
                                     <div class="flex items-center gap-2 text-xs font-mono">
-                                        <span class="px-2.5 py-1 rounded-full bg-[#8c5cff]/20 text-[#8c5cff] font-bold">
+                                        <span class="px-2.5 py-1 rounded-full bg-[#2dd4bf]/20 text-[#2dd4bf] font-bold">
                                             <i class="fa-solid fa-qrcode mr-1"></i>FORMULARIO OPERARIO QR
                                         </span>
                                     </div>
@@ -575,7 +658,7 @@ body {
                                 <div id="qr-scanner-container" class="hidden p-6 bg-[var(--card)]">
                                     <div class="max-w-md mx-auto space-y-3">
                                         <div class="flex items-center justify-between">
-                                            <span class="text-xs font-mono font-bold text-[#8c5cff] flex items-center gap-2">
+                                            <span class="text-xs font-mono font-bold text-[#2dd4bf] flex items-center gap-2">
                                                 <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
                                                 CÁMARA ESCÁNER QR ACTIVA
                                             </span>
@@ -592,11 +675,11 @@ body {
                                     <!-- Step 1: Machine Selection -->
                                     <div class="p-6 sm:p-8 space-y-3">
                                         <div class="flex flex-wrap items-center justify-between gap-2">
-                                            <label class="text-xs font-mono font-bold uppercase tracking-wider text-[#8c5cff]">
+                                            <label class="text-xs font-mono font-bold uppercase tracking-wider text-[#2dd4bf]">
                                                 01 // MÁQUINA AFECTADA (ESCANEO QR O SELECCIÓN) *
                                             </label>
                                             <button type="button" onclick="toggleQrScanner()" id="btn-toggle-scanner"
-                                                class="px-3.5 py-1.5 rounded-full shadow-badge text-xs font-semibold text-[#8c5cff] hover:border-[#8c5cff] flex items-center gap-1.5">
+                                                class="px-3.5 py-1.5 rounded-full shadow-badge text-xs font-semibold text-[#2dd4bf] hover:border-[#2dd4bf] flex items-center gap-1.5">
                                                 <i class="fa-solid fa-camera"></i> Abrir Cámara QR
                                             </button>
                                         </div>
@@ -604,16 +687,16 @@ body {
                                         <div id="quick-machine-chips" class="flex flex-wrap gap-2 pt-1"></div>
 
                                         <select id="form-machine-id" required onchange="onMachineSelectChange(this.value)"
-                                            class="w-full bg-[var(--card)] border cf-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#8c5cff] transition-colors">
+                                            class="w-full bg-[var(--card)] border cf-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#2dd4bf] transition-colors">
                                             <option value="">-- Selecciona o escanea una máquina --</option>
                                         </select>
 
-                                        <div id="form-machine-info" class="hidden p-3 rounded-xl bg-[#8c5cff]/10 border border-[#8c5cff]/30 flex items-center justify-between gap-2 text-xs text-[#8c5cff]">
+                                        <div id="form-machine-info" class="hidden p-3 rounded-xl bg-[#2dd4bf]/10 border border-[#2dd4bf]/30 flex items-center justify-between gap-2 text-xs text-[#2dd4bf]">
                                             <div class="flex items-center gap-2">
                                                 <i class="fa-solid fa-circle-check"></i>
                                                 <span id="form-machine-info-text" class="font-semibold"></span>
                                             </div>
-                                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#8c5cff]/20 font-bold">QR OK</span>
+                                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#2dd4bf]/20 font-bold">QR OK</span>
                                         </div>
                                     </div>
 
@@ -624,28 +707,28 @@ body {
                                                 02 // NOMBRE COMPLETO (OPERARIO) *
                                             </label>
                                             <input type="text" id="form-operator-name" required placeholder="Ej: Carlos Morales"
-                                                class="w-full bg-[var(--card)] border cf-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#8c5cff]">
+                                                class="w-full bg-[var(--card)] border cf-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#2dd4bf]">
                                         </div>
                                         <div class="p-6 space-y-1.5">
                                             <label class="block text-xs font-mono font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
                                                 FECHA *
                                             </label>
                                             <input type="date" id="form-date" required
-                                                class="w-full bg-[var(--card)] border cf-border rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:border-[#8c5cff]">
+                                                class="w-full bg-[var(--card)] border cf-border rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:border-[#2dd4bf]">
                                         </div>
                                         <div class="p-6 space-y-1.5">
                                             <label class="block text-xs font-mono font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
                                                 HORA *
                                             </label>
                                             <input type="time" id="form-time" required
-                                                class="w-full bg-[var(--card)] border cf-border rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:border-[#8c5cff]">
+                                                class="w-full bg-[var(--card)] border cf-border rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:border-[#2dd4bf]">
                                         </div>
                                     </div>
 
                                     <!-- Step 3: Categorización de Falla -->
                                     <div class="p-6 sm:p-8 space-y-4">
                                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                                            <label class="text-xs font-mono font-bold uppercase tracking-wider text-[#8c5cff]">
+                                            <label class="text-xs font-mono font-bold uppercase tracking-wider text-[#2dd4bf]">
                                                 03 // CATEGORIZAR LA FALLA *
                                             </label>
                                             <span class="text-xs text-[var(--muted-foreground)]">Elige categoría y subcategoría técnica</span>
@@ -660,7 +743,7 @@ body {
                                             </label>
                                             <div id="form-subcategory-chips" class="flex flex-wrap gap-1.5 mb-2.5"></div>
                                             <input type="text" id="form-failure-subcategory" placeholder="Selecciona un chip arriba o escribe el componente (ej: Rodamientos, Sensor...)"
-                                                class="w-full bg-[var(--card)] border cf-border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#8c5cff]">
+                                                class="w-full bg-[var(--card)] border cf-border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#2dd4bf]">
                                         </div>
                                     </div>
 
@@ -704,18 +787,18 @@ body {
                                             </label>
                                             <textarea id="form-description" rows="3" required
                                                 placeholder="Describe qué ocurrió, ruidos, alertas o síntoma detectado..."
-                                                class="w-full bg-[var(--card)] border cf-border rounded-xl p-3.5 text-sm focus:outline-none focus:border-[#8c5cff]"></textarea>
+                                                class="w-full bg-[var(--card)] border cf-border rounded-xl p-3.5 text-sm focus:outline-none focus:border-[#2dd4bf]"></textarea>
                                         </div>
                                     </div>
 
                                     <!-- BOSS EXCLUSIVE FIELDS (Hidden for Operario & Técnico!) -->
-                                    <div id="boss-only-report-fields" class="hidden p-6 sm:p-8 bg-[#8c5cff]/[0.06] space-y-4">
+                                    <div id="boss-only-report-fields" class="hidden p-6 sm:p-8 bg-[#2dd4bf]/[0.06] space-y-4">
                                         <div class="flex items-center justify-between">
-                                            <span class="text-xs font-mono font-bold text-[#8c5cff] flex items-center gap-2">
+                                            <span class="text-xs font-mono font-bold text-[#2dd4bf] flex items-center gap-2">
                                                 <i class="fa-solid fa-crown"></i>
                                                 06 // EXCLUSIVO JEFE: TIPO DE MANTENIMIENTO Y ASIGNACIÓN DE TÉCNICO
                                             </span>
-                                            <span class="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-[#8c5cff]/20 text-[#8c5cff]">Oculto al Operario</span>
+                                            <span class="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-[#2dd4bf]/20 text-[#2dd4bf]">Oculto al Operario</span>
                                         </div>
                                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div>
@@ -746,7 +829,7 @@ body {
 
                                     <div class="p-6 bg-[var(--card)] flex flex-col sm:flex-row items-center justify-between gap-4">
                                         <span class="text-xs text-[var(--muted-foreground)] flex items-center gap-2">
-                                            <i class="fa-solid fa-bell text-[#8c5cff]"></i>
+                                            <i class="fa-solid fa-bell text-[#2dd4bf]"></i>
                                             Notifica automáticamente a Jefes y Técnicos en tiempo real.
                                         </span>
                                         <button type="submit" id="btn-submit-report" class="vb-btn-primary rounded-full px-8 py-3 text-xs font-semibold flex items-center gap-2">
@@ -778,7 +861,7 @@ body {
                                 <!-- Filters -->
                                 <div class="px-6 py-4 bg-[var(--card)] flex flex-wrap items-center gap-3">
                                     <input type="text" id="filter-search" oninput="loadOrdersList()" placeholder="Buscar OT, máquina, síntoma u operario..."
-                                        class="flex-1 min-w-[200px] bg-[var(--background)] border cf-border rounded-full px-4 py-2 text-xs focus:outline-none focus:border-[#8c5cff]">
+                                        class="flex-1 min-w-[200px] bg-[var(--background)] border cf-border rounded-full px-4 py-2 text-xs focus:outline-none focus:border-[#2dd4bf]">
                                     <select id="filter-status" onchange="loadOrdersList()" class="bg-[var(--background)] border cf-border rounded-full px-3.5 py-2 text-xs">
                                         <option value="">Todos los Estados</option>
                                         <option value="PENDIENTE">⏳ Pendientes</option>
@@ -792,7 +875,7 @@ body {
                                     <select id="filter-failure" onchange="loadOrdersList()" class="bg-[var(--background)] border cf-border rounded-full px-3.5 py-2 text-xs">
                                         <option value="">Todas las Categorías</option>
                                     </select>
-                                    <span id="orders-sub-filter-chip" class="hidden items-center gap-2 px-3 py-1.5 rounded-full bg-[#8c5cff]/15 border border-[#8c5cff]/30 text-[11px] font-mono text-[#8c5cff]">
+                                    <span id="orders-sub-filter-chip" class="hidden items-center gap-2 px-3 py-1.5 rounded-full bg-[#2dd4bf]/15 border border-[#2dd4bf]/30 text-[11px] font-mono text-[#2dd4bf]">
                                         <span id="orders-sub-filter-text"></span>
                                         <button type="button" onclick="clearOrderSubFilter()" class="text-zinc-400 hover:text-white cursor-pointer" title="Quitar filtro">&times;</button>
                                     </span>
@@ -825,12 +908,12 @@ body {
                             <div id="view-machines" class="cf-divide-y hidden">
                                 <div class="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
                                     <div>
-                                        <span class="text-xs font-mono font-bold uppercase text-[#8c5cff]">● EXPEDIENTES TÉCNICOS & ALERTAS</span>
+                                        <span class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">● EXPEDIENTES TÉCNICOS & ALERTAS</span>
                                         <h3 class="text-xl font-bold tracking-tight">Hojas de Vida de Máquinas & Stickers QR</h3>
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2">
                                         <button onclick="window.print()" class="px-4 py-2 rounded-full shadow-badge text-xs font-semibold flex items-center gap-2">
-                                            <i class="fa-solid fa-print text-[#8c5cff]"></i> Imprimir QR
+                                            <i class="fa-solid fa-print text-[#2dd4bf]"></i> Imprimir QR
                                         </button>
                                         <button id="btn-new-machine" onclick="openMachineModal()" class="hidden vb-btn-primary px-5 py-2 rounded-full text-xs font-semibold">
                                             + Nueva Máquina / Hoja de Vida
@@ -849,7 +932,7 @@ body {
                                 <div id="cal-main">
                                     <div class="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                         <div>
-                                            <span class="text-xs font-mono font-bold uppercase text-[#8c5cff]">● CALENDARIO PRINCIPAL</span>
+                                            <span class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">● CALENDARIO PRINCIPAL</span>
                                             <h3 class="text-xl font-bold tracking-tight">Plan de Mantenimiento Preventivo</h3>
                                             <p class="text-xs text-[var(--muted-foreground)] mt-1">Haz clic en un día para ver las máquinas con actividades y luego en la máquina para abrir su página.</p>
                                         </div>
@@ -858,9 +941,9 @@ body {
                                                 <option value="">Todas las áreas</option>
                                             </select>
                                             <div class="flex items-center gap-1">
-                                                <button type="button" onclick="calShiftMonth(-1)" aria-label="Mes anterior" class="w-11 h-11 rounded-full border cf-border hover:bg-white/5 text-xs cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8c5cff]"><i class="fa-solid fa-chevron-left"></i></button>
+                                                <button type="button" onclick="calShiftMonth(-1)" aria-label="Mes anterior" class="w-11 h-11 rounded-full border cf-border hover:bg-white/5 text-xs cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2dd4bf]"><i class="fa-solid fa-chevron-left"></i></button>
                                                 <span id="cal-month-label" class="min-w-[140px] text-center text-sm font-bold"></span>
-                                                <button type="button" onclick="calShiftMonth(1)" aria-label="Mes siguiente" class="w-11 h-11 rounded-full border cf-border hover:bg-white/5 text-xs cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8c5cff]"><i class="fa-solid fa-chevron-right"></i></button>
+                                                <button type="button" onclick="calShiftMonth(1)" aria-label="Mes siguiente" class="w-11 h-11 rounded-full border cf-border hover:bg-white/5 text-xs cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2dd4bf]"><i class="fa-solid fa-chevron-right"></i></button>
                                             </div>
                                         </div>
                                     </div>
@@ -877,7 +960,7 @@ body {
                             <div id="view-plans" class="cf-divide-y hidden">
                                 <div class="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div>
-                                        <span class="text-xs font-mono font-bold uppercase text-[#8c5cff]">● PLANIFICACIÓN PREVENTIVA & PREDICTIVA</span>
+                                        <span class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">● PLANIFICACIÓN PREVENTIVA & PREDICTIVA</span>
                                         <h3 class="text-xl font-bold tracking-tight">Cronograma Anual Preventivo 2027</h3>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -894,7 +977,7 @@ body {
 
                                 <div class="p-6 space-y-3">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-xs font-mono font-bold text-[#8c5cff]">MATRIZ INTERACTIVA ENERO – DICIEMBRE 2027</span>
+                                        <span class="text-xs font-mono font-bold text-[#2dd4bf]">MATRIZ INTERACTIVA ENERO – DICIEMBRE 2027</span>
                                         <span class="text-[11px] text-[var(--muted-foreground)]">El Jefe puede hacer clic en cualquier mes para programar/desmarcar</span>
                                     </div>
                                     <div class="overflow-x-auto border cf-border rounded-xl">
@@ -931,7 +1014,7 @@ body {
                             <div id="view-categories" class="cf-divide-y hidden">
                                 <div class="p-6 sm:p-8 flex items-center justify-between">
                                     <div>
-                                        <span class="text-xs font-mono font-bold uppercase text-[#8c5cff]">● TAXONOMÍA DE AVERÍAS</span>
+                                        <span class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">● TAXONOMÍA DE AVERÍAS</span>
                                         <h3 class="text-xl font-bold tracking-tight">Categorización de Fallas y Subcategorías</h3>
                                     </div>
                                     <button onclick="openCategoryModal()" class="vb-btn-primary px-5 py-2 rounded-full text-xs font-semibold">
@@ -948,11 +1031,11 @@ body {
                             <div id="view-dashboard" class="cf-divide-y hidden">
                                 <div class="p-6 sm:p-8 flex flex-wrap items-center justify-between gap-4">
                                     <div>
-                                        <span class="text-xs font-mono font-bold uppercase text-[#8c5cff]">● PANEL DE CONTROL DEL JEFE</span>
+                                        <span class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">● PANEL DE CONTROL DEL JEFE</span>
                                         <h3 class="text-xl font-bold tracking-tight">Dashboard Ejecutivo & Analítica de Planta</h3>
                                     </div>
                                     <button onclick="resetDemoDatabase()" class="px-4 py-2 rounded-full shadow-badge text-xs font-mono">
-                                        <i class="fa-solid fa-rotate-left mr-1 text-[#8c5cff]"></i> Restaurar 2 Objetos Demo
+                                        <i class="fa-solid fa-rotate-left mr-1 text-[#2dd4bf]"></i> Restaurar 2 Objetos Demo
                                     </button>
                                 </div>
 
@@ -960,7 +1043,7 @@ body {
                                 <div class="p-6 sm:p-8 space-y-5">
                                     <div class="flex flex-wrap items-center justify-between gap-3">
                                         <div>
-                                            <span class="text-xs font-mono font-bold uppercase text-[#8c5cff]">● CUADRO RESUMEN</span>
+                                            <span class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">● CUADRO RESUMEN</span>
                                             <h4 class="text-base font-bold tracking-tight">Cumplimiento de órdenes abiertas y cerradas</h4>
                                         </div>
                                         <div class="flex flex-wrap items-center gap-2">
@@ -984,7 +1067,7 @@ body {
                                         </div>
                                         <div class="cf-card rounded-2xl p-4 text-center">
                                             <span class="text-[10px] font-mono uppercase text-[var(--muted-foreground)] block">Cumplimiento</span>
-                                            <span id="dash-kpi-compliance" class="text-3xl font-black font-mono text-[#8c5cff] mt-1 block">0%</span>
+                                            <span id="dash-kpi-compliance" class="text-3xl font-black font-mono text-[#2dd4bf] mt-1 block">0%</span>
                                         </div>
                                         <div class="cf-card rounded-2xl p-4 text-center col-span-2 lg:col-span-1">
                                             <span class="text-[10px] font-mono uppercase text-[var(--muted-foreground)] block">Meta del indicador</span>
@@ -1005,12 +1088,12 @@ body {
                                 <!-- TOP FALLAS (con vínculo a órdenes de trabajo) + TORTA MECÁNICA / ELECTRÓNICA -->
                                 <div class="grid grid-cols-1 lg:grid-cols-2 cf-divide-y lg:divide-y-0 lg:cf-divide-x">
                                     <div class="p-6 space-y-3">
-                                        <h4 class="text-xs font-mono font-bold uppercase text-[#8c5cff]">TOP FALLAS</h4>
+                                        <h4 class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">TOP FALLAS</h4>
                                         <p class="text-[11px] text-[var(--muted-foreground)]">Clic en una falla para ver sus órdenes de trabajo.</p>
                                         <div id="top-failures-list" class="space-y-2"></div>
                                     </div>
                                     <div class="p-6 space-y-3">
-                                        <h4 class="text-xs font-mono font-bold uppercase text-[#8c5cff]">FALLAS: MECÁNICA VS ELECTRÓNICA</h4>
+                                        <h4 class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">FALLAS: MECÁNICA VS ELECTRÓNICA</h4>
                                         <div class="h-56"><canvas id="failureGroupChart"></canvas></div>
                                     </div>
                                 </div>
@@ -1018,7 +1101,7 @@ body {
                                 <!-- GRÁFICA 3: TODOS LOS MESES -->
                                 <div class="p-6 space-y-3">
                                     <div class="flex flex-wrap items-center justify-between gap-3">
-                                        <h4 id="monthly-chart-title" class="text-xs font-mono font-bold uppercase text-[#8c5cff]">ÓRDENES POR MES</h4>
+                                        <h4 id="monthly-chart-title" class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">ÓRDENES POR MES</h4>
                                         <select id="dash-year" onchange="renderDashboardExtras()" class="bg-[var(--background)] border cf-border rounded-full px-3.5 py-2 text-xs"></select>
                                     </div>
                                     <div class="h-64"><canvas id="monthlyOrdersChart"></canvas></div>
@@ -1026,11 +1109,11 @@ body {
 
                                 <div class="grid grid-cols-1 lg:grid-cols-2 cf-divide-y lg:divide-y-0 lg:cf-divide-x">
                                     <div class="p-6 space-y-3">
-                                        <h4 class="text-xs font-mono font-bold uppercase text-[#8c5cff]">FALLAS POR CATEGORÍA TÉCNICA</h4>
+                                        <h4 class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">FALLAS POR CATEGORÍA TÉCNICA</h4>
                                         <div class="h-56"><canvas id="failuresChart"></canvas></div>
                                     </div>
                                     <div class="p-6 space-y-3">
-                                        <h4 class="text-xs font-mono font-bold uppercase text-[#8c5cff]">ÓRDENES POR TIPO DE MANTENIMIENTO</h4>
+                                        <h4 class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">ÓRDENES POR TIPO DE MANTENIMIENTO</h4>
                                         <div class="h-56"><canvas id="maintenanceTypeChart"></canvas></div>
                                     </div>
                                 </div>
@@ -1061,7 +1144,7 @@ body {
                             <div id="view-technicians" class="cf-divide-y hidden">
                                 <div class="p-6 sm:p-8 flex items-center justify-between">
                                     <div>
-                                        <span class="text-xs font-mono font-bold uppercase text-[#8c5cff]">● PERSONAL DE PLANTA</span>
+                                        <span class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">● PERSONAL DE PLANTA</span>
                                         <h3 class="text-xl font-bold tracking-tight">Ingenieros y Técnicos de Mantenimiento</h3>
                                     </div>
                                     <button onclick="openTechnicianModal()" class="vb-btn-primary px-5 py-2 rounded-full text-xs font-semibold">
@@ -1085,7 +1168,7 @@ body {
                 <div class="grid w-full max-w-7xl grid-cols-1 items-center cf-divide-y lg:grid-cols-6 lg:divide-y-0">
                     <div class="col-span-2 flex flex-col items-center justify-center p-6 text-center">
                         <p class="font-medium text-sm text-[var(--muted-foreground)]">
-                            Sincronizado en tiempo real con <span class="text-[#8c5cff] font-semibold">Supabase Cloud</span>
+                            Sincronizado en tiempo real con <span class="text-[#2dd4bf] font-semibold">Supabase Cloud</span>
                         </p>
                         <span class="text-[11px] font-mono text-[var(--muted-foreground)] mt-1">Celular ↔ PC • Latencia Cero</span>
                     </div>
@@ -1093,7 +1176,7 @@ body {
                     <div class="col-span-4 grid grid-cols-2 md:grid-cols-4 lg:border-l cf-border cf-divide-x">
                         <div class="flex flex-col items-center justify-center h-28 p-4 text-center">
                             <span class="text-[10px] font-mono uppercase text-[var(--muted-foreground)]">ÓRDENES ACTIVAS</span>
-                            <span id="kpi-active-orders" class="text-3xl font-black font-mono text-[#8c5cff] mt-1">1</span>
+                            <span id="kpi-active-orders" class="text-3xl font-black font-mono text-[#2dd4bf] mt-1">1</span>
                             <span id="kpi-Active-breakdown" class="text-[10px] font-mono text-[var(--muted-foreground)]">En planta</span>
                         </div>
                         <div class="flex flex-col items-center justify-center h-28 p-4 text-center">
@@ -1109,7 +1192,7 @@ body {
                         <div class="flex flex-col items-center justify-center h-28 p-4 text-center">
                             <span class="text-[10px] font-mono uppercase text-[var(--muted-foreground)]">PLANES 2027</span>
                             <span id="kpi-plans-2027" class="text-3xl font-black font-mono text-emerald-400 mt-1">2</span>
-                            <span class="text-[10px] font-mono text-[#8c5cff] cursor-pointer hover:underline" onclick="navigateTo('plans')">Ver Matriz &rarr;</span>
+                            <span class="text-[10px] font-mono text-[#2dd4bf] cursor-pointer hover:underline" onclick="navigateTo('plans')">Ver Matriz &rarr;</span>
                         </div>
                     </div>
                 </div>
@@ -1126,7 +1209,7 @@ body {
                 <div class="w-full p-8 md:p-16 flex flex-col items-center justify-center">
                     <div class="max-w-2xl mx-auto flex flex-col items-center justify-center gap-3 text-center">
                         <div class="flex items-center gap-2 px-4 py-1.5 rounded-full shadow-badge">
-                            <i class="fa-solid fa-layer-group text-xs text-[#8c5cff]"></i>
+                            <i class="fa-solid fa-layer-group text-xs text-[#2dd4bf]"></i>
                             <span class="text-xs font-medium">Arquitectura Modular CMMS</span>
                         </div>
                         <h2 class="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tighter text-center text-balance mt-2">
@@ -1142,9 +1225,9 @@ body {
                 <div class="grid grid-cols-1 md:grid-cols-6 cf-divide-y md:divide-y-0 md:cf-divide-x">
                     
                     <!-- Bento 1: Hojas de Vida & Notificaciones -->
-                    <div onclick="switchRole('TECNICO'); navigateTo('machines');" class="md:col-span-3 p-6 sm:p-10 hover:bg-[#8c5cff]/[0.03] transition-colors cursor-pointer flex flex-col justify-between gap-6">
+                    <div onclick="switchRole('TECNICO'); navigateTo('machines');" class="md:col-span-3 p-6 sm:p-10 hover:bg-[#2dd4bf]/[0.03] transition-colors cursor-pointer flex flex-col justify-between gap-6">
                         <div class="space-y-2">
-                            <span class="text-xs font-mono font-bold text-[#8c5cff]">01 // HOJAS DE VIDA & ALERTAS</span>
+                            <span class="text-xs font-mono font-bold text-[#2dd4bf]">01 // HOJAS DE VIDA & ALERTAS</span>
                             <h3 class="text-2xl font-semibold tracking-tight">Expediente Técnico con Notificaciones a Jefes y Técnicos</h3>
                             <p class="text-xs sm:text-sm text-[var(--muted-foreground)]">
                                 Consulta ficha técnica (marca, serie, potencia, repuestos críticos), bitácora de intervenciones y dispara alertas en tiempo real.
@@ -1152,7 +1235,7 @@ body {
                         </div>
                         <div class="p-4 rounded-xl shadow-badge flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-[#8c5cff]/15 text-[#8c5cff] flex items-center justify-center">
+                                <div class="w-10 h-10 rounded-lg bg-[#2dd4bf]/15 text-[#2dd4bf] flex items-center justify-center">
                                     <i class="fa-solid fa-book-medical"></i>
                                 </div>
                                 <div>
@@ -1160,14 +1243,14 @@ body {
                                     <p class="text-[11px] text-[var(--muted-foreground)]">2 Hojas de Vida listas para prueba</p>
                                 </div>
                             </div>
-                            <span class="text-xs font-mono text-[#8c5cff] font-bold">Abrir &rarr;</span>
+                            <span class="text-xs font-mono text-[#2dd4bf] font-bold">Abrir &rarr;</span>
                         </div>
                     </div>
 
                     <!-- Bento 2: Plan Preventivo 2027 -->
-                    <div onclick="switchRole('TECNICO'); navigateTo('plans');" class="md:col-span-3 p-6 sm:p-10 hover:bg-[#8c5cff]/[0.03] transition-colors cursor-pointer flex flex-col justify-between gap-6">
+                    <div onclick="switchRole('TECNICO'); navigateTo('plans');" class="md:col-span-3 p-6 sm:p-10 hover:bg-[#2dd4bf]/[0.03] transition-colors cursor-pointer flex flex-col justify-between gap-6">
                         <div class="space-y-2">
-                            <span class="text-xs font-mono font-bold text-[#8c5cff]">02 // CRONOGRAMA PREVENTIVO 2027</span>
+                            <span class="text-xs font-mono font-bold text-[#2dd4bf]">02 // CRONOGRAMA PREVENTIVO 2027</span>
                             <h3 class="text-2xl font-semibold tracking-tight">Matriz Anual Enero–Diciembre 2027 y Checklists</h3>
                             <p class="text-xs sm:text-sm text-[var(--muted-foreground)]">
                                 Programa mantenimientos preventivos y predictivos para todo el 2027 y genera Órdenes de Trabajo (OT) en un clic.
@@ -1175,13 +1258,13 @@ body {
                         </div>
                         <div class="p-4 rounded-xl shadow-badge flex items-center justify-between">
                             <div class="flex items-center gap-2 font-mono text-xs">
-                                <span class="px-2 py-1 rounded bg-[#8c5cff] text-white font-bold">ENE</span>
-                                <span class="px-2 py-1 rounded bg-[#8c5cff] text-white font-bold">ABR</span>
-                                <span class="px-2 py-1 rounded bg-[#8c5cff] text-white font-bold">JUL</span>
-                                <span class="px-2 py-1 rounded bg-[#8c5cff] text-white font-bold">OCT</span>
+                                <span class="px-2 py-1 rounded bg-[#2dd4bf] text-white font-bold">ENE</span>
+                                <span class="px-2 py-1 rounded bg-[#2dd4bf] text-white font-bold">ABR</span>
+                                <span class="px-2 py-1 rounded bg-[#2dd4bf] text-white font-bold">JUL</span>
+                                <span class="px-2 py-1 rounded bg-[#2dd4bf] text-white font-bold">OCT</span>
                                 <span class="text-[var(--muted-foreground)] ml-1">2027</span>
                             </div>
-                            <span class="text-xs font-mono text-[#8c5cff] font-bold">Ver Plan 2027 &rarr;</span>
+                            <span class="text-xs font-mono text-[#2dd4bf] font-bold">Ver Plan 2027 &rarr;</span>
                         </div>
                     </div>
                 </div>
@@ -1193,10 +1276,10 @@ body {
             <!-- ============================================================= -->
             <footer class="w-full py-6 px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--muted-foreground)] no-print">
                 <div class="flex items-center gap-2 font-mono text-[11px]">
-                    <span class="w-2 h-2 rounded-full bg-[#8c5cff]"></span>
+                    <span class="w-2 h-2 rounded-full bg-[#2dd4bf]"></span>
                     <span class="font-bold text-[var(--foreground)]">SistMaint CMMS 2.0</span>
                     <span>•</span>
-                    <span>Codeforge × Violet Bloom</span>
+                    <span>Gilpa Impresores S.A.</span>
                 </div>
                 <div>
                     Developed by <span class="text-[var(--foreground)] font-semibold">Daniel Martínez</span>, <span class="text-[var(--foreground)] font-semibold">Nicolás Cifuentes</span> & <span class="text-[var(--foreground)] font-semibold">Andrés Garzón</span>
@@ -1215,7 +1298,7 @@ body {
         <div class="fixed inset-y-0 right-0 w-full max-w-md bg-[var(--background)] border-l cf-border shadow-2xl flex flex-col z-10">
             <div class="p-4 border-b cf-border flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-[#8c5cff]/15 text-[#8c5cff] flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-lg bg-[#2dd4bf]/15 text-[#2dd4bf] flex items-center justify-center">
                         <i class="fa-solid fa-bell"></i>
                     </div>
                     <div>
@@ -1224,7 +1307,7 @@ body {
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="markAllNotificationsRead()" class="text-[11px] text-[#8c5cff] hover:underline font-mono">
+                    <button onclick="markAllNotificationsRead()" class="text-[11px] text-[#2dd4bf] hover:underline font-mono">
                         Marcar leídas
                     </button>
                     <button onclick="toggleNotificationDrawer()" class="p-1.5 text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
@@ -1245,7 +1328,7 @@ body {
             
             <div class="p-4 sm:p-5 border-b cf-border flex items-center justify-between bg-[var(--card)]">
                 <div class="flex items-center gap-3">
-                    <span id="modal-order-number" class="font-mono text-base font-black text-[#8c5cff] bg-[#8c5cff]/10 px-3 py-1 rounded-lg border border-[#8c5cff]/30">OT-0000</span>
+                    <span id="modal-order-number" class="font-mono text-base font-black text-[#2dd4bf] bg-[#2dd4bf]/10 px-3 py-1 rounded-lg border border-[#2dd4bf]/30">OT-0000</span>
                     <span id="modal-order-status" class="text-xs px-2.5 py-1 rounded-full font-bold">PENDIENTE</span>
                 </div>
                 <button onclick="closeOrderModal()" class="w-8 h-8 rounded-full shadow-badge flex items-center justify-center">
@@ -1280,8 +1363,8 @@ body {
                 </div>
 
                 <!-- BOSS CLASSIFICATION & ASSIGNMENT PANEL (ONLY FOR JEFE!) -->
-                <div id="modal-boss-classification-box" class="hidden p-4 rounded-xl bg-[#8c5cff]/10 border border-[#8c5cff]/35 space-y-3">
-                    <span class="text-xs font-mono font-bold text-[#8c5cff] flex items-center gap-1.5">
+                <div id="modal-boss-classification-box" class="hidden p-4 rounded-xl bg-[#2dd4bf]/10 border border-[#2dd4bf]/35 space-y-3">
+                    <span class="text-xs font-mono font-bold text-[#2dd4bf] flex items-center gap-1.5">
                         <i class="fa-solid fa-crown"></i>
                         EXCLUSIVO JEFE: TIPO DE MANTENIMIENTO Y ASIGNACIÓN DE TÉCNICO
                     </span>
@@ -1319,18 +1402,18 @@ body {
                     </div>
                     <div>
                         <span class="text-[var(--muted-foreground)]">Técnico Responsable:</span>
-                        <strong id="modal-readonly-tech-name" class="text-[#8c5cff] ml-1">Sin asignar</strong>
+                        <strong id="modal-readonly-tech-name" class="text-[#2dd4bf] ml-1">Sin asignar</strong>
                     </div>
                 </div>
 
                 <!-- LIVE STOPWATCH PANEL -->
-                <div class="p-5 rounded-xl bg-[#8c5cff]/10 border border-[#8c5cff]/35 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="p-5 rounded-xl bg-[#2dd4bf]/10 border border-[#2dd4bf]/35 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
-                        <div id="timer-status-indicator" class="w-12 h-12 rounded-full bg-[#8c5cff]/20 border border-[#8c5cff]/40 flex items-center justify-center text-[#8c5cff] text-xl">
+                        <div id="timer-status-indicator" class="w-12 h-12 rounded-full bg-[#2dd4bf]/20 border border-[#2dd4bf]/40 flex items-center justify-center text-[#2dd4bf] text-xl">
                             <i class="fa-solid fa-stopwatch"></i>
                         </div>
                         <div>
-                            <p class="text-[10px] font-mono uppercase tracking-wider font-bold text-[#8c5cff]">CRONÓMETRO DE INTERVENCIÓN TÉCNICA</p>
+                            <p class="text-[10px] font-mono uppercase tracking-wider font-bold text-[#2dd4bf]">CRONÓMETRO DE INTERVENCIÓN TÉCNICA</p>
                             <div id="modal-live-timer" class="text-3xl sm:text-4xl font-mono font-black tracking-wider">00:00:00</div>
                             <p id="modal-downtime-counter" class="text-[11px] text-rose-400 font-mono mt-0.5"></p>
                         </div>
@@ -1348,7 +1431,7 @@ body {
 
                 <!-- Spare Parts Used -->
                 <div class="p-4 rounded-xl bg-[var(--card)] border cf-border space-y-3">
-                    <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-[#8c5cff] flex items-center gap-2">
+                    <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-[#2dd4bf] flex items-center gap-2">
                         <i class="fa-solid fa-boxes-stacked"></i>
                         Repuestos e Insumos Utilizados
                     </h4>
@@ -1406,12 +1489,12 @@ body {
             
             <div class="p-4 sm:p-5 border-b cf-border flex items-center justify-between bg-[var(--card)]">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-[#8c5cff]/15 border border-[#8c5cff]/30 text-[#8c5cff] flex items-center justify-center">
+                    <div class="w-10 h-10 rounded-xl bg-[#2dd4bf]/15 border border-[#2dd4bf]/30 text-[#2dd4bf] flex items-center justify-center">
                         <i class="fa-solid fa-book-medical"></i>
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <span id="dossier-code" class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-[#8c5cff]/15 text-[#8c5cff]">MAQ-001</span>
+                            <span id="dossier-code" class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-[#2dd4bf]/15 text-[#2dd4bf]">MAQ-001</span>
                             <h3 id="dossier-name" class="text-base sm:text-lg font-extrabold">Hoja de Vida de Máquina</h3>
                         </div>
                         <p id="dossier-subtitle" class="text-xs text-[var(--muted-foreground)]">Expediente técnico, indicadores de confiabilidad y bitácora histórica</p>
@@ -1437,7 +1520,7 @@ body {
                     </div>
                     <div class="p-3.5 rounded-xl bg-[var(--card)] border cf-border">
                         <p class="text-[10px] font-mono uppercase font-bold text-[var(--muted-foreground)]">MTTR (Prom. Reparación)</p>
-                        <p id="dossier-kpi-mttr" class="text-2xl font-mono font-black text-[#8c5cff] mt-1">0 min</p>
+                        <p id="dossier-kpi-mttr" class="text-2xl font-mono font-black text-[#2dd4bf] mt-1">0 min</p>
                     </div>
                     <div class="p-3.5 rounded-xl bg-[var(--card)] border cf-border">
                         <p class="text-[10px] font-mono uppercase font-bold text-[var(--muted-foreground)]">Planes Activos (2027)</p>
@@ -1448,7 +1531,7 @@ body {
                 <!-- Technical Specs Card -->
                 <div class="p-4 rounded-xl bg-[var(--card)] border cf-border space-y-4">
                     <div class="flex items-center justify-between border-b cf-border pb-2.5">
-                        <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-[#8c5cff] flex items-center gap-2">
+                        <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-[#2dd4bf] flex items-center gap-2">
                             <i class="fa-solid fa-microchip"></i> Ficha Técnica e Identificación del Activo
                         </h4>
                         <span id="dossier-criticality" class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">CRITICIDAD ALTA</span>
@@ -1502,9 +1585,9 @@ body {
                 </div>
 
                 <!-- Send Notification to Jefes & Técnicos directly from Hoja de Vida -->
-                <div class="p-4 rounded-xl bg-[#8c5cff]/10 border border-[#8c5cff]/35 space-y-3">
+                <div class="p-4 rounded-xl bg-[#2dd4bf]/10 border border-[#2dd4bf]/35 space-y-3">
                     <div class="flex items-center justify-between">
-                        <h4 class="text-xs font-mono font-bold text-[#8c5cff] flex items-center gap-2">
+                        <h4 class="text-xs font-mono font-bold text-[#2dd4bf] flex items-center gap-2">
                             <i class="fa-solid fa-bell"></i>
                             EMITIR NOTIFICACIÓN DESDE HOJA DE VIDA A JEFES Y TÉCNICOS
                         </h4>
@@ -1526,7 +1609,7 @@ body {
 
                 <div class="space-y-2">
                     <h4 class="text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-calendar-check text-[#8c5cff]"></i>
+                        <i class="fa-solid fa-calendar-check text-[#2dd4bf]"></i>
                         Planes Preventivos y Cronograma 2027 de esta Máquina
                     </h4>
                     <div id="dossier-plans-list" class="space-y-2"></div>
@@ -1534,7 +1617,7 @@ body {
 
                 <div class="space-y-2">
                     <h4 class="text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-clock-rotate-left text-[#8c5cff]"></i>
+                        <i class="fa-solid fa-clock-rotate-left text-[#2dd4bf]"></i>
                         Historial Cronológico de Mantenimientos y Reparaciones
                     </h4>
                     <div id="dossier-history-list" class="space-y-2.5"></div>
@@ -1747,7 +1830,7 @@ body {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[var(--muted-foreground)] font-bold mb-1">Color</label>
-                        <input type="color" id="category-color-input" value="#8c5cff" class="w-full h-9 bg-[var(--card)] border cf-border rounded-lg px-2 py-1">
+                        <input type="color" id="category-color-input" value="#2dd4bf" class="w-full h-9 bg-[var(--card)] border cf-border rounded-lg px-2 py-1">
                     </div>
                     <div>
                         <label class="block text-[var(--muted-foreground)] font-bold mb-1">Ícono</label>
@@ -1821,7 +1904,7 @@ body {
         <div class="bg-[var(--background)] border cf-border rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-5">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-xl bg-[#8c5cff]/15 border border-[#8c5cff]/40 text-[#8c5cff] flex items-center justify-center">
+                    <div class="w-9 h-9 rounded-xl bg-[#2dd4bf]/15 border border-[#2dd4bf]/40 text-[#2dd4bf] flex items-center justify-center">
                         <i class="fa-solid fa-right-to-bracket"></i>
                     </div>
                     <div>
@@ -2021,24 +2104,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initThemeMode() {
-    const savedTheme = localStorage.getItem('sm_v2_theme') || 'dark';
-    const isDark = savedTheme === 'dark';
-    document.documentElement.classList.toggle('dark', isDark);
-    const icon = document.getElementById('theme-toggle-icon');
-    if (icon) {
-        icon.className = isDark ? 'fa-solid fa-sun text-xs' : 'fa-solid fa-moon text-xs';
-    }
+    // Tema único: industrial oscuro
+    document.documentElement.classList.add('dark');
 }
 
-function toggleThemeMode() {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('sm_v2_theme', isDark ? 'dark' : 'light');
-    const icon = document.getElementById('theme-toggle-icon');
-    if (icon) {
-        icon.className = isDark ? 'fa-solid fa-sun text-xs' : 'fa-solid fa-moon text-xs';
-    }
-    showToast(isDark ? 'Tema Violet Bloom Dark activado' : 'Tema Violet Bloom Light activado', 'info');
-}
+function toggleThemeMode() { /* tema único oscuro */ }
 
 async function loadAllData() {
     await Promise.allSettled([
@@ -2148,6 +2218,7 @@ function switchRole(targetRole) {
 
 function applyRoleUI() {
     const isAuthenticated = !!state.bossUser;
+    document.body.classList.toggle('authed', isAuthenticated);
     const isBoss = isAuthenticated && state.bossUser.role === 'JEFE';
     const isTech = isAuthenticated && state.bossUser.role === 'TECNICO';
     const isOp = !isAuthenticated;
@@ -2286,7 +2357,7 @@ function applyRoleUI() {
             heroLoginBtn.innerHTML = `<i class="fa-solid fa-right-from-bracket text-rose-400"></i><span>Cerrar Sesión (${state.bossUser.username})</span>`;
             heroLoginBtn.onclick = () => logoutBoss();
         } else {
-            heroLoginBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket text-[#8c5cff]"></i><span>Iniciar Sesión</span>`;
+            heroLoginBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket text-[#2dd4bf]"></i><span>Iniciar Sesión</span>`;
             heroLoginBtn.onclick = () => openLoginModal();
         }
     }
@@ -2747,7 +2818,7 @@ function renderFailureCategorySelector(selectedCode) {
             <button type="button" onclick="selectFailureCategory('${cat.code}')"
                 class="p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
                     isSelected
-                        ? 'bg-zinc-900 border-purple-500 shadow-lg shadow-purple-500/10 ring-1 ring-purple-500/40'
+                        ? 'bg-zinc-900 border-teal-600 shadow-lg shadow-teal-600/10 ring-1 ring-teal-600/40'
                         : 'bg-zinc-950/70 border-white/[0.07] hover:border-white/20'
                 }">
                 <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs"
@@ -2789,7 +2860,7 @@ function renderSubcategoryChips(code) {
             <button type="button" onclick="selectSubcategoryChip('${sub.replace(/'/g, "\\'")}')"
                 class="px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all ${
                     active
-                        ? 'bg-purple-600 text-white border-purple-400'
+                        ? 'bg-teal-700 text-white border-teal-400'
                         : 'bg-zinc-900 text-zinc-300 border-white/10 hover:border-white/25'
                 }">
                 ${sub}
@@ -2992,8 +3063,8 @@ function renderQuickMachineChips() {
             <button type="button" onclick="preselectMachine(${m.id})"
                 class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-2 ${
                     isSelected
-                        ? 'bg-purple-600 text-white border-purple-400 shadow-lg shadow-purple-500/20'
-                        : 'bg-zinc-900/90 text-zinc-300 border-white/10 hover:border-purple-500/40 hover:text-white'
+                        ? 'bg-teal-700 text-white border-teal-400 shadow-lg shadow-teal-600/20'
+                        : 'bg-zinc-900/90 text-zinc-300 border-white/10 hover:border-teal-600/40 hover:text-white'
                 }">
                 <i class="fa-solid fa-industry text-[11px]"></i>
                 <span>${m.code}: ${m.name}</span>
@@ -3281,7 +3352,7 @@ function renderDamagedMachinesBanner() {
                 ${activeOrder ? `
                     <div class="p-3 rounded-xl bg-zinc-900/90 border border-white/[0.06] text-xs space-y-1">
                         <div class="flex items-center justify-between">
-                            <span class="font-mono font-bold text-purple-300">${activeOrder.order_number}</span>
+                            <span class="font-mono font-bold text-teal-300">${activeOrder.order_number}</span>
                             <span class="text-[11px]" style="color:${cat?.color || '#a1a1aa'}">
                                 ● ${cat?.name || activeOrder.failure_type} ${activeOrder.failure_subcategory ? `(${activeOrder.failure_subcategory})` : ''}
                             </span>
@@ -3289,7 +3360,7 @@ function renderDamagedMachinesBanner() {
                         <p class="text-zinc-300 line-clamp-2">${activeOrder.description}</p>
                         <div class="flex items-center justify-between pt-1 text-[11px] text-zinc-400">
                             <span>Técnico: <strong class="text-white">${activeOrder.technician_name || 'Sin asignar'}</strong></span>
-                            <span class="font-mono ${isRunning ? 'text-[#e57cd8]' : 'text-emerald-400'} font-bold order-live-timer" data-order-id="${activeOrder.id}">
+                            <span class="font-mono ${isRunning ? 'text-[#f59e0b]' : 'text-emerald-400'} font-bold order-live-timer" data-order-id="${activeOrder.id}">
                                 ${formatSecondsToHHMMSS(activeOrder.current_live_duration_seconds || 0)}
                             </span>
                         </div>
@@ -3301,7 +3372,7 @@ function renderDamagedMachinesBanner() {
                 `}
 
                 <div class="flex flex-wrap items-center gap-2 pt-1">
-                    <button type="button" onclick="attendDamagedMachine(${m.id})" class="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all">
+                    <button type="button" onclick="attendDamagedMachine(${m.id})" class="flex-1 py-2 px-3 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all">
                         <i class="fa-solid fa-stopwatch"></i> Atender / Cronómetro
                     </button>
                     ${activeOrder ? `
@@ -3312,7 +3383,7 @@ function renderDamagedMachinesBanner() {
                         </button>
                     ` : ''}
                     <button type="button" onclick="openMachineDossier(${m.id})" class="py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all">
-                        <i class="fa-solid fa-book-medical text-purple-400"></i> Hoja de Vida
+                        <i class="fa-solid fa-book-medical text-teal-400"></i> Hoja de Vida
                     </button>
                     <button type="button" onclick="markMachineOperational(${m.id})" class="py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all" title="Sacar la máquina de mantenimiento/parada y dejarla operativa">
                         <i class="fa-solid fa-circle-check"></i> Marcar operativa
@@ -3593,7 +3664,7 @@ function renderOrdersTable(tbodyId, ordersList) {
         const durSec = o.current_live_duration_seconds || o.repair_duration_seconds || 0;
 
         return `
-            <tr onclick="openOrderModal(${o.id})" class="hover:bg-[#11141c] cursor-pointer transition-colors ${isRunning ? 'bg-[#160d1f]/60 border-l-2 border-l-[#e57cd8]' : ''}">
+            <tr onclick="openOrderModal(${o.id})" class="hover:bg-[#11141c] cursor-pointer transition-colors ${isRunning ? 'bg-[#160d1f]/60 border-l-2 border-l-[#f59e0b]' : ''}">
                 <td class="px-5 py-3.5">
                     <div class="flex items-center gap-2">
                         <span class="font-mono font-bold text-[#2CD5FF]">${o.order_number}</span>
@@ -3603,7 +3674,7 @@ function renderOrdersTable(tbodyId, ordersList) {
                 </td>
                 <td class="px-4 py-3.5">
                     <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/[0.03] border border-white/[0.06]">
-                        <span class="w-2 h-2 rounded-full bg-[#e57cd8]"></span>
+                        <span class="w-2 h-2 rounded-full bg-[#f59e0b]"></span>
                         <span class="font-bold text-white text-xs">${o.machine_name || ''}</span>
                         <span class="text-[10px] font-mono text-zinc-400">${o.machine_code || ''}</span>
                     </div>
@@ -3636,7 +3707,7 @@ function renderOrdersTable(tbodyId, ordersList) {
                 <td class="px-4 py-3.5">
                     <div class="flex items-center gap-2">
                         ${getStatusBadgeHTML(o.status)}
-                        <span class="font-mono text-sm font-extrabold ${isRunning ? 'text-[#e57cd8]' : 'text-zinc-200'} order-live-timer" data-order-id="${o.id}">
+                        <span class="font-mono text-sm font-extrabold ${isRunning ? 'text-[#f59e0b]' : 'text-zinc-200'} order-live-timer" data-order-id="${o.id}">
                             ${formatSecondsToHHMMSS(durSec)}
                         </span>
                     </div>
@@ -3716,7 +3787,7 @@ async function quickToggleOrderTimer(orderId, currentlyRunning) {
 function getStatusBadgeHTML(status) {
     const map = {
         PENDIENTE: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-        EN_PROCESO: 'bg-[#e57cd8]/20 text-[#e57cd8] border-[#e57cd8]/40',
+        EN_PROCESO: 'bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/40',
         PAUSADO: 'bg-[#2CD5FF]/15 text-[#2CD5FF] border-[#2CD5FF]/30',
         FINALIZADO: 'bg-zinc-800 text-zinc-400 border-white/10'
     };
@@ -3741,10 +3812,10 @@ function updateTopTogglTimerBar() {
 
     if (runningOrder) {
         if (header) header.classList.add('timer-running');
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-[#e57cd8] timer-pulse';
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-[#f59e0b] timer-pulse';
         label.innerHTML = `<strong class="text-[#2CD5FF] font-mono">${runningOrder.order_number}</strong> <span class="text-white font-semibold mx-1">● ${runningOrder.machine_name}</span> <span class="text-zinc-400 text-[11px]">${runningOrder.description || ''}</span>`;
         clock.textContent = formatSecondsToHHMMSS(runningOrder.current_live_duration_seconds || 0);
-        clock.className = 'font-mono text-base font-black text-[#e57cd8] tracking-tight';
+        clock.className = 'font-mono text-base font-black text-[#f59e0b] tracking-tight';
         if (btn) {
             btn.className = 'toggl-stop-btn !w-8 !h-8';
             btn.dataset.orderId = runningOrder.id;
@@ -3833,7 +3904,7 @@ async function openOrderModal(orderId) {
     document.getElementById('modal-order-number').textContent = o.order_number;
     document.getElementById('modal-order-status').textContent = o.status;
     document.getElementById('modal-order-status').className = `text-xs px-2.5 py-1 rounded-full font-bold ${
-        o.status === 'FINALIZADO' ? 'bg-zinc-800 text-zinc-300' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+        o.status === 'FINALIZADO' ? 'bg-zinc-800 text-zinc-300' : 'bg-teal-600/20 text-teal-300 border border-teal-600/30'
     }`;
 
     document.getElementById('modal-machine-name').textContent = `${o.machine_code || ''} - ${o.machine_name || ''}`;
@@ -4204,12 +4275,12 @@ function renderMachinesGrid() {
                 <div class="flex flex-col sm:flex-row items-start justify-between gap-4">
                     <div class="space-y-2 flex-1">
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="px-2.5 py-0.5 rounded-md font-mono text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">${m.code}</span>
+                            <span class="px-2.5 py-0.5 rounded-md font-mono text-xs font-bold bg-teal-600/20 text-teal-300 border border-teal-600/30">${m.code}</span>
                             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${stCls}">${m.status}</span>
                             <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-900 text-zinc-400 border border-white/5">Criticidad: ${m.criticality || 'ALTA'}</span>
                         </div>
                         <h3 class="text-lg font-extrabold text-white">${m.name}</h3>
-                        <p class="text-xs text-zinc-400"><i class="fa-solid fa-location-dot text-purple-400 mr-1"></i> ${m.location}</p>
+                        <p class="text-xs text-zinc-400"><i class="fa-solid fa-location-dot text-teal-400 mr-1"></i> ${m.location}</p>
                         
                         <!-- Technical Hoja de Vida Preview -->
                         <div class="grid grid-cols-2 gap-2 pt-2 text-[11px] bg-zinc-950/60 p-3 rounded-xl border border-white/[0.05]">
@@ -4230,7 +4301,7 @@ function renderMachinesGrid() {
                 <!-- Action Buttons -->
                 <div class="pt-3 border-t border-white/[0.07] flex flex-wrap items-center justify-between gap-2 no-print">
                     <div class="flex flex-wrap items-center gap-2">
-                        <button onclick="openMachineDossier(${m.id})" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-600/20">
+                        <button onclick="openMachineDossier(${m.id})" class="px-3.5 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-teal-700/20">
                             <i class="fa-solid fa-book-medical"></i> Hoja de Vida
                         </button>
                         <button onclick="quickNotifyFromMachineCard(${m.id})" class="px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1.5" title="Enviar Alerta de Hoja de Vida a Jefes y Técnicos">
@@ -4366,7 +4437,7 @@ async function openMachineDossier(machineId) {
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-[11px] font-mono text-zinc-400">Meses: ${(p.months || []).map(m => MONTH_NAMES_SHORT[m - 1]).join(', ')}</span>
-                        <span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold text-[10px]">${p.technician_name || 'Sin asignar'}</span>
+                        <span class="px-2 py-0.5 rounded bg-teal-600/20 text-teal-300 font-semibold text-[10px]">${p.technician_name || 'Sin asignar'}</span>
                     </div>
                 </div>
             `).join('');
@@ -4386,7 +4457,7 @@ async function openMachineDossier(machineId) {
                     <div class="p-3.5 rounded-xl bg-zinc-950/90 border border-white/[0.07] space-y-1.5 text-xs">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <div class="flex items-center gap-2">
-                                <span class="font-mono font-bold text-purple-400">${h.order_number}</span>
+                                <span class="font-mono font-bold text-teal-400">${h.order_number}</span>
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-900 text-zinc-200">${h.maintenance_type}</span>
                                 <span class="text-[11px] font-semibold" style="color:${cat.color}">● ${cat.name} ${h.failure_subcategory ? `(${h.failure_subcategory})` : ''}</span>
                             </div>
@@ -4683,7 +4754,7 @@ function renderPlansView() {
                                 onclick="${isBoss ? `togglePlanMonth2027(${p.id}, ${mNum})` : ''}"
                                 class="month-cell w-8 h-7 rounded-lg font-mono text-[10px] font-bold inline-flex items-center justify-center border ${
                                     active
-                                        ? 'bg-purple-600 text-white border-purple-400 shadow shadow-purple-500/30'
+                                        ? 'bg-teal-700 text-white border-teal-400 shadow shadow-teal-600/30'
                                         : 'bg-zinc-900/70 text-zinc-600 border-white/5 hover:border-white/15'
                                 } ${isBoss ? 'cursor-pointer' : 'cursor-default'}"
                                 title="${mName} ${p.year}: ${active ? 'Programado' : 'Sin programar'}">
@@ -4697,7 +4768,7 @@ function renderPlansView() {
                     <tr class="hover:bg-white/[0.02]">
                         <td class="px-3 py-2.5">
                             <div class="font-bold text-white">${p.machine_code || ''} - ${p.machine_name || ''}</div>
-                            <div class="text-[10px] text-purple-300 font-mono truncate max-w-[220px]">${p.plan_code}: ${p.title}</div>
+                            <div class="text-[10px] text-teal-300 font-mono truncate max-w-[220px]">${p.plan_code}: ${p.title}</div>
                         </td>
                         ${monthCells}
                     </tr>
@@ -4714,13 +4785,13 @@ function renderPlansView() {
         const checklistHTML = (p.checklist || []).map((item, i) => `
             <label class="flex items-start gap-2 text-xs text-zinc-300 cursor-pointer py-1">
                 <input type="checkbox" ${item.done ? 'checked' : ''} onchange="togglePlanChecklistItem(${p.id}, ${i}, this.checked)"
-                    class="mt-0.5 rounded bg-zinc-900 border-white/20 text-purple-600 focus:ring-0">
+                    class="mt-0.5 rounded bg-zinc-900 border-white/20 text-teal-700 focus:ring-0">
                 <span class="${item.done ? 'line-through text-zinc-500' : ''}">${item.task}</span>
             </label>
         `).join('');
 
         const monthPills = (p.months || []).map(m =>
-            `<span class="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 font-mono text-[10px] font-bold">${MONTH_NAMES_SHORT[m - 1]}</span>`
+            `<span class="px-2 py-0.5 rounded bg-teal-600/15 text-teal-300 border border-teal-600/30 font-mono text-[10px] font-bold">${MONTH_NAMES_SHORT[m - 1]}</span>`
         ).join('');
 
         return `
@@ -4733,7 +4804,7 @@ function renderPlansView() {
                                 <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-zinc-800 text-zinc-300">${p.maintenance_type} • ${p.frequency}</span>
                             </div>
                             <h3 class="text-sm sm:text-base font-bold text-white mt-1.5">${p.title}</h3>
-                            <p class="text-xs text-purple-300 font-semibold">${p.machine_code} - ${p.machine_name}</p>
+                            <p class="text-xs text-teal-300 font-semibold">${p.machine_code} - ${p.machine_name}</p>
                         </div>
                         ${isBoss ? `
                             <div class="flex items-center gap-1">
@@ -4765,7 +4836,7 @@ function renderPlansView() {
                         <span class="font-mono text-amber-400">Próx: ${p.scheduled_date}</span>
                     </div>
                     ${isBoss ? `
-                        <button onclick="launchOrderFromPlan(${p.id})" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow cursor-pointer">
+                        <button onclick="launchOrderFromPlan(${p.id})" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-600 hover:to-cyan-600 text-white text-xs font-bold flex items-center gap-1.5 shadow cursor-pointer">
                             <i class="fa-solid fa-rocket"></i> Lanzar OT
                         </button>
                     ` : ''}
@@ -4876,7 +4947,7 @@ function renderPlanModalMonthSelector() {
         return `
             <button type="button" onclick="toggleModalMonth(${mNum})"
                 class="py-1.5 px-2 rounded-lg font-mono text-[11px] font-bold border transition-all ${
-                    active ? 'bg-purple-600 text-white border-purple-400' : 'bg-zinc-950 text-zinc-400 border-white/10'
+                    active ? 'bg-teal-700 text-white border-teal-400' : 'bg-zinc-950 text-zinc-400 border-white/10'
                 }">
                 ${mName}
             </button>
@@ -5040,7 +5111,7 @@ function renderNotificationsDrawer() {
         CRITICAL: 'border-rose-500/40 bg-rose-500/10 text-rose-300',
         WARNING: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
         SUCCESS: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
-        INFO: 'border-purple-500/30 bg-purple-500/10 text-purple-300'
+        INFO: 'border-teal-600/30 bg-teal-600/10 text-teal-300'
     };
 
     list.innerHTML = state.notifications.map(n => {
@@ -5179,7 +5250,7 @@ function renderRecentOrdersDashboard(orders) {
         const cat = getCategoryMeta(o.failure_type);
         return `
             <tr onclick="openOrderModal(${o.id})" class="hover:bg-white/[0.03] cursor-pointer">
-                <td class="px-4 py-3 font-mono font-bold text-purple-300">${o.order_number}</td>
+                <td class="px-4 py-3 font-mono font-bold text-teal-300">${o.order_number}</td>
                 <td class="px-4 py-3 font-semibold text-white">${o.machine_name}</td>
                 <td class="px-4 py-3">
                     <span class="text-xs font-semibold" style="color:${cat.color}">● ${cat.name}</span>
@@ -5189,7 +5260,7 @@ function renderRecentOrdersDashboard(orders) {
                 <td class="px-4 py-3">${o.machine_stopped ? '<span class="text-rose-400 font-bold">Sí</span>' : '<span class="text-emerald-400">No</span>'}</td>
                 <td class="px-4 py-3">${o.technician_name || '<span class="text-amber-400 italic">Asignar</span>'}</td>
                 <td class="px-4 py-3">${getStatusBadgeHTML(o.status)}</td>
-                <td class="px-4 py-3 text-right"><button type="button" class="text-purple-400 hover:underline font-bold cursor-pointer">Gestionar</button></td>
+                <td class="px-4 py-3 text-right"><button type="button" class="text-teal-400 hover:underline font-bold cursor-pointer">Gestionar</button></td>
             </tr>
         `;
     }).join('');
@@ -5382,14 +5453,14 @@ function renderTopFailures(top, total) {
         const w = Math.max(6, Math.round((t.count / max) * 100));
         return `
         <button type="button" onclick="goToOrdersByFailure('${t.code}', '${encodeURIComponent(t.sub)}')"
-            class="w-full text-left p-3 rounded-xl border border-white/[0.07] bg-zinc-950/60 hover:border-[#8c5cff]/60 transition-all cursor-pointer">
+            class="w-full text-left p-3 rounded-xl border border-white/[0.07] bg-zinc-950/60 hover:border-[#2dd4bf]/60 transition-all cursor-pointer">
             <div class="flex items-center justify-between gap-3 text-xs">
                 <span class="font-bold text-white truncate">${i + 1}. ${t.sub}</span>
                 <span class="font-mono text-zinc-300 flex-shrink-0">${t.count} <span class="text-zinc-500">(${pct}%)</span></span>
             </div>
             <div class="flex items-center justify-between gap-3 mt-1">
                 <span class="text-[10px] font-semibold" style="color:${cat.color}">● ${cat.name}</span>
-                <span class="text-[10px] text-[#8c5cff] font-mono">Ver órdenes &rarr;</span>
+                <span class="text-[10px] text-[#2dd4bf] font-mono">Ver órdenes &rarr;</span>
             </div>
             <div class="h-1 rounded-full bg-zinc-800 mt-2 overflow-hidden">
                 <div class="h-full rounded-full" style="width:${w}%; background-color:${cat.color}"></div>
@@ -5490,12 +5561,12 @@ function renderTechniciansGrid() {
         <div class="cf-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
             <div class="flex items-start justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center justify-center font-bold text-base">
+                    <div class="w-11 h-11 rounded-2xl bg-teal-600/15 border border-teal-600/30 text-teal-300 flex items-center justify-center font-bold text-base">
                         ${(t.name || 'T').charAt(0)}
                     </div>
                     <div>
                         <h3 class="text-sm font-bold text-white">${t.name}</h3>
-                        <p class="text-xs text-purple-300">${t.role || ''}</p>
+                        <p class="text-xs text-teal-300">${t.role || ''}</p>
                         <p class="text-[11px] text-zinc-400">${t.specialty || ''}</p>
                     </div>
                 </div>
@@ -5609,7 +5680,7 @@ function showToast(message, type = 'info') {
         success: 'border-emerald-500/40 bg-zinc-950/95 text-emerald-300',
         error: 'border-rose-500/40 bg-zinc-950/95 text-rose-300',
         warning: 'border-amber-500/40 bg-zinc-950/95 text-amber-300',
-        info: 'border-purple-500/40 bg-zinc-950/95 text-purple-200'
+        info: 'border-teal-600/40 bg-zinc-950/95 text-teal-200'
     };
 
     const el = document.createElement('div');
@@ -5642,7 +5713,7 @@ const calState = { loaded: false, loading: false, error: '', items: [], byDate: 
                    machineId: null, machineTab: 'calendario', mYear: null, mMonth: null, mSelected: null, minDate: null, maxDate: null };
 
 const CAL_ABBR = { 'Inspección': 'Insp.', 'Quincenal': 'Quinc.', 'Mensual': 'Mens.', 'Trimestral': 'Trim.', 'Semestral': 'Sem.', 'Anual': 'Anual' };
-const CAL_FOCUS = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8c5cff]';
+const CAL_FOCUS = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2dd4bf]';
 function calLum(hex) {
     const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -5761,7 +5832,7 @@ function renderCalDayPanel() {
     const box = document.getElementById('cal-day-panel');
     if (!box) return;
     if (!calState.selected) {
-        box.innerHTML = '<div class="p-6 text-xs text-[var(--muted-foreground)] text-center"><i class="fa-solid fa-hand-pointer text-2xl text-[#8c5cff] mb-2"></i><p>Selecciona un día del calendario para ver las máquinas con actividades programadas.</p></div>';
+        box.innerHTML = '<div class="p-6 text-xs text-[var(--muted-foreground)] text-center"><i class="fa-solid fa-hand-pointer text-2xl text-[#2dd4bf] mb-2"></i><p>Selecciona un día del calendario para ver las máquinas con actividades programadas.</p></div>';
         return;
     }
     const ents = (calState.byDate[calState.selected] || []).filter(e => !calState.area || e.area === calState.area);
@@ -5775,7 +5846,7 @@ function renderCalDayPanel() {
             <div class="flex flex-wrap gap-1 mt-1">${fr.map(f => `<span class="px-1.5 py-0.5 rounded text-[11px] font-bold" style="background:${calFreq(f).color}22;color:${calFreq(f).color};border:1px solid ${calFreq(f).color}66">${f}</span>`).join('')}</div></div>
             <i class="fa-solid fa-chevron-right text-xs text-[var(--muted-foreground)]"></i></button>`;
     }).join('');
-    box.innerHTML = `<div class="px-4 py-3 bg-[#8c5cff]/15"><div class="text-[10px] font-mono uppercase text-[#8c5cff] font-bold">Día seleccionado</div><div class="text-sm font-bold">${calLong(calState.selected)}</div></div>
+    box.innerHTML = `<div class="px-4 py-3 bg-[#2dd4bf]/15"><div class="text-[10px] font-mono uppercase text-[#2dd4bf] font-bold">Día seleccionado</div><div class="text-sm font-bold">${calLong(calState.selected)}</div></div>
         <div class="px-4 py-2 text-xs font-bold">Máquinas con actividades (${Object.keys(byM).length})</div><div class="max-h-[420px] overflow-y-auto">${rows}</div>`;
 }
 
@@ -5804,7 +5875,7 @@ function renderCalMachinePage() {
     root.classList.remove('hidden');
     const mine = e => e.machine_id == m.id;
     const tabs = [['calendario', 'fa-calendar-days', 'Calendario'], ['actividades', 'fa-list-check', 'Actividades'], ['ficha', 'fa-clipboard-list', 'Ficha técnica'], ['hoja', 'fa-book-medical', 'Hoja de vida']];
-    const side = tabs.map(([k, ic, lb]) => `<button type="button" onclick="calMachineTab('${k}')" aria-current="${calState.machineTab === k}" class="w-full text-left px-4 py-3 text-xs font-semibold flex items-center gap-2 cursor-pointer ${CAL_FOCUS} ${calState.machineTab === k ? 'bg-[#8c5cff]/20 text-white' : 'text-[var(--muted-foreground)] hover:bg-white/5'}"><i class="fa-solid ${ic} w-4"></i>${lb}</button>`).join('');
+    const side = tabs.map(([k, ic, lb]) => `<button type="button" onclick="calMachineTab('${k}')" aria-current="${calState.machineTab === k}" class="w-full text-left px-4 py-3 text-xs font-semibold flex items-center gap-2 cursor-pointer ${CAL_FOCUS} ${calState.machineTab === k ? 'bg-[#2dd4bf]/20 text-white' : 'text-[var(--muted-foreground)] hover:bg-white/5'}"><i class="fa-solid ${ic} w-4"></i>${lb}</button>`).join('');
     const monthLabel = `${CAL_MONTHS[calState.mMonth]} ${calState.mYear}`;
     const prefix = `${calState.mYear}-${String(calState.mMonth + 1).padStart(2, '0')}`;
     const monthItems = Object.keys(calState.byDate).filter(k => k.startsWith(prefix)).sort()

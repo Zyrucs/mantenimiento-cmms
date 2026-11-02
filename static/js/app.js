@@ -166,24 +166,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initThemeMode() {
-    const savedTheme = localStorage.getItem('sm_v2_theme') || 'dark';
-    const isDark = savedTheme === 'dark';
-    document.documentElement.classList.toggle('dark', isDark);
-    const icon = document.getElementById('theme-toggle-icon');
-    if (icon) {
-        icon.className = isDark ? 'fa-solid fa-sun text-xs' : 'fa-solid fa-moon text-xs';
-    }
+    // Tema único: industrial oscuro
+    document.documentElement.classList.add('dark');
 }
 
-function toggleThemeMode() {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('sm_v2_theme', isDark ? 'dark' : 'light');
-    const icon = document.getElementById('theme-toggle-icon');
-    if (icon) {
-        icon.className = isDark ? 'fa-solid fa-sun text-xs' : 'fa-solid fa-moon text-xs';
-    }
-    showToast(isDark ? 'Tema Violet Bloom Dark activado' : 'Tema Violet Bloom Light activado', 'info');
-}
+function toggleThemeMode() { /* tema único oscuro */ }
 
 async function loadAllData() {
     await Promise.allSettled([
@@ -293,6 +280,7 @@ function switchRole(targetRole) {
 
 function applyRoleUI() {
     const isAuthenticated = !!state.bossUser;
+    document.body.classList.toggle('authed', isAuthenticated);
     const isBoss = isAuthenticated && state.bossUser.role === 'JEFE';
     const isTech = isAuthenticated && state.bossUser.role === 'TECNICO';
     const isOp = !isAuthenticated;
@@ -431,7 +419,7 @@ function applyRoleUI() {
             heroLoginBtn.innerHTML = `<i class="fa-solid fa-right-from-bracket text-rose-400"></i><span>Cerrar Sesión (${state.bossUser.username})</span>`;
             heroLoginBtn.onclick = () => logoutBoss();
         } else {
-            heroLoginBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket text-[#8c5cff]"></i><span>Iniciar Sesión</span>`;
+            heroLoginBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket text-[#2dd4bf]"></i><span>Iniciar Sesión</span>`;
             heroLoginBtn.onclick = () => openLoginModal();
         }
     }
@@ -892,7 +880,7 @@ function renderFailureCategorySelector(selectedCode) {
             <button type="button" onclick="selectFailureCategory('${cat.code}')"
                 class="p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
                     isSelected
-                        ? 'bg-zinc-900 border-purple-500 shadow-lg shadow-purple-500/10 ring-1 ring-purple-500/40'
+                        ? 'bg-zinc-900 border-teal-600 shadow-lg shadow-teal-600/10 ring-1 ring-teal-600/40'
                         : 'bg-zinc-950/70 border-white/[0.07] hover:border-white/20'
                 }">
                 <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs"
@@ -934,7 +922,7 @@ function renderSubcategoryChips(code) {
             <button type="button" onclick="selectSubcategoryChip('${sub.replace(/'/g, "\\'")}')"
                 class="px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all ${
                     active
-                        ? 'bg-purple-600 text-white border-purple-400'
+                        ? 'bg-teal-700 text-white border-teal-400'
                         : 'bg-zinc-900 text-zinc-300 border-white/10 hover:border-white/25'
                 }">
                 ${sub}
@@ -1137,8 +1125,8 @@ function renderQuickMachineChips() {
             <button type="button" onclick="preselectMachine(${m.id})"
                 class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-2 ${
                     isSelected
-                        ? 'bg-purple-600 text-white border-purple-400 shadow-lg shadow-purple-500/20'
-                        : 'bg-zinc-900/90 text-zinc-300 border-white/10 hover:border-purple-500/40 hover:text-white'
+                        ? 'bg-teal-700 text-white border-teal-400 shadow-lg shadow-teal-600/20'
+                        : 'bg-zinc-900/90 text-zinc-300 border-white/10 hover:border-teal-600/40 hover:text-white'
                 }">
                 <i class="fa-solid fa-industry text-[11px]"></i>
                 <span>${m.code}: ${m.name}</span>
@@ -1426,7 +1414,7 @@ function renderDamagedMachinesBanner() {
                 ${activeOrder ? `
                     <div class="p-3 rounded-xl bg-zinc-900/90 border border-white/[0.06] text-xs space-y-1">
                         <div class="flex items-center justify-between">
-                            <span class="font-mono font-bold text-purple-300">${activeOrder.order_number}</span>
+                            <span class="font-mono font-bold text-teal-300">${activeOrder.order_number}</span>
                             <span class="text-[11px]" style="color:${cat?.color || '#a1a1aa'}">
                                 ● ${cat?.name || activeOrder.failure_type} ${activeOrder.failure_subcategory ? `(${activeOrder.failure_subcategory})` : ''}
                             </span>
@@ -1434,7 +1422,7 @@ function renderDamagedMachinesBanner() {
                         <p class="text-zinc-300 line-clamp-2">${activeOrder.description}</p>
                         <div class="flex items-center justify-between pt-1 text-[11px] text-zinc-400">
                             <span>Técnico: <strong class="text-white">${activeOrder.technician_name || 'Sin asignar'}</strong></span>
-                            <span class="font-mono ${isRunning ? 'text-[#e57cd8]' : 'text-emerald-400'} font-bold order-live-timer" data-order-id="${activeOrder.id}">
+                            <span class="font-mono ${isRunning ? 'text-[#f59e0b]' : 'text-emerald-400'} font-bold order-live-timer" data-order-id="${activeOrder.id}">
                                 ${formatSecondsToHHMMSS(activeOrder.current_live_duration_seconds || 0)}
                             </span>
                         </div>
@@ -1446,7 +1434,7 @@ function renderDamagedMachinesBanner() {
                 `}
 
                 <div class="flex flex-wrap items-center gap-2 pt-1">
-                    <button type="button" onclick="attendDamagedMachine(${m.id})" class="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all">
+                    <button type="button" onclick="attendDamagedMachine(${m.id})" class="flex-1 py-2 px-3 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all">
                         <i class="fa-solid fa-stopwatch"></i> Atender / Cronómetro
                     </button>
                     ${activeOrder ? `
@@ -1457,7 +1445,7 @@ function renderDamagedMachinesBanner() {
                         </button>
                     ` : ''}
                     <button type="button" onclick="openMachineDossier(${m.id})" class="py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all">
-                        <i class="fa-solid fa-book-medical text-purple-400"></i> Hoja de Vida
+                        <i class="fa-solid fa-book-medical text-teal-400"></i> Hoja de Vida
                     </button>
                     <button type="button" onclick="markMachineOperational(${m.id})" class="py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all" title="Sacar la máquina de mantenimiento/parada y dejarla operativa">
                         <i class="fa-solid fa-circle-check"></i> Marcar operativa
@@ -1738,7 +1726,7 @@ function renderOrdersTable(tbodyId, ordersList) {
         const durSec = o.current_live_duration_seconds || o.repair_duration_seconds || 0;
 
         return `
-            <tr onclick="openOrderModal(${o.id})" class="hover:bg-[#11141c] cursor-pointer transition-colors ${isRunning ? 'bg-[#160d1f]/60 border-l-2 border-l-[#e57cd8]' : ''}">
+            <tr onclick="openOrderModal(${o.id})" class="hover:bg-[#11141c] cursor-pointer transition-colors ${isRunning ? 'bg-[#160d1f]/60 border-l-2 border-l-[#f59e0b]' : ''}">
                 <td class="px-5 py-3.5">
                     <div class="flex items-center gap-2">
                         <span class="font-mono font-bold text-[#2CD5FF]">${o.order_number}</span>
@@ -1748,7 +1736,7 @@ function renderOrdersTable(tbodyId, ordersList) {
                 </td>
                 <td class="px-4 py-3.5">
                     <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/[0.03] border border-white/[0.06]">
-                        <span class="w-2 h-2 rounded-full bg-[#e57cd8]"></span>
+                        <span class="w-2 h-2 rounded-full bg-[#f59e0b]"></span>
                         <span class="font-bold text-white text-xs">${o.machine_name || ''}</span>
                         <span class="text-[10px] font-mono text-zinc-400">${o.machine_code || ''}</span>
                     </div>
@@ -1781,7 +1769,7 @@ function renderOrdersTable(tbodyId, ordersList) {
                 <td class="px-4 py-3.5">
                     <div class="flex items-center gap-2">
                         ${getStatusBadgeHTML(o.status)}
-                        <span class="font-mono text-sm font-extrabold ${isRunning ? 'text-[#e57cd8]' : 'text-zinc-200'} order-live-timer" data-order-id="${o.id}">
+                        <span class="font-mono text-sm font-extrabold ${isRunning ? 'text-[#f59e0b]' : 'text-zinc-200'} order-live-timer" data-order-id="${o.id}">
                             ${formatSecondsToHHMMSS(durSec)}
                         </span>
                     </div>
@@ -1861,7 +1849,7 @@ async function quickToggleOrderTimer(orderId, currentlyRunning) {
 function getStatusBadgeHTML(status) {
     const map = {
         PENDIENTE: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-        EN_PROCESO: 'bg-[#e57cd8]/20 text-[#e57cd8] border-[#e57cd8]/40',
+        EN_PROCESO: 'bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/40',
         PAUSADO: 'bg-[#2CD5FF]/15 text-[#2CD5FF] border-[#2CD5FF]/30',
         FINALIZADO: 'bg-zinc-800 text-zinc-400 border-white/10'
     };
@@ -1886,10 +1874,10 @@ function updateTopTogglTimerBar() {
 
     if (runningOrder) {
         if (header) header.classList.add('timer-running');
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-[#e57cd8] timer-pulse';
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-[#f59e0b] timer-pulse';
         label.innerHTML = `<strong class="text-[#2CD5FF] font-mono">${runningOrder.order_number}</strong> <span class="text-white font-semibold mx-1">● ${runningOrder.machine_name}</span> <span class="text-zinc-400 text-[11px]">${runningOrder.description || ''}</span>`;
         clock.textContent = formatSecondsToHHMMSS(runningOrder.current_live_duration_seconds || 0);
-        clock.className = 'font-mono text-base font-black text-[#e57cd8] tracking-tight';
+        clock.className = 'font-mono text-base font-black text-[#f59e0b] tracking-tight';
         if (btn) {
             btn.className = 'toggl-stop-btn !w-8 !h-8';
             btn.dataset.orderId = runningOrder.id;
@@ -1978,7 +1966,7 @@ async function openOrderModal(orderId) {
     document.getElementById('modal-order-number').textContent = o.order_number;
     document.getElementById('modal-order-status').textContent = o.status;
     document.getElementById('modal-order-status').className = `text-xs px-2.5 py-1 rounded-full font-bold ${
-        o.status === 'FINALIZADO' ? 'bg-zinc-800 text-zinc-300' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+        o.status === 'FINALIZADO' ? 'bg-zinc-800 text-zinc-300' : 'bg-teal-600/20 text-teal-300 border border-teal-600/30'
     }`;
 
     document.getElementById('modal-machine-name').textContent = `${o.machine_code || ''} - ${o.machine_name || ''}`;
@@ -2349,12 +2337,12 @@ function renderMachinesGrid() {
                 <div class="flex flex-col sm:flex-row items-start justify-between gap-4">
                     <div class="space-y-2 flex-1">
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="px-2.5 py-0.5 rounded-md font-mono text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">${m.code}</span>
+                            <span class="px-2.5 py-0.5 rounded-md font-mono text-xs font-bold bg-teal-600/20 text-teal-300 border border-teal-600/30">${m.code}</span>
                             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${stCls}">${m.status}</span>
                             <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-900 text-zinc-400 border border-white/5">Criticidad: ${m.criticality || 'ALTA'}</span>
                         </div>
                         <h3 class="text-lg font-extrabold text-white">${m.name}</h3>
-                        <p class="text-xs text-zinc-400"><i class="fa-solid fa-location-dot text-purple-400 mr-1"></i> ${m.location}</p>
+                        <p class="text-xs text-zinc-400"><i class="fa-solid fa-location-dot text-teal-400 mr-1"></i> ${m.location}</p>
                         
                         <!-- Technical Hoja de Vida Preview -->
                         <div class="grid grid-cols-2 gap-2 pt-2 text-[11px] bg-zinc-950/60 p-3 rounded-xl border border-white/[0.05]">
@@ -2375,7 +2363,7 @@ function renderMachinesGrid() {
                 <!-- Action Buttons -->
                 <div class="pt-3 border-t border-white/[0.07] flex flex-wrap items-center justify-between gap-2 no-print">
                     <div class="flex flex-wrap items-center gap-2">
-                        <button onclick="openMachineDossier(${m.id})" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-600/20">
+                        <button onclick="openMachineDossier(${m.id})" class="px-3.5 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-teal-700/20">
                             <i class="fa-solid fa-book-medical"></i> Hoja de Vida
                         </button>
                         <button onclick="quickNotifyFromMachineCard(${m.id})" class="px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1.5" title="Enviar Alerta de Hoja de Vida a Jefes y Técnicos">
@@ -2511,7 +2499,7 @@ async function openMachineDossier(machineId) {
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-[11px] font-mono text-zinc-400">Meses: ${(p.months || []).map(m => MONTH_NAMES_SHORT[m - 1]).join(', ')}</span>
-                        <span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold text-[10px]">${p.technician_name || 'Sin asignar'}</span>
+                        <span class="px-2 py-0.5 rounded bg-teal-600/20 text-teal-300 font-semibold text-[10px]">${p.technician_name || 'Sin asignar'}</span>
                     </div>
                 </div>
             `).join('');
@@ -2531,7 +2519,7 @@ async function openMachineDossier(machineId) {
                     <div class="p-3.5 rounded-xl bg-zinc-950/90 border border-white/[0.07] space-y-1.5 text-xs">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <div class="flex items-center gap-2">
-                                <span class="font-mono font-bold text-purple-400">${h.order_number}</span>
+                                <span class="font-mono font-bold text-teal-400">${h.order_number}</span>
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-900 text-zinc-200">${h.maintenance_type}</span>
                                 <span class="text-[11px] font-semibold" style="color:${cat.color}">● ${cat.name} ${h.failure_subcategory ? `(${h.failure_subcategory})` : ''}</span>
                             </div>
@@ -2828,7 +2816,7 @@ function renderPlansView() {
                                 onclick="${isBoss ? `togglePlanMonth2027(${p.id}, ${mNum})` : ''}"
                                 class="month-cell w-8 h-7 rounded-lg font-mono text-[10px] font-bold inline-flex items-center justify-center border ${
                                     active
-                                        ? 'bg-purple-600 text-white border-purple-400 shadow shadow-purple-500/30'
+                                        ? 'bg-teal-700 text-white border-teal-400 shadow shadow-teal-600/30'
                                         : 'bg-zinc-900/70 text-zinc-600 border-white/5 hover:border-white/15'
                                 } ${isBoss ? 'cursor-pointer' : 'cursor-default'}"
                                 title="${mName} ${p.year}: ${active ? 'Programado' : 'Sin programar'}">
@@ -2842,7 +2830,7 @@ function renderPlansView() {
                     <tr class="hover:bg-white/[0.02]">
                         <td class="px-3 py-2.5">
                             <div class="font-bold text-white">${p.machine_code || ''} - ${p.machine_name || ''}</div>
-                            <div class="text-[10px] text-purple-300 font-mono truncate max-w-[220px]">${p.plan_code}: ${p.title}</div>
+                            <div class="text-[10px] text-teal-300 font-mono truncate max-w-[220px]">${p.plan_code}: ${p.title}</div>
                         </td>
                         ${monthCells}
                     </tr>
@@ -2859,13 +2847,13 @@ function renderPlansView() {
         const checklistHTML = (p.checklist || []).map((item, i) => `
             <label class="flex items-start gap-2 text-xs text-zinc-300 cursor-pointer py-1">
                 <input type="checkbox" ${item.done ? 'checked' : ''} onchange="togglePlanChecklistItem(${p.id}, ${i}, this.checked)"
-                    class="mt-0.5 rounded bg-zinc-900 border-white/20 text-purple-600 focus:ring-0">
+                    class="mt-0.5 rounded bg-zinc-900 border-white/20 text-teal-700 focus:ring-0">
                 <span class="${item.done ? 'line-through text-zinc-500' : ''}">${item.task}</span>
             </label>
         `).join('');
 
         const monthPills = (p.months || []).map(m =>
-            `<span class="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 font-mono text-[10px] font-bold">${MONTH_NAMES_SHORT[m - 1]}</span>`
+            `<span class="px-2 py-0.5 rounded bg-teal-600/15 text-teal-300 border border-teal-600/30 font-mono text-[10px] font-bold">${MONTH_NAMES_SHORT[m - 1]}</span>`
         ).join('');
 
         return `
@@ -2878,7 +2866,7 @@ function renderPlansView() {
                                 <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-zinc-800 text-zinc-300">${p.maintenance_type} • ${p.frequency}</span>
                             </div>
                             <h3 class="text-sm sm:text-base font-bold text-white mt-1.5">${p.title}</h3>
-                            <p class="text-xs text-purple-300 font-semibold">${p.machine_code} - ${p.machine_name}</p>
+                            <p class="text-xs text-teal-300 font-semibold">${p.machine_code} - ${p.machine_name}</p>
                         </div>
                         ${isBoss ? `
                             <div class="flex items-center gap-1">
@@ -2910,7 +2898,7 @@ function renderPlansView() {
                         <span class="font-mono text-amber-400">Próx: ${p.scheduled_date}</span>
                     </div>
                     ${isBoss ? `
-                        <button onclick="launchOrderFromPlan(${p.id})" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow cursor-pointer">
+                        <button onclick="launchOrderFromPlan(${p.id})" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-600 hover:to-cyan-600 text-white text-xs font-bold flex items-center gap-1.5 shadow cursor-pointer">
                             <i class="fa-solid fa-rocket"></i> Lanzar OT
                         </button>
                     ` : ''}
@@ -3021,7 +3009,7 @@ function renderPlanModalMonthSelector() {
         return `
             <button type="button" onclick="toggleModalMonth(${mNum})"
                 class="py-1.5 px-2 rounded-lg font-mono text-[11px] font-bold border transition-all ${
-                    active ? 'bg-purple-600 text-white border-purple-400' : 'bg-zinc-950 text-zinc-400 border-white/10'
+                    active ? 'bg-teal-700 text-white border-teal-400' : 'bg-zinc-950 text-zinc-400 border-white/10'
                 }">
                 ${mName}
             </button>
@@ -3185,7 +3173,7 @@ function renderNotificationsDrawer() {
         CRITICAL: 'border-rose-500/40 bg-rose-500/10 text-rose-300',
         WARNING: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
         SUCCESS: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
-        INFO: 'border-purple-500/30 bg-purple-500/10 text-purple-300'
+        INFO: 'border-teal-600/30 bg-teal-600/10 text-teal-300'
     };
 
     list.innerHTML = state.notifications.map(n => {
@@ -3324,7 +3312,7 @@ function renderRecentOrdersDashboard(orders) {
         const cat = getCategoryMeta(o.failure_type);
         return `
             <tr onclick="openOrderModal(${o.id})" class="hover:bg-white/[0.03] cursor-pointer">
-                <td class="px-4 py-3 font-mono font-bold text-purple-300">${o.order_number}</td>
+                <td class="px-4 py-3 font-mono font-bold text-teal-300">${o.order_number}</td>
                 <td class="px-4 py-3 font-semibold text-white">${o.machine_name}</td>
                 <td class="px-4 py-3">
                     <span class="text-xs font-semibold" style="color:${cat.color}">● ${cat.name}</span>
@@ -3334,7 +3322,7 @@ function renderRecentOrdersDashboard(orders) {
                 <td class="px-4 py-3">${o.machine_stopped ? '<span class="text-rose-400 font-bold">Sí</span>' : '<span class="text-emerald-400">No</span>'}</td>
                 <td class="px-4 py-3">${o.technician_name || '<span class="text-amber-400 italic">Asignar</span>'}</td>
                 <td class="px-4 py-3">${getStatusBadgeHTML(o.status)}</td>
-                <td class="px-4 py-3 text-right"><button type="button" class="text-purple-400 hover:underline font-bold cursor-pointer">Gestionar</button></td>
+                <td class="px-4 py-3 text-right"><button type="button" class="text-teal-400 hover:underline font-bold cursor-pointer">Gestionar</button></td>
             </tr>
         `;
     }).join('');
@@ -3527,14 +3515,14 @@ function renderTopFailures(top, total) {
         const w = Math.max(6, Math.round((t.count / max) * 100));
         return `
         <button type="button" onclick="goToOrdersByFailure('${t.code}', '${encodeURIComponent(t.sub)}')"
-            class="w-full text-left p-3 rounded-xl border border-white/[0.07] bg-zinc-950/60 hover:border-[#8c5cff]/60 transition-all cursor-pointer">
+            class="w-full text-left p-3 rounded-xl border border-white/[0.07] bg-zinc-950/60 hover:border-[#2dd4bf]/60 transition-all cursor-pointer">
             <div class="flex items-center justify-between gap-3 text-xs">
                 <span class="font-bold text-white truncate">${i + 1}. ${t.sub}</span>
                 <span class="font-mono text-zinc-300 flex-shrink-0">${t.count} <span class="text-zinc-500">(${pct}%)</span></span>
             </div>
             <div class="flex items-center justify-between gap-3 mt-1">
                 <span class="text-[10px] font-semibold" style="color:${cat.color}">● ${cat.name}</span>
-                <span class="text-[10px] text-[#8c5cff] font-mono">Ver órdenes &rarr;</span>
+                <span class="text-[10px] text-[#2dd4bf] font-mono">Ver órdenes &rarr;</span>
             </div>
             <div class="h-1 rounded-full bg-zinc-800 mt-2 overflow-hidden">
                 <div class="h-full rounded-full" style="width:${w}%; background-color:${cat.color}"></div>
@@ -3635,12 +3623,12 @@ function renderTechniciansGrid() {
         <div class="cf-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
             <div class="flex items-start justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center justify-center font-bold text-base">
+                    <div class="w-11 h-11 rounded-2xl bg-teal-600/15 border border-teal-600/30 text-teal-300 flex items-center justify-center font-bold text-base">
                         ${(t.name || 'T').charAt(0)}
                     </div>
                     <div>
                         <h3 class="text-sm font-bold text-white">${t.name}</h3>
-                        <p class="text-xs text-purple-300">${t.role || ''}</p>
+                        <p class="text-xs text-teal-300">${t.role || ''}</p>
                         <p class="text-[11px] text-zinc-400">${t.specialty || ''}</p>
                     </div>
                 </div>
@@ -3754,7 +3742,7 @@ function showToast(message, type = 'info') {
         success: 'border-emerald-500/40 bg-zinc-950/95 text-emerald-300',
         error: 'border-rose-500/40 bg-zinc-950/95 text-rose-300',
         warning: 'border-amber-500/40 bg-zinc-950/95 text-amber-300',
-        info: 'border-purple-500/40 bg-zinc-950/95 text-purple-200'
+        info: 'border-teal-600/40 bg-zinc-950/95 text-teal-200'
     };
 
     const el = document.createElement('div');
@@ -3787,7 +3775,7 @@ const calState = { loaded: false, loading: false, error: '', items: [], byDate: 
                    machineId: null, machineTab: 'calendario', mYear: null, mMonth: null, mSelected: null, minDate: null, maxDate: null };
 
 const CAL_ABBR = { 'Inspección': 'Insp.', 'Quincenal': 'Quinc.', 'Mensual': 'Mens.', 'Trimestral': 'Trim.', 'Semestral': 'Sem.', 'Anual': 'Anual' };
-const CAL_FOCUS = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8c5cff]';
+const CAL_FOCUS = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2dd4bf]';
 function calLum(hex) {
     const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -3906,7 +3894,7 @@ function renderCalDayPanel() {
     const box = document.getElementById('cal-day-panel');
     if (!box) return;
     if (!calState.selected) {
-        box.innerHTML = '<div class="p-6 text-xs text-[var(--muted-foreground)] text-center"><i class="fa-solid fa-hand-pointer text-2xl text-[#8c5cff] mb-2"></i><p>Selecciona un día del calendario para ver las máquinas con actividades programadas.</p></div>';
+        box.innerHTML = '<div class="p-6 text-xs text-[var(--muted-foreground)] text-center"><i class="fa-solid fa-hand-pointer text-2xl text-[#2dd4bf] mb-2"></i><p>Selecciona un día del calendario para ver las máquinas con actividades programadas.</p></div>';
         return;
     }
     const ents = (calState.byDate[calState.selected] || []).filter(e => !calState.area || e.area === calState.area);
@@ -3920,7 +3908,7 @@ function renderCalDayPanel() {
             <div class="flex flex-wrap gap-1 mt-1">${fr.map(f => `<span class="px-1.5 py-0.5 rounded text-[11px] font-bold" style="background:${calFreq(f).color}22;color:${calFreq(f).color};border:1px solid ${calFreq(f).color}66">${f}</span>`).join('')}</div></div>
             <i class="fa-solid fa-chevron-right text-xs text-[var(--muted-foreground)]"></i></button>`;
     }).join('');
-    box.innerHTML = `<div class="px-4 py-3 bg-[#8c5cff]/15"><div class="text-[10px] font-mono uppercase text-[#8c5cff] font-bold">Día seleccionado</div><div class="text-sm font-bold">${calLong(calState.selected)}</div></div>
+    box.innerHTML = `<div class="px-4 py-3 bg-[#2dd4bf]/15"><div class="text-[10px] font-mono uppercase text-[#2dd4bf] font-bold">Día seleccionado</div><div class="text-sm font-bold">${calLong(calState.selected)}</div></div>
         <div class="px-4 py-2 text-xs font-bold">Máquinas con actividades (${Object.keys(byM).length})</div><div class="max-h-[420px] overflow-y-auto">${rows}</div>`;
 }
 
@@ -3949,7 +3937,7 @@ function renderCalMachinePage() {
     root.classList.remove('hidden');
     const mine = e => e.machine_id == m.id;
     const tabs = [['calendario', 'fa-calendar-days', 'Calendario'], ['actividades', 'fa-list-check', 'Actividades'], ['ficha', 'fa-clipboard-list', 'Ficha técnica'], ['hoja', 'fa-book-medical', 'Hoja de vida']];
-    const side = tabs.map(([k, ic, lb]) => `<button type="button" onclick="calMachineTab('${k}')" aria-current="${calState.machineTab === k}" class="w-full text-left px-4 py-3 text-xs font-semibold flex items-center gap-2 cursor-pointer ${CAL_FOCUS} ${calState.machineTab === k ? 'bg-[#8c5cff]/20 text-white' : 'text-[var(--muted-foreground)] hover:bg-white/5'}"><i class="fa-solid ${ic} w-4"></i>${lb}</button>`).join('');
+    const side = tabs.map(([k, ic, lb]) => `<button type="button" onclick="calMachineTab('${k}')" aria-current="${calState.machineTab === k}" class="w-full text-left px-4 py-3 text-xs font-semibold flex items-center gap-2 cursor-pointer ${CAL_FOCUS} ${calState.machineTab === k ? 'bg-[#2dd4bf]/20 text-white' : 'text-[var(--muted-foreground)] hover:bg-white/5'}"><i class="fa-solid ${ic} w-4"></i>${lb}</button>`).join('');
     const monthLabel = `${CAL_MONTHS[calState.mMonth]} ${calState.mYear}`;
     const prefix = `${calState.mYear}-${String(calState.mMonth + 1).padStart(2, '0')}`;
     const monthItems = Object.keys(calState.byDate).filter(k => k.startsWith(prefix)).sort()
