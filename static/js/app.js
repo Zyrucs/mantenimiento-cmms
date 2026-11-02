@@ -3786,6 +3786,18 @@ const CAL_MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Juli
 const calState = { loaded: false, loading: false, error: '', items: [], byDate: {}, areas: [], year: null, month: null, selected: null, area: '',
                    machineId: null, machineTab: 'calendario', mYear: null, mMonth: null, mSelected: null, minDate: null, maxDate: null };
 
+const CAL_ABBR = { 'Inspección': 'Insp.', 'Quincenal': 'Quinc.', 'Mensual': 'Mens.', 'Trimestral': 'Trim.', 'Semestral': 'Sem.', 'Anual': 'Anual' };
+const CAL_FOCUS = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8c5cff]';
+function calLum(hex) {
+    const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+// texto negro o blanco, el que dé mayor contraste (WCAG) sobre el color de fondo
+function calTextColor(bg) {
+    const L = calLum(bg), Lblack = calLum('#0b0b0f');
+    const withWhite = 1.05 / (L + 0.05), withBlack = (L + 0.05) / (Lblack + 0.05);
+    return withBlack >= withWhite ? '#0b0b0f' : '#ffffff';
+}
 function calEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function calKey(y, m, d) { return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`; }
 function calLong(key) { const [y, m, d] = key.split('-').map(Number); return `${d} de ${CAL_MONTHS[m - 1].toLowerCase()} de ${y}`; }
@@ -3870,11 +3882,13 @@ function calMonthGrid(y, m, filterFn, clickFn, selected) {
         const machines = new Set(ents.map(e => e.machine_id)).size;
         const color = top >= 0 ? CAL_FREQS[top].color : null;
         const isSel = key === selected;
-        const dark = color && ['#facc15', '#22c55e'].includes(color);
-        cells += `<button type="button" ${machines ? `onclick="${clickFn}('${key}')"` : 'disabled'}
-            class="relative h-14 sm:h-16 rounded-lg border text-sm font-bold flex flex-col items-center justify-center transition ${isSel ? 'ring-2 ring-white' : ''} ${machines ? 'cursor-pointer hover:brightness-110' : 'cursor-default opacity-60'}"
-            style="${color ? `background:${color};border-color:${color};color:${dark ? '#111' : '#fff'}` : 'border-color:rgba(255,255,255,.08)'}">
-            <span>${d}</span>${machines ? `<span class="text-[9px] font-mono font-semibold opacity-90">${machines} máq.</span>` : ''}</button>`;
+        const fg = color ? calTextColor(color) : '';
+        const topName = top >= 0 ? CAL_FREQS[top].key : '';
+        const label = machines ? `${calLong(key)}: ${machines} ${machines === 1 ? 'máquina' : 'máquinas'}, mayor frecuencia ${topName}` : `${calLong(key)}: sin actividades`;
+        cells += `<button type="button" ${machines ? `onclick="${clickFn}('${key}')" aria-pressed="${isSel}"` : 'disabled'} aria-label="${label}"
+            class="relative h-16 rounded-lg border text-sm font-bold flex flex-col items-center justify-center transition-colors duration-150 ${CAL_FOCUS} ${isSel ? 'ring-2 ring-white' : ''} ${machines ? 'cursor-pointer hover:brightness-110' : 'cursor-default opacity-60'}"
+            style="${color ? `background:${color};border-color:${color};color:${fg}` : 'border-color:rgba(255,255,255,.08)'}">
+            <span>${d}</span>${machines ? `<span class="text-[11px] leading-tight font-semibold"><span class="hidden sm:inline">${CAL_ABBR[topName]} · </span>${machines}</span>` : ''}</button>`;
     }
     return `<div class="grid grid-cols-7 gap-1.5">${head}${cells}</div>`;
 }
@@ -3901,9 +3915,9 @@ function renderCalDayPanel() {
     const rows = Object.keys(byM).map(id => {
         const m = state.machines.find(x => x.id == id) || { name: `Máquina ${id}` };
         const fr = [...new Set(byM[id].map(e => e.frequency))].sort((a, b) => calRank(b) - calRank(a));
-        return `<button type="button" onclick="openCalMachine(${id}, '${calState.selected}')" class="w-full text-left px-4 py-3 flex items-center justify-between gap-3 border-t cf-border hover:bg-white/5 cursor-pointer">
+        return `<button type="button" onclick="openCalMachine(${id}, '${calState.selected}')" class="w-full text-left px-4 py-3 flex items-center justify-between gap-3 border-t cf-border hover:bg-white/5 cursor-pointer ${CAL_FOCUS}">
             <div><div class="text-sm font-bold">${calEsc(m.name)}</div>
-            <div class="flex flex-wrap gap-1 mt-1">${fr.map(f => `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold" style="background:${calFreq(f).color}22;color:${calFreq(f).color};border:1px solid ${calFreq(f).color}66">${f}</span>`).join('')}</div></div>
+            <div class="flex flex-wrap gap-1 mt-1">${fr.map(f => `<span class="px-1.5 py-0.5 rounded text-[11px] font-bold" style="background:${calFreq(f).color}22;color:${calFreq(f).color};border:1px solid ${calFreq(f).color}66">${f}</span>`).join('')}</div></div>
             <i class="fa-solid fa-chevron-right text-xs text-[var(--muted-foreground)]"></i></button>`;
     }).join('');
     box.innerHTML = `<div class="px-4 py-3 bg-[#8c5cff]/15"><div class="text-[10px] font-mono uppercase text-[#8c5cff] font-bold">Día seleccionado</div><div class="text-sm font-bold">${calLong(calState.selected)}</div></div>
@@ -3935,7 +3949,7 @@ function renderCalMachinePage() {
     root.classList.remove('hidden');
     const mine = e => e.machine_id == m.id;
     const tabs = [['calendario', 'fa-calendar-days', 'Calendario'], ['actividades', 'fa-list-check', 'Actividades'], ['ficha', 'fa-clipboard-list', 'Ficha técnica'], ['hoja', 'fa-book-medical', 'Hoja de vida']];
-    const side = tabs.map(([k, ic, lb]) => `<button type="button" onclick="calMachineTab('${k}')" class="w-full text-left px-4 py-2.5 text-xs font-semibold flex items-center gap-2 cursor-pointer ${calState.machineTab === k ? 'bg-[#8c5cff]/20 text-white' : 'text-[var(--muted-foreground)] hover:bg-white/5'}"><i class="fa-solid ${ic} w-4"></i>${lb}</button>`).join('');
+    const side = tabs.map(([k, ic, lb]) => `<button type="button" onclick="calMachineTab('${k}')" aria-current="${calState.machineTab === k}" class="w-full text-left px-4 py-3 text-xs font-semibold flex items-center gap-2 cursor-pointer ${CAL_FOCUS} ${calState.machineTab === k ? 'bg-[#8c5cff]/20 text-white' : 'text-[var(--muted-foreground)] hover:bg-white/5'}"><i class="fa-solid ${ic} w-4"></i>${lb}</button>`).join('');
     const monthLabel = `${CAL_MONTHS[calState.mMonth]} ${calState.mYear}`;
     const prefix = `${calState.mYear}-${String(calState.mMonth + 1).padStart(2, '0')}`;
     const monthItems = Object.keys(calState.byDate).filter(k => k.startsWith(prefix)).sort()
@@ -3944,16 +3958,16 @@ function renderCalMachinePage() {
     if (calState.machineTab === 'calendario') {
         const dayList = calState.mSelected ? (calState.byDate[calState.mSelected] || []).filter(mine) : [];
         body = `<div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold">Calendario de mantenimiento</h4>
-            <div class="flex items-center gap-1"><button type="button" onclick="calMachineShift(-1)" class="w-8 h-8 rounded-full border cf-border hover:bg-white/5 text-xs"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="flex items-center gap-1"><button type="button" onclick="calMachineShift(-1)" aria-label="Mes anterior" class="w-11 h-11 rounded-full border cf-border hover:bg-white/5 text-xs cursor-pointer ${CAL_FOCUS}"><i class="fa-solid fa-chevron-left"></i></button>
             <span class="min-w-[130px] text-center text-sm font-bold">${monthLabel}</span>
-            <button type="button" onclick="calMachineShift(1)" class="w-8 h-8 rounded-full border cf-border hover:bg-white/5 text-xs"><i class="fa-solid fa-chevron-right"></i></button></div></div>
+            <button type="button" onclick="calMachineShift(1)" aria-label="Mes siguiente" class="w-11 h-11 rounded-full border cf-border hover:bg-white/5 text-xs cursor-pointer ${CAL_FOCUS}"><i class="fa-solid fa-chevron-right"></i></button></div></div>
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-4"><div class="xl:col-span-2">${calMonthGrid(calState.mYear, calState.mMonth, mine, 'calMachineSelect', calState.mSelected)}</div>
             <div class="rounded-xl border cf-border p-3 text-xs space-y-2"><div class="font-bold">Frecuencia</div>${CAL_FREQS.map(f => `<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:${f.color}"></span>${f.label}</div>`).join('')}</div></div>
             ${calState.mSelected ? `<div class="mt-4 rounded-xl border cf-border p-4"><div class="text-xs font-bold mb-2">${calLong(calState.mSelected)}</div>${dayList.map(calActivityRow).join('') || '<p class="text-xs text-[var(--muted-foreground)]">Sin actividades.</p>'}</div>` : ''}`;
     } else if (calState.machineTab === 'actividades') {
         body = `<div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold">Actividades · ${monthLabel}</h4>
-            <div class="flex items-center gap-1"><button type="button" onclick="calMachineShift(-1)" class="w-8 h-8 rounded-full border cf-border hover:bg-white/5 text-xs"><i class="fa-solid fa-chevron-left"></i></button>
-            <button type="button" onclick="calMachineShift(1)" class="w-8 h-8 rounded-full border cf-border hover:bg-white/5 text-xs"><i class="fa-solid fa-chevron-right"></i></button></div></div>
+            <div class="flex items-center gap-1"><button type="button" onclick="calMachineShift(-1)" aria-label="Mes anterior" class="w-11 h-11 rounded-full border cf-border hover:bg-white/5 text-xs cursor-pointer ${CAL_FOCUS}"><i class="fa-solid fa-chevron-left"></i></button>
+            <button type="button" onclick="calMachineShift(1)" aria-label="Mes siguiente" class="w-11 h-11 rounded-full border cf-border hover:bg-white/5 text-xs cursor-pointer ${CAL_FOCUS}"><i class="fa-solid fa-chevron-right"></i></button></div></div>
             ${monthItems.length ? monthItems.map(e => `<div class="flex gap-3 py-2 border-t cf-border"><div class="w-24 shrink-0 text-xs font-mono text-[var(--muted-foreground)]">${calLong(e.key).replace(/ de \d{4}$/, '')}</div>${calActivityRow(e)}</div>`).join('') : '<p class="text-xs text-[var(--muted-foreground)]">No hay actividades este mes.</p>'}`;
     } else if (calState.machineTab === 'ficha') {
         const f = [['Código', m.code], ['Nombre', m.name], ['Ubicación', m.location], ['Marca', m.brand], ['Modelo', m.model], ['N.º de serie', m.serial_number], ['Año / instalación', m.install_date], ['Voltaje', m.voltage], ['Potencia', m.power_kw], ['Proveedor', m.supplier], ['Criticidad', m.criticality], ['Estado', m.status]];
@@ -3971,6 +3985,6 @@ function renderCalMachinePage() {
 
 function calActivityRow(e) {
     const f = calFreq(e.frequency);
-    return `<div class="flex-1 flex items-start gap-2 py-1"><span class="mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0" style="background:${f.color}22;color:${f.color};border:1px solid ${f.color}66">${calEsc(f.key)}</span>
+    return `<div class="flex-1 flex items-start gap-2 py-1"><span class="mt-0.5 px-1.5 py-0.5 rounded text-[11px] font-bold shrink-0" style="background:${f.color}22;color:${f.color};border:1px solid ${f.color}66">${calEsc(f.key)}</span>
         <div class="text-xs"><div>${calEsc(e.activity || '')}</div><div class="text-[10px] text-[var(--muted-foreground)]">${calEsc(e.area || '')}${e.daysTotal > 1 ? ` · día ${e.dayNo} de ${e.daysTotal}` : ''} · ${calEsc(e.status || '')}</div></div></div>`;
 }
