@@ -1106,6 +1106,20 @@ def create_order():
         conn.close()
         return jsonify({"error": "La máquina seleccionada no existe"}), 404
 
+    # A machine may only have one open order at a time.
+    open_order = conn.execute("""
+        SELECT id, order_number FROM maintenance_orders
+        WHERE machine_id = ? AND status NOT IN ('FINALIZADO', 'CERRADA')
+        ORDER BY id DESC LIMIT 1
+    """, (machine_id,)).fetchone()
+    if open_order:
+        conn.close()
+        return jsonify({
+            "error": f"La máquina ya tiene la orden abierta {open_order['order_number']}. Finalízala antes de crear otra.",
+            "existing_order_id": open_order['id'],
+            "existing_order_number": open_order['order_number']
+        }), 409
+
     operator_name = (data.get('operator_name') or '').strip()
     if not operator_name:
         conn.close()

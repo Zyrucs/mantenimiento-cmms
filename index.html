@@ -597,12 +597,6 @@ body.authed #demo > div > div:last-child > div { box-shadow: none !important; bo
                             <span>Calendario</span>
                             <span class="tab-laser"></span>
                         </button>
-
-                        <button type="button" onclick="navigateTo('plans')" id="nav-plans" class="cf-demo-tab">
-                            <i class="fa-solid fa-calendar-check text-[#2dd4bf]"></i>
-                            <span>Plan Preventivo 2027</span>
-                            <span class="tab-laser"></span>
-                        </button>
                     </div>
 
                     <!-- Boss Exclusive Secondary Flush Tab Bar (Visible only when Jefe is logged in!) -->
@@ -957,57 +951,6 @@ body.authed #demo > div > div:last-child > div { box-shadow: none !important; bo
                                 <div id="cal-machine-root" class="hidden"></div>
                             </div>
 
-                            <div id="view-plans" class="cf-divide-y hidden">
-                                <div class="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                    <div>
-                                        <span class="text-xs font-mono font-bold uppercase text-[#2dd4bf]">● PLANIFICACIÓN PREVENTIVA & PREDICTIVA</span>
-                                        <h3 class="text-xl font-bold tracking-tight">Cronograma Anual Preventivo 2027</h3>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <select id="filter-plan-year" onchange="renderPlansView()" class="bg-[var(--card)] border cf-border rounded-full px-4 py-2 text-xs font-mono">
-                                            <option value="2027">📅 Año 2027</option>
-                                            <option value="2026">📅 Año 2026</option>
-                                            <option value="">Todos</option>
-                                        </select>
-                                        <button id="btn-new-plan" onclick="openPlanModal()" class="hidden vb-btn-primary px-5 py-2 rounded-full text-xs font-semibold">
-                                            + Nuevo Plan 2027
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="p-6 space-y-3">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs font-mono font-bold text-[#2dd4bf]">MATRIZ INTERACTIVA ENERO – DICIEMBRE 2027</span>
-                                        <span class="text-[11px] text-[var(--muted-foreground)]">El Jefe puede hacer clic en cualquier mes para programar/desmarcar</span>
-                                    </div>
-                                    <div class="overflow-x-auto border cf-border rounded-xl">
-                                        <table class="w-full text-left text-xs">
-                                            <thead class="bg-[var(--card)] text-[10px] font-mono uppercase text-[var(--muted-foreground)] border-b cf-border">
-                                                <tr>
-                                                    <th class="px-4 py-3 min-w-[200px]">Máquina / Plan</th>
-                                                    <th class="px-2 py-3 text-center">Ene</th>
-                                                    <th class="px-2 py-3 text-center">Feb</th>
-                                                    <th class="px-2 py-3 text-center">Mar</th>
-                                                    <th class="px-2 py-3 text-center">Abr</th>
-                                                    <th class="px-2 py-3 text-center">May</th>
-                                                    <th class="px-2 py-3 text-center">Jun</th>
-                                                    <th class="px-2 py-3 text-center">Jul</th>
-                                                    <th class="px-2 py-3 text-center">Ago</th>
-                                                    <th class="px-2 py-3 text-center">Sep</th>
-                                                    <th class="px-2 py-3 text-center">Oct</th>
-                                                    <th class="px-2 py-3 text-center">Nov</th>
-                                                    <th class="px-2 py-3 text-center">Dic</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="matrix-2027-tbody" class="cf-divide-y"></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                <div id="plans-cards-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6"></div>
-                            </div>
-
-
                             <!-- ================================================= -->
                             <!-- VIEW 5: CATEGORIZACIÓN DE FALLAS (JEFE)           -->
                             <!-- ================================================= -->
@@ -1173,7 +1116,7 @@ body.authed #demo > div > div:last-child > div { box-shadow: none !important; bo
                         <span class="text-[11px] font-mono text-[var(--muted-foreground)] mt-1">Celular ↔ PC • Latencia Cero</span>
                     </div>
 
-                    <div class="col-span-4 grid grid-cols-2 md:grid-cols-4 lg:border-l cf-border cf-divide-x">
+                    <div class="col-span-4 grid grid-cols-2 md:grid-cols-3 lg:border-l cf-border cf-divide-x">
                         <div class="flex flex-col items-center justify-center h-28 p-4 text-center">
                             <span class="text-[10px] font-mono uppercase text-[var(--muted-foreground)]">ÓRDENES ACTIVAS</span>
                             <span id="kpi-active-orders" class="text-3xl font-black font-mono text-[#2dd4bf] mt-1">1</span>
@@ -1188,11 +1131,6 @@ body.authed #demo > div > div:last-child > div { box-shadow: none !important; bo
                             <span class="text-[10px] font-mono uppercase text-[var(--muted-foreground)]">MTTR PROMEDIO</span>
                             <span id="kpi-avg-repair" class="text-3xl font-black font-mono mt-1">35 min</span>
                             <span class="text-[10px] font-mono text-[var(--muted-foreground)]">Cerradas: <strong id="kpi-finished-orders">1</strong></span>
-                        </div>
-                        <div class="flex flex-col items-center justify-center h-28 p-4 text-center">
-                            <span class="text-[10px] font-mono uppercase text-[var(--muted-foreground)]">PLANES 2027</span>
-                            <span id="kpi-plans-2027" class="text-3xl font-black font-mono text-emerald-400 mt-1">2</span>
-                            <span class="text-[10px] font-mono text-[#2dd4bf] cursor-pointer hover:underline" onclick="navigateTo('plans')">Ver Matriz &rarr;</span>
                         </div>
                     </div>
                 </div>
@@ -1225,7 +1163,7 @@ body.authed #demo > div > div:last-child > div { box-shadow: none !important; bo
                 <div class="grid grid-cols-1 md:grid-cols-6 cf-divide-y md:divide-y-0 md:cf-divide-x">
                     
                     <!-- Bento 1: Hojas de Vida & Notificaciones -->
-                    <div onclick="switchRole('TECNICO'); navigateTo('machines');" class="md:col-span-3 p-6 sm:p-10 hover:bg-[#2dd4bf]/[0.03] transition-colors cursor-pointer flex flex-col justify-between gap-6">
+                    <div onclick="switchRole('TECNICO'); navigateTo('machines');" class="md:col-span-6 p-6 sm:p-10 hover:bg-[#2dd4bf]/[0.03] transition-colors cursor-pointer flex flex-col justify-between gap-6">
                         <div class="space-y-2">
                             <span class="text-xs font-mono font-bold text-[#2dd4bf]">01 // HOJAS DE VIDA & ALERTAS</span>
                             <h3 class="text-2xl font-semibold tracking-tight">Expediente Técnico con Notificaciones a Jefes y Técnicos</h3>
@@ -1244,27 +1182,6 @@ body.authed #demo > div > div:last-child > div { box-shadow: none !important; bo
                                 </div>
                             </div>
                             <span class="text-xs font-mono text-[#2dd4bf] font-bold">Abrir &rarr;</span>
-                        </div>
-                    </div>
-
-                    <!-- Bento 2: Plan Preventivo 2027 -->
-                    <div onclick="switchRole('TECNICO'); navigateTo('plans');" class="md:col-span-3 p-6 sm:p-10 hover:bg-[#2dd4bf]/[0.03] transition-colors cursor-pointer flex flex-col justify-between gap-6">
-                        <div class="space-y-2">
-                            <span class="text-xs font-mono font-bold text-[#2dd4bf]">02 // CRONOGRAMA PREVENTIVO 2027</span>
-                            <h3 class="text-2xl font-semibold tracking-tight">Matriz Anual Enero–Diciembre 2027 y Checklists</h3>
-                            <p class="text-xs sm:text-sm text-[var(--muted-foreground)]">
-                                Programa mantenimientos preventivos y predictivos para todo el 2027 y genera Órdenes de Trabajo (OT) en un clic.
-                            </p>
-                        </div>
-                        <div class="p-4 rounded-xl shadow-badge flex items-center justify-between">
-                            <div class="flex items-center gap-2 font-mono text-xs">
-                                <span class="px-2 py-1 rounded bg-[#2dd4bf] text-white font-bold">ENE</span>
-                                <span class="px-2 py-1 rounded bg-[#2dd4bf] text-white font-bold">ABR</span>
-                                <span class="px-2 py-1 rounded bg-[#2dd4bf] text-white font-bold">JUL</span>
-                                <span class="px-2 py-1 rounded bg-[#2dd4bf] text-white font-bold">OCT</span>
-                                <span class="text-[var(--muted-foreground)] ml-1">2027</span>
-                            </div>
-                            <span class="text-xs font-mono text-[#2dd4bf] font-bold">Ver Plan 2027 &rarr;</span>
                         </div>
                     </div>
                 </div>
@@ -2148,13 +2065,13 @@ function handleInitialRoute() {
     }
 
     if (state.role === 'TECNICO') {
-        if (['orders', 'machines', 'calendar', 'plans', 'report'].includes(hash)) {
+        if (['orders', 'machines', 'calendar', 'report'].includes(hash)) {
             navigateTo(hash);
         } else {
             navigateTo('orders');
         }
     } else if (state.role === 'JEFE') {
-        if (['dashboard', 'orders', 'machines', 'calendar', 'plans', 'categories', 'technicians', 'report'].includes(hash)) {
+        if (['dashboard', 'orders', 'machines', 'calendar', 'categories', 'technicians', 'report'].includes(hash)) {
             navigateTo(hash);
         } else {
             navigateTo('dashboard');
@@ -2379,6 +2296,8 @@ function applyRoleUI() {
 }
 
 function navigateTo(viewName) {
+    // The "Plan Preventivo 2027" page was removed; send old links to the calendar.
+    if (viewName === 'plans') viewName = 'calendar';
     const isAuthenticated = !!state.bossUser;
     const isBoss = isAuthenticated && state.bossUser.role === 'JEFE';
 
@@ -2398,7 +2317,7 @@ function navigateTo(viewName) {
         window.location.hash = viewName;
     }
 
-    const views = ['report', 'orders', 'machines', 'calendar', 'plans', 'categories', 'dashboard', 'technicians'];
+    const views = ['report', 'orders', 'machines', 'calendar', 'categories', 'dashboard', 'technicians'];
     views.forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.classList.toggle('hidden', v !== viewName);
@@ -2415,7 +2334,6 @@ function navigateTo(viewName) {
         orders: ['Máquinas Dañadas & Órdenes de Trabajo', 'Control de tiempos con cronómetro en vivo y estado de planta'],
         machines: ['Hojas de Vida de Máquinas & Códigos QR', 'Ficha técnica, bitácora histórica, alertas y etiquetas QR'],
         calendar: ['Calendario Principal de Mantenimiento', 'Día → máquinas con actividades → página de la máquina'],
-        plans: ['Planes de Mantenimiento & Preventivo 2027', 'Cronograma anual 2027 y rutinas preventivas/predictivas'],
         categories: ['Categorización de Fallas', 'Catálogo de tipos y subcategorías de fallas técnicas'],
         dashboard: ['Dashboard Ejecutivo de Planta (Jefe)', 'Métricas en tiempo real, MTTR, paros y distribución de fallas'],
         technicians: ['Equipo Técnico e Ingenieros', 'Administración del personal de mantenimiento']
@@ -2433,7 +2351,6 @@ function navigateTo(viewName) {
         loadOrdersList();
     } else if (viewName === 'machines') renderMachinesGrid();
     else if (viewName === 'calendar') renderCalendarView();
-    else if (viewName === 'plans') renderPlansView();
     else if (viewName === 'categories') renderCategoriesGrid();
     else if (viewName === 'technicians') renderTechniciansGrid();
     else if (viewName === 'report') {
@@ -3165,6 +3082,27 @@ function stopQrScanner() {
     }
 }
 
+const CLOSED_ORDER_STATUSES = ['FINALIZADO', 'CERRADA'];
+
+// Returns the open order for a machine (checked against Supabase so the
+// answer is fresh), or null when the machine has none.
+async function findOpenOrderForMachine(machineId) {
+    try {
+        const rows = await sbDirectGet(
+            `work_orders?machine_id=eq.${parseInt(machineId)}&status=not.in.(${CLOSED_ORDER_STATUSES.join(',')})&select=id,order_number&order=id.desc&limit=1`
+        );
+        if (Array.isArray(rows) && rows.length > 0) return rows[0];
+        return null;
+    } catch (e) {
+        return state.orders.find(o => o.machine_id == machineId && !CLOSED_ORDER_STATUSES.includes(o.status)) || null;
+    }
+}
+
+function rejectDuplicateOrder(orderId, orderNumber) {
+    showToast(`Esta máquina ya tiene la orden abierta ${orderNumber || ''}. Finalízala antes de reportar otra falla.`, 'warning');
+    if (state.bossUser && orderId) openOrderModal(orderId);
+}
+
 async function submitIncidentReport(e) {
     e.preventDefault();
     const machineId = document.getElementById('form-machine-id').value;
@@ -3203,6 +3141,14 @@ async function submitIncidentReport(e) {
     const btn = document.getElementById('btn-submit-report');
     if (btn) btn.disabled = true;
 
+    // A machine may only have one open order at a time.
+    const existing = await findOpenOrderForMachine(machineId);
+    if (existing) {
+        rejectDuplicateOrder(existing.id, existing.order_number);
+        if (btn) btn.disabled = false;
+        return;
+    }
+
     try {
         const res = await fetch('/api/orders', {
             method: 'POST',
@@ -3210,6 +3156,12 @@ async function submitIncidentReport(e) {
             body: JSON.stringify(payload)
         });
         const contentType = res.headers.get('content-type') || '';
+        if (res.status === 409 && contentType.includes('application/json')) {
+            const dup = await res.json();
+            rejectDuplicateOrder(dup.existing_order_id, dup.existing_order_number);
+            if (btn) btn.disabled = false;
+            return;
+        }
         if (res.ok && contentType.includes('application/json')) {
             const data = await res.json();
             showToast(`✅ Orden ${data.order_number} registrada en Supabase. Jefes y Técnicos notificados.`, 'success');
@@ -3492,9 +3444,11 @@ async function attendDamagedMachine(machineId) {
         await openOrderModal(activeOrder.id);
         return;
     }
-    const anyOrder = state.orders.find(o => o.machine_id == machineId);
-    if (anyOrder) {
-        await openOrderModal(anyOrder.id);
+    // No open order: do NOT reopen an old finished one (its "Finalizar" button is
+    // hidden, which left the machine stuck). Create a fresh order instead.
+    const freshOpen = await findOpenOrderForMachine(machineId);
+    if (freshOpen) {
+        await openOrderModal(freshOpen.id);
         return;
     }
     // Create an active maintenance order on the fly if none exists for this damaged machine
@@ -4143,13 +4097,18 @@ async function finishMaintenanceOrder() {
         }
     } catch (e) {}
 
-    // Direct Supabase finish
+    // Direct Supabase finish. Only send columns that exist in work_orders
+    // (there is no `diagnosis` or `solution_applied` column; sending them made
+    // Supabase reject the update, so orders could never be finalized).
+    const notesText = [
+        payload.diagnosis ? `Diagnóstico: ${payload.diagnosis}` : '',
+        payload.solution_notes ? `Solución: ${payload.solution_notes}` : ''
+    ].filter(Boolean).join(' | ');
     try {
         await sbDirectPatch('work_orders', `id=eq.${orderId}`, {
             status: 'FINALIZADO',
             completed_at: new Date().toISOString(),
-            diagnosis: payload.diagnosis,
-            solution_applied: payload.solution_notes,
+            solution_notes: notesText,
             spare_parts_used: payload.spare_parts_notes,
             repair_minutes: repairMin,
             downtime_minutes: repairMin
@@ -4167,8 +4126,9 @@ async function finishMaintenanceOrder() {
                 machine_id: parseInt(machineId),
                 event_type: 'REPARACION_CERRADA',
                 title: `Orden ${state.activeOrder.order_number} Finalizada`,
-                details: `Diagnóstico: ${payload.diagnosis || 'N/A'} | Solución: ${payload.solution_notes || 'N/A'} | Repuestos: ${payload.spare_parts_notes || 'N/A'} (${repairMin} min)`,
-                author: state.activeOrder.technician_name || state.bossUser?.full_name || 'Técnico'
+                description: `Diagnóstico: ${payload.diagnosis || 'N/A'} | Solución: ${payload.solution_notes || 'N/A'} | Repuestos: ${payload.spare_parts_notes || 'N/A'} (${repairMin} min)`,
+                technician_name: state.activeOrder.technician_name || null,
+                created_by: state.bossUser?.full_name || state.activeOrder.technician_name || 'Técnico'
             });
         } catch (err) {}
 
