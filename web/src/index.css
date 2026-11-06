@@ -16,6 +16,9 @@
   --color-brand: #0f766e;       /* Gilpa teal */
   --color-brand-hover: #115e59;
   --color-brand-tint: #ecfdf9;
+
+  --color-chart: #0d9488;       /* single-series data color (validated: chroma, contrast) */
+  --color-grid: #ecebe9;        /* chart gridlines */
 }
 
 html, body, #root { height: 100%; }
