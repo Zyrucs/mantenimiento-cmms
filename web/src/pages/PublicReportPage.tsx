@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom'
-import { Card, EmptyState } from '../components/ui'
+import { Link, useParams } from 'react-router-dom'
+import { ReportForm } from '../components/ReportForm'
 
-// Public page for operators (no login). The real form arrives in Phase 2.
+// Public page for operators (no login), also reached from machine QR codes.
 export function PublicReportPage() {
+  const { machineCode } = useParams()
   return (
     <div className="min-h-full">
       <header className="bg-surface border-b border-line">
@@ -15,10 +16,9 @@ export function PublicReportPage() {
         </div>
       </header>
       <main className="max-w-[720px] mx-auto px-4 py-7">
-        <h1 className="text-[22px] font-semibold tracking-tight mb-6">Reportar falla</h1>
-        <Card>
-          <EmptyState title="Formulario en construcción" text="El formulario de reporte se reconstruye en la Fase 2." />
-        </Card>
+        <h1 className="text-[22px] font-semibold tracking-tight">Reportar falla</h1>
+        <p className="text-muted mt-0.5 mb-6">Mantenimiento recibe el aviso apenas lo envíes.</p>
+        <ReportForm initialMachineCode={machineCode} />
       </main>
     </div>
   )

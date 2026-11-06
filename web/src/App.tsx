@@ -6,6 +6,7 @@ import { Spinner } from './components/ui'
 import { LoginPage } from './pages/LoginPage'
 import { PublicReportPage } from './pages/PublicReportPage'
 import { Placeholder } from './pages/Placeholder'
+import { ReportPage } from './pages/ReportPage'
 
 function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
   const { loading, profile } = useAuth()
@@ -36,7 +37,7 @@ export default function App() {
       {!profile && <Route path="/reportar/:machineCode?" element={<PublicReportPage />} />}
 
       <Route element={<RequireRole roles={BOTH}><AppShell /></RequireRole>}>
-        <Route path="/reportar/:machineCode?" element={<Placeholder title="Reportar falla" phase={2} />} />
+        <Route path="/reportar/:machineCode?" element={<ReportPage />} />
         <Route path="/ordenes" element={<Placeholder title="Órdenes" phase={3} />} />
         <Route path="/maquinas" element={<Placeholder title="Máquinas" phase={4} />} />
         <Route path="/calendario" element={<Placeholder title="Calendario" phase={5} />} />
