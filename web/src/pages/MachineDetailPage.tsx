@@ -10,6 +10,7 @@ import { machineStatus, orderStatus } from '../lib/labels'
 import { formatDateTime } from '../lib/time'
 import { MachineForm } from '../components/MachineForm'
 import { OrderDetail } from '../components/OrderDetail'
+import { MachineSchedule } from '../components/MachineSchedule'
 import { QrCode, machineReportUrl } from '../components/QrCode'
 import { Button, Card, EmptyState, Field, Input, Pill, Spinner, Table, Textarea } from '../components/ui'
 import { areaOf } from './MachinesPage'
@@ -120,6 +121,8 @@ export function MachineDetailPage() {
               </dl>
             )}
           </Card>
+
+          <MachineSchedule machineId={m.id} />
 
           <Card title={`Órdenes (${orders.length})`}>
             {orders.length === 0 ? <EmptyState title="Sin órdenes" text="Esta máquina no tiene órdenes registradas." /> : (

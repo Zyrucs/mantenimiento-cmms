@@ -11,6 +11,7 @@ import { OrdersPage } from './pages/OrdersPage'
 import { MachinesPage } from './pages/MachinesPage'
 import { MachineDetailPage } from './pages/MachineDetailPage'
 import { LabelsPage } from './pages/LabelsPage'
+import { CalendarPage } from './pages/CalendarPage'
 
 function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
   const { loading, profile } = useAuth()
@@ -47,7 +48,7 @@ export default function App() {
         <Route path="/ordenes" element={<OrdersPage />} />
         <Route path="/maquinas" element={<MachinesPage />} />
         <Route path="/maquinas/:id" element={<MachineDetailPage />} />
-        <Route path="/calendario" element={<Placeholder title="Calendario" phase={5} />} />
+        <Route path="/calendario" element={<CalendarPage />} />
         <Route path="/dashboard" element={<RequireRole roles={JEFE}><Placeholder title="Dashboard" phase={6} /></RequireRole>} />
         <Route path="/categorias" element={<RequireRole roles={JEFE}><Placeholder title="Categorías" phase={6} /></RequireRole>} />
         <Route path="/tecnicos" element={<RequireRole roles={JEFE}><Placeholder title="Técnicos" phase={6} /></RequireRole>} />

@@ -239,6 +239,58 @@ export async function classifyOrder(orderId: number, fields: {
   if (error) throw new Error(error.message)
 }
 
+/* ---------- Maintenance schedule (calendar) ---------- */
+export interface ScheduleItem {
+  id: number
+  machine_id: number
+  scheduled_date: string // YYYY-MM-DD
+  frequency: string
+  area: string | null
+  days: number | null
+  activity: string | null
+  status: string
+}
+
+/** Activities touching [from, to] (inclusive, YYYY-MM-DD). Multi-day items may start before `from`. */
+export function useSchedule(from: string, to: string, machineId?: number) {
+  return useQuery({
+    queryKey: ['schedule', from, to, machineId ?? 'all'],
+    queryFn: async (): Promise<ScheduleItem[]> => {
+      // Items last at most a few days; look back 31 days to catch ones that start earlier.
+      const lookBack = new Date(`${from}T00:00:00Z`)
+      lookBack.setUTCDate(lookBack.getUTCDate() - 31)
+      const rows: ScheduleItem[] = []
+      for (let offset = 0; ; offset += 1000) {
+        let q = supabase.from('maintenance_schedule')
+          .select('id, machine_id, scheduled_date, frequency, area, days, activity, status')
+          .gte('scheduled_date', lookBack.toISOString().slice(0, 10))
+          .lte('scheduled_date', to)
+          .order('scheduled_date').order('id')
+          .range(offset, offset + 999)
+        if (machineId) q = q.eq('machine_id', machineId)
+        const { data, error } = await q
+        if (error) throw error
+        rows.push(...(data ?? []))
+        if (!data || data.length < 1000) break
+      }
+      return rows
+    },
+    staleTime: 60_000,
+  })
+}
+
+/** First date with a pending activity on or after `from` (for "go to next activity"). */
+export async function nextScheduledDate(from: string, machineId?: number) {
+  let q = supabase.from('maintenance_schedule').select('scheduled_date')
+    .gte('scheduled_date', from).order('scheduled_date').limit(1)
+  if (machineId) q = q.eq('machine_id', machineId)
+  const { data } = await q
+  return data?.[0]?.scheduled_date as string | undefined
+}
+
+export const setScheduleStatus = (id: number, done: boolean) =>
+  rpc('set_schedule_status', { p_id: id, p_done: done })
+
 /* ---------- Mutations ---------- */
 export interface ReportFailureInput {
   machineId: number
