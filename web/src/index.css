@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/* SistMaint design tokens: light, calm, Gilpa teal used sparingly. */
+@theme {
+  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+
+  --color-canvas: #f7f7f5;      /* page background */
+  --color-surface: #ffffff;     /* cards, sidebar */
+  --color-line: #e7e5e4;        /* borders */
+  --color-line-soft: #f0efed;   /* table row dividers */
+  --color-ink: #18181b;         /* main text */
+  --color-ink-soft: #44403c;    /* secondary text */
+  --color-muted: #78716c;       /* labels, hints */
+  --color-faint: #a8a29e;       /* table headers */
+
+  --color-brand: #0f766e;       /* Gilpa teal */
+  --color-brand-hover: #115e59;
+  --color-brand-tint: #ecfdf9;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
