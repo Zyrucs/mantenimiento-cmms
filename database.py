@@ -8,7 +8,50 @@ import sqlite3
 import os
 import json
 import urllib.request
-from datetime import datetime, timedelta
+import time
+from datetime import datetime, timedelta, timezone
+
+# ---------------------------------------------------------------------------
+# Hora de Colombia (UTC-5, sin horario de verano).
+# SQLite guarda horas locales de Colombia sin zona; Supabase guarda timestamptz.
+# Forzamos la zona del proceso para que datetime.now() devuelva hora de Colombia
+# también en Vercel (que corre en UTC). La cadena POSIX no necesita tzdata.
+# ---------------------------------------------------------------------------
+COL_TZ = timezone(timedelta(hours=-5))
+os.environ['TZ'] = '<-05>5'
+if hasattr(time, 'tzset'):
+    time.tzset()
+
+
+def sb_to_local(value):
+    """Supabase timestamp (UTC/offset) -> 'YYYY-MM-DD HH:MM:SS' in Colombia time."""
+    if not value:
+        return None
+    s = str(value).strip().replace(' ', 'T')
+    if s.endswith('Z'):
+        s = s[:-1] + '+00:00'
+    try:
+        dt = datetime.fromisoformat(s)
+    except ValueError:
+        try:
+            dt = datetime.fromisoformat(s[:19])
+        except ValueError:
+            return str(value)[:19].replace('T', ' ')
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(COL_TZ).strftime('%Y-%m-%d %H:%M:%S')
+
+
+def local_to_sb(value):
+    """Naive Colombia-time string from SQLite -> ISO string with -05:00 for Supabase."""
+    if not value:
+        return None
+    s = str(value).strip().replace(' ', 'T')
+    if s.endswith('Z') or '+' in s[10:] or '-' in s[10:]:
+        return s  # already carries a zone
+    if len(s) == 16:  # YYYY-MM-DDTHH:MM
+        s += ':00'
+    return s[:19] + '-05:00'
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IS_VERCEL = bool(os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'))
@@ -717,15 +760,13 @@ def push_to_cloud(conn, event_type="db_updated", summary=""):
             if not sp_str and r.get('spare_parts_notes'):
                 sp_str = r.get('spare_parts_notes')
 
-            rep_iso = r.get('created_at') or f"{r.get('report_date', '')}T{r.get('report_time', '00:00:00')}"
-            if rep_iso and ' ' in rep_iso and 'T' not in rep_iso:
-                rep_iso = rep_iso.replace(' ', 'T') + 'Z'
-            start_iso = r.get('repair_start') or None
-            if start_iso and ' ' in start_iso and 'T' not in start_iso:
-                start_iso = start_iso.replace(' ', 'T') + 'Z'
-            end_iso = r.get('repair_end') or None
-            if end_iso and ' ' in end_iso and 'T' not in end_iso:
-                end_iso = end_iso.replace(' ', 'T') + 'Z'
+            # report_date/report_time are Colombia local time; send them with -05:00.
+            if r.get('report_date'):
+                rep_iso = local_to_sb(f"{r['report_date']}T{r.get('report_time') or '00:00:00'}")
+            else:
+                rep_iso = local_to_sb(r.get('created_at'))
+            start_iso = local_to_sb(r.get('repair_start'))
+            end_iso = local_to_sb(r.get('repair_end'))
 
             repair_mins = round(float(r.get('repair_duration_seconds') or 0) / 60.0, 2)
             wo_rows.append({
@@ -890,12 +931,12 @@ def pull_from_cloud(conn):
             cursor.execute("DELETE FROM spare_parts_used")
             cursor.execute("DELETE FROM maintenance_orders")
             for o in sb_orders:
-                rep_at = (o.get('reported_at') or datetime.now().isoformat()).replace('T', ' ').replace('Z', '')[:19]
+                rep_at = sb_to_local(o.get('reported_at')) or datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 parts_dt = rep_at.split(' ')
                 rep_date = parts_dt[0] if len(parts_dt) > 0 else datetime.now().strftime('%Y-%m-%d')
                 rep_time = parts_dt[1] if len(parts_dt) > 1 else datetime.now().strftime('%H:%M:%S')
-                st_time = (o.get('started_at') or '').replace('T', ' ').replace('Z', '')[:19] or None
-                end_time = (o.get('completed_at') or '').replace('T', ' ').replace('Z', '')[:19] or None
+                st_time = sb_to_local(o.get('started_at'))
+                end_time = sb_to_local(o.get('completed_at'))
                 rep_secs = int(round(float(o.get('repair_minutes') or 0) * 60.0))
                 status_val = o.get('status') or 'PENDIENTE'
                 is_running = 1 if status_val == 'EN_PROCESO' and st_time and not end_time else 0
@@ -978,7 +1019,7 @@ def pull_from_cloud(conn):
         if isinstance(sb_notifs, list):
             cursor.execute("DELETE FROM notifications")
             for n in sb_notifs:
-                created = (n.get('created_at') or datetime.now().isoformat()).replace('T', ' ').replace('Z', '')[:19]
+                created = sb_to_local(n.get('created_at')) or datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 cursor.execute("""
                     INSERT INTO notifications (
                         id, target_role, severity, category, machine_id, title, message, is_read, created_at

@@ -3021,16 +3021,41 @@ function preselectMachineByCode(machineCode) {
     if (machine) preselectMachine(machine.id);
 }
 
+// ---------------------------------------------------------------------------
+// Hora de Colombia. Supabase guarda timestamps en UTC; siempre los mostramos
+// en America/Bogota (UTC-5), sin importar la zona horaria del dispositivo.
+// ---------------------------------------------------------------------------
+const APP_TIME_ZONE = 'America/Bogota';
+const _bogotaFmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: APP_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+});
+
+// Date (or timestamp string) -> { date: 'YYYY-MM-DD', time: 'HH:MM' } in Colombia.
+// A string without zone info is assumed to already be Colombia local time.
+function toBogotaParts(value) {
+    if (value === null || value === undefined || value === '') return null;
+    if (typeof value === 'string' && !/(Z|[+-]\d{2}:?\d{2})$/.test(value.trim())) {
+        const [d, t = ''] = value.trim().replace('T', ' ').split(' ');
+        return { date: d, time: t.slice(0, 5) };
+    }
+    const dt = value instanceof Date ? value : new Date(value);
+    if (isNaN(dt)) return null;
+    const p = Object.fromEntries(_bogotaFmt.formatToParts(dt).map(x => [x.type, x.value]));
+    return { date: `${p.year}-${p.month}-${p.day}`, time: `${p.hour}:${p.minute}` };
+}
+
+function formatBogota(value) {
+    const p = toBogotaParts(value);
+    return p ? `${p.date} ${p.time}` : '';
+}
+
 function setCurrentDateTime() {
-    const now = new Date();
+    const now = toBogotaParts(new Date());
     const dateInput = document.getElementById('form-date');
     const timeInput = document.getElementById('form-time');
-    if (dateInput) {
-        dateInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    }
-    if (timeInput) {
-        timeInput.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    }
+    if (dateInput) dateInput.value = now.date;
+    if (timeInput) timeInput.value = now.time;
 }
 
 function toggleQrScanner() {
@@ -3492,7 +3517,7 @@ function parsePartsString(str) {
 function mapSupabaseOrder(o) {
     const m = state.machines.find(x => x.id == o.machine_id) || {};
     const t = state.technicians.find(x => x.id == (o.assigned_technician_id || o.technician_id)) || {};
-    const dtParts = (o.reported_at || '').replace('T', ' ').replace('Z', '').split(' ');
+    const reportedLocal = toBogotaParts(o.reported_at);
     const normStatus = o.status === 'CERRADA' ? 'FINALIZADO' : (o.status === 'REPORTADA' ? 'PENDIENTE' : (o.status || 'PENDIENTE'));
     const timersMap = getRunningTimersMap();
     const timerEntry = timersMap[String(o.id)];
@@ -3510,8 +3535,8 @@ function mapSupabaseOrder(o) {
         machine_code: o.machine_code || m.code || `MAQ-00${o.machine_id}`,
         machine_location: o.machine_location || m.location || 'Planta',
         operator_name: o.operator_name || o.reporter_name || 'Operario',
-        report_date: o.report_date || dtParts[0] || new Date().toISOString().slice(0, 10),
-        report_time: o.report_time || (dtParts[1] || '').slice(0, 5) || '08:00',
+        report_date: o.report_date || reportedLocal?.date || toBogotaParts(new Date()).date,
+        report_time: (o.report_time || reportedLocal?.time || '08:00').slice(0, 5),
         technician_id: o.technician_id ?? o.assigned_technician_id ?? null,
         technician_name: o.technician_name || t.name || null,
         machine_stopped: o.machine_stopped !== undefined ? o.machine_stopped : (o.priority === 'ALTA' || m.status === 'PARADA' ? 1 : 0),
@@ -5086,7 +5111,7 @@ function renderNotificationsDrawer() {
                 <p class="text-[11px] text-zinc-300 leading-relaxed">${n.message}</p>
                 <div class="flex items-center justify-between pt-1 text-[10px] text-zinc-400 font-mono">
                     <span>${n.category || n.notif_type || 'SISTEMA'}</span>
-                    <span>${(n.created_at || '').replace('T', ' ').slice(0, 16)}</span>
+                    <span>${formatBogota(n.created_at)}</span>
                 </div>
             </div>
         `;
@@ -5722,8 +5747,7 @@ async function calLoadSchedule(force) {
         calState.maxDate = all.length ? String(all[all.length - 1].scheduled_date).slice(0, 10) : null;
         calState.loaded = true;
         if (calState.year == null) {
-            const today = new Date();
-            const tk = calKey(today.getFullYear(), today.getMonth(), today.getDate());
+            const tk = toBogotaParts(new Date()).date;
             const ref = (calState.minDate && tk >= calState.minDate && tk <= calState.maxDate) ? tk : (calState.minDate || tk);
             calState.year = parseInt(ref.slice(0, 4)); calState.month = parseInt(ref.slice(5, 7)) - 1;
         }
@@ -5749,7 +5773,7 @@ async function renderCalendarView() {
         sel.innerHTML = '<option value="">Todas las áreas</option>' + calState.areas.map(a => `<option value="${calEsc(a)}" ${a === calState.area ? 'selected' : ''}>${calEsc(a)}</option>`).join('');
     }
     document.getElementById('cal-legend').innerHTML = CAL_FREQS.map(f => `<span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm" style="background:${f.color}"></span>${f.label}</span>`).join('');
-    if (calState.year == null) { const t = new Date(); calState.year = t.getFullYear(); calState.month = t.getMonth(); }
+    if (calState.year == null) { const [ty, tm] = toBogotaParts(new Date()).date.split('-').map(Number); calState.year = ty; calState.month = tm - 1; }
     document.getElementById('cal-month-label').textContent = `${CAL_MONTHS[calState.month]} ${calState.year}`;
     document.getElementById('cal-grid').innerHTML = calMonthGrid(calState.year, calState.month, e => !calState.area || e.area === calState.area, 'calSelectDay', calState.selected);
     renderCalDayPanel();
