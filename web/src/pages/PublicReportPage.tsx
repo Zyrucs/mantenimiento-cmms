@@ -8,7 +8,7 @@ export function PublicReportPage() {
   return (
     <div className="min-h-full">
       <header className="sticky top-0 z-30 bg-canvas/85 backdrop-blur border-b border-line">
-        <div className="max-w-[720px] mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="max-w-[720px] mx-auto px-4 h-[68px] flex items-center justify-between">
           <Logo />
           <Link to="/login" className="h-9 px-3.5 inline-flex items-center rounded-lg text-[13px] font-medium bg-surface ring-1 ring-line shadow-card hover:bg-subtle">Ingresar</Link>
         </div>

@@ -5,6 +5,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useAuth, type Role } from '../lib/auth'
+import gilpaLogo from '../assets/logo-gilpa.png'
 
 interface NavItem { to: string; label: string; icon: LucideIcon; roles: Role[] }
 
@@ -19,13 +20,14 @@ const ADMIN: NavItem[] = [
   { to: '/tecnicos', label: 'Técnicos', icon: Users, roles: ['JEFE'] },
 ]
 
-export function Logo() {
+/** Grupo Gilpa logo with the product name. `large` is for the login screen. */
+export function Logo({ large = false }: { large?: boolean }) {
   return (
-    <div className="flex items-center gap-2.5 px-2">
-      <span className="w-8 h-8 rounded-lg bg-brand text-white text-[12px] font-bold grid place-items-center shadow-[inset_0_1px_0_rgb(255_255_255/0.15),0_1px_2px_rgb(15_118_110/0.3)]">SM</span>
-      <span className="leading-tight">
-        <b className="block text-[14px] font-semibold tracking-tight">SistMaint</b>
-        <span className="text-[11px] text-muted">Gilpa Impresores</span>
+    <div className={`flex flex-col ${large ? 'items-center gap-2' : 'items-start gap-1 px-2'}`}>
+      <img src={gilpaLogo} alt="Grupo Gilpa" width={480} height={102}
+        className={large ? 'h-10 w-auto' : 'h-7 w-auto'} />
+      <span className={`font-medium text-muted tracking-tight ${large ? 'text-sm' : 'text-[11.5px]'}`}>
+        SistMaint · Mantenimiento
       </span>
     </div>
   )
@@ -93,7 +95,7 @@ export function AppShell() {
       <aside className="hidden md:block w-[232px] shrink-0 px-3 py-4 sticky top-0 h-screen">{sidebar}</aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="md:hidden sticky top-0 z-30 flex items-center justify-between bg-canvas/90 backdrop-blur border-b border-line px-4 h-14">
+        <header className="md:hidden sticky top-0 z-30 flex items-center justify-between bg-canvas/90 backdrop-blur border-b border-line px-4 h-[68px]">
           <Logo />
           <button onClick={() => setMenuOpen(true)} aria-label="Abrir menú"
             className="w-10 h-10 rounded-lg hover:bg-stone-200/60 grid place-items-center cursor-pointer">

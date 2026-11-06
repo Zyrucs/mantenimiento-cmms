@@ -23,7 +23,7 @@ export function LoginPage() {
   return (
     <div className="min-h-full grid place-items-center px-4 py-10">
       <div className="w-full max-w-[380px]">
-        <div className="mb-8 flex justify-center"><Logo /></div>
+        <div className="mb-8 flex justify-center"><Logo large /></div>
 
         <div className="bg-surface rounded-2xl ring-1 ring-line shadow-raised p-7">
           <h1 className="text-xl font-semibold tracking-tight">Bienvenido de nuevo</h1>
