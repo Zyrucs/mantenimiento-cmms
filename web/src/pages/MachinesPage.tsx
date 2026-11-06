@@ -71,7 +71,7 @@ export function MachinesPage() {
             const st = machineStatus(m.status)
             return (
               <Link key={m.id} to={`/maquinas/${m.id}`}
-                className="bg-surface border border-line rounded-[10px] p-4 hover:border-stone-300 transition-colors block">
+                className="bg-surface rounded-xl ring-1 ring-line shadow-card p-4 hover:shadow-raised hover:ring-stone-300 transition-shadow block">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-semibold truncate">{m.name}</p>

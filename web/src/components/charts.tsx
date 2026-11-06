@@ -17,7 +17,7 @@ export function ChartCard({ title, subtitle, data, unit, children }: {
 }) {
   const [table, setTable] = useState(false)
   return (
-    <section className="bg-surface border border-line rounded-[10px]">
+    <section className="bg-surface rounded-xl ring-1 ring-line shadow-card">
       <header className="flex items-start justify-between gap-3 px-4 pt-3.5 pb-2">
         <div>
           <h2 className="text-sm font-semibold">{title}</h2>

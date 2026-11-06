@@ -4,7 +4,8 @@ import { isOpen, useCategories, useMachines, useOrders } from '../lib/data'
 import { MONTHS } from '../lib/calendar'
 import { bogotaParts } from '../lib/time'
 import { BarList, ChartCard, ColumnChart, type Datum } from '../components/charts'
-import { Card, PageHeader, Spinner, Stat } from '../components/ui'
+import { ClipboardList, Clock, OctagonAlert, Wrench } from 'lucide-react'
+import { Card, PageHeader, Segmented, Spinner, Stat } from '../components/ui'
 
 const PERIODS = [
   { key: 30, label: '30 días' },
@@ -80,25 +81,21 @@ export function DashboardPage() {
         title="Dashboard"
         subtitle="Estado de la planta y fallas registradas."
         actions={
-          <div className="flex rounded-lg border border-line bg-surface p-0.5 text-[13px]" role="tablist" aria-label="Periodo">
-            {PERIODS.map(p => (
-              <button key={p.key} role="tab" aria-selected={days === p.key} onClick={() => setDays(p.key)}
-                className={`px-3 h-8 rounded-md cursor-pointer ${days === p.key ? 'bg-brand-tint text-brand font-semibold' : 'text-ink-soft hover:bg-stone-50'}`}>
-                {p.label}
-              </button>
-            ))}
-          </div>
+          <Segmented label="Periodo" value={days} onChange={setDays}
+            options={PERIODS.map(p => [p.key, p.label] as const)} />
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-5">
-        <Link to="/ordenes" className="block"><Stat label="Órdenes abiertas" value={openCount} note="ahora" /></Link>
-        <Stat label="Máquinas paradas" value={stopped} tone={stopped ? 'danger' : 'default'} note={`de ${machines.length} máquinas`} />
-        <Stat label="Tiempo medio de reparación" value={finished.length ? fmtMin(mttr) : '—'} note={`${finished.length} órdenes cerradas`} />
-        <Stat label="Tiempo de paro" value={fmtMin(downtime)} note={`${inPeriod.length} fallas reportadas`} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <Link to="/ordenes" className="block rounded-xl hover:shadow-raised transition-shadow">
+          <Stat icon={ClipboardList} label="Órdenes abiertas" value={openCount} note="ahora" />
+        </Link>
+        <Stat icon={OctagonAlert} label="Máquinas paradas" value={stopped} tone={stopped ? 'danger' : 'default'} note={`de ${machines.length} máquinas`} />
+        <Stat icon={Wrench} label="Tiempo medio de reparación" value={finished.length ? fmtMin(mttr) : '—'} note={`${finished.length} órdenes cerradas`} />
+        <Stat icon={Clock} label="Tiempo de paro" value={fmtMin(downtime)} note={`${inPeriod.length} fallas reportadas`} />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
+      <div className="grid lg:grid-cols-2 gap-4">
         <div className="lg:col-span-2">
           <ChartCard title="Órdenes por mes" subtitle="Últimos 12 meses" data={monthly} unit="órdenes">
             <ColumnChart data={monthly} unit="órdenes" />

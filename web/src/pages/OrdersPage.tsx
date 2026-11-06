@@ -9,7 +9,8 @@ import {
 import { formatDuration, machineStatus, orderStatus, priority, useNow } from '../lib/labels'
 import { formatDateTime } from '../lib/time'
 import { OrderDetail } from '../components/OrderDetail'
-import { Button, Card, EmptyState, Input, PageHeader, Pill, Spinner, Stat, Table } from '../components/ui'
+import { CircleCheck, ClipboardList, OctagonAlert, Plus, Search, Timer } from 'lucide-react'
+import { Button, Card, EmptyState, Input, PageHeader, Pill, Segmented, Spinner, Stat, Table } from '../components/ui'
 
 type Tab = 'open' | 'closed' | 'all'
 
@@ -102,19 +103,19 @@ export function OrdersPage() {
       <PageHeader
         title="Órdenes"
         subtitle="Máquinas que necesitan atención y órdenes de trabajo."
-        actions={<Link to="/reportar"><Button>+ Reportar falla</Button></Link>}
+        actions={<Link to="/reportar"><Button icon={Plus}>Reportar falla</Button></Link>}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
-        <Stat label="Órdenes abiertas" value={openCount} />
-        <Stat label="Máquinas paradas" value={stopped} tone={stopped ? 'danger' : 'default'} note={`de ${machines.length} máquinas`} />
-        <Stat label="Con cronómetro activo" value={orders.filter(o => o.timer_started_at).length} />
-        <Stat label="Finalizadas" value={orders.length - openCount} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        <Stat icon={ClipboardList} label="Órdenes abiertas" value={openCount} />
+        <Stat icon={OctagonAlert} label="Máquinas paradas" value={stopped} tone={stopped ? 'danger' : 'default'} note={`de ${machines.length} máquinas`} />
+        <Stat icon={Timer} label="Cronómetros activos" value={orders.filter(o => o.timer_started_at).length} />
+        <Stat icon={CircleCheck} label="Finalizadas" value={orders.length - openCount} />
       </div>
 
       {error && <p role="alert" className="text-sm text-red-700 bg-red-50 rounded-lg px-3 py-2 mb-4">{error}</p>}
 
-      <h2 className="text-sm font-semibold mb-3">Máquinas que necesitan atención</h2>
+      <h2 className="text-[15px] font-semibold tracking-tight mb-3">Máquinas que necesitan atención</h2>
       {attention.length === 0 ? (
         <Card className="mb-6"><EmptyState title="Todo en orden" text="Todas las máquinas están operativas y sin órdenes abiertas." /></Card>
       ) : (
@@ -126,7 +127,7 @@ export function OrdersPage() {
               ? { label: 'Con orden abierta', tone: 'amber' as const }
               : machineStatus(m.status)
             return (
-              <div key={m.id} className="bg-surface border border-line rounded-[10px] p-4 flex flex-col gap-3">
+              <div key={m.id} className="bg-surface rounded-xl ring-1 ring-line shadow-card p-4 flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-semibold truncate">{m.name}</p>
@@ -135,20 +136,20 @@ export function OrdersPage() {
                   <Pill tone={ms.tone}>{ms.label}</Pill>
                 </div>
                 {o ? (
-                  <div className="text-sm">
+                  <div className="text-sm rounded-lg bg-subtle ring-1 ring-line-soft px-3 py-2.5">
                     <div className="flex items-center justify-between">
                       <span className="font-medium">{o.order_number}</span>
-                      <span className={`font-mono tabular-nums ${o.timer_started_at ? 'text-amber-700 font-semibold' : 'text-muted'}`}>
-                        {formatDuration(workedSeconds(o, now))}
+                      <span className={`inline-flex items-center gap-1 tabular-nums text-[13px] ${o.timer_started_at ? 'text-amber-700 font-semibold' : 'text-muted'}`}>
+                        <Timer size={13} aria-hidden />{formatDuration(workedSeconds(o, now))}
                       </span>
                     </div>
-                    <p className="text-muted line-clamp-2 mt-0.5">{o.description}</p>
+                    <p className="text-muted line-clamp-1 mt-0.5">{o.description}</p>
                   </div>
                 ) : (
                   <p className="text-sm text-muted">Sin orden abierta.</p>
                 )}
                 <div className="flex gap-2 mt-auto">
-                  <Button className="flex-1" disabled={busyMachine === m.id} onClick={() => attend(m)}>
+                  <Button className="flex-1" variant={o ? 'secondary' : 'primary'} disabled={busyMachine === m.id} onClick={() => attend(m)}>
                     {o ? 'Abrir orden' : 'Atender'}
                   </Button>
                   {!o && m.status !== 'OPERATIVA' && (
@@ -164,18 +165,13 @@ export function OrdersPage() {
       <Card
         title="Órdenes de trabajo"
         actions={
-          <div className="flex rounded-lg border border-line p-0.5 text-[13px]" role="tablist">
-            {([['open', 'Abiertas'], ['closed', 'Finalizadas'], ['all', 'Todas']] as const).map(([k, label]) => (
-              <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
-                className={`px-3 h-8 rounded-md cursor-pointer ${tab === k ? 'bg-brand-tint text-brand font-semibold' : 'text-ink-soft hover:bg-stone-50'}`}>
-                {label}
-              </button>
-            ))}
-          </div>
+          <Segmented label="Filtrar órdenes" value={tab} onChange={setTab}
+            options={[['open', 'Abiertas'], ['closed', 'Finalizadas'], ['all', 'Todas']] as const} />
         }
       >
-        <div className="px-4 pt-3">
-          <Input placeholder="Buscar por máquina, número de orden o descripción…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Buscar órdenes" />
+        <div className="px-5 py-3 border-b border-line-soft relative">
+          <Search size={16} aria-hidden className="absolute left-8 top-1/2 -translate-y-1/2 text-faint" />
+          <Input className="pl-9" placeholder="Buscar por máquina, número de orden o descripción…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Buscar órdenes" />
         </div>
         {list.length === 0 ? (
           <EmptyState title="No hay órdenes" text={q ? 'Ninguna orden coincide con la búsqueda.' : 'No hay órdenes en esta vista.'} />
