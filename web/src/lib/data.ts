@@ -14,6 +14,79 @@ export interface Machine {
   model: string | null
 }
 
+export interface MachineDetail extends Machine {
+  description: string | null
+  serial_number: string | null
+  install_date: string | null
+  voltage: string | null
+  power_kw: string | null
+  criticality: string | null
+  supplier: string | null
+  critical_parts: string | null
+  preventive_interval_days: number | null
+  last_maintenance_date: string | null
+  next_maintenance_date: string | null
+  life_notes: string | null
+}
+
+export interface LifeEvent {
+  id: number
+  machine_id: number
+  event_type: string
+  title: string
+  description: string | null
+  technician_name: string | null
+  parts_replaced: string | null
+  severity: string | null
+  created_by: string | null
+  created_at: string
+}
+
+export function useMachine(id: number) {
+  return useQuery({
+    queryKey: ['machine', id],
+    queryFn: async (): Promise<MachineDetail | null> => {
+      const { data, error } = await supabase.from('machines').select('*').eq('id', id).maybeSingle()
+      if (error) throw error
+      return data
+    },
+  })
+}
+
+export function useMachineOrders(machineId: number) {
+  return useQuery({
+    queryKey: ['work_orders', 'machine', machineId],
+    queryFn: async (): Promise<WorkOrder[]> => {
+      const { data, error } = await supabase.from('work_orders').select('*')
+        .eq('machine_id', machineId).order('reported_at', { ascending: false })
+      if (error) throw error
+      return data ?? []
+    },
+  })
+}
+
+export function useLifeEvents(machineId: number) {
+  return useQuery({
+    queryKey: ['life_events', machineId],
+    queryFn: async (): Promise<LifeEvent[]> => {
+      const { data, error } = await supabase.from('machine_life_events').select('*')
+        .eq('machine_id', machineId).order('created_at', { ascending: false })
+      if (error) throw error
+      return data ?? []
+    },
+  })
+}
+
+export type MachineInput = Partial<Record<keyof Omit<MachineDetail, 'id' | 'status' | 'last_maintenance_date'>, string>>
+
+export const saveMachine = (id: number | null, fields: MachineInput) =>
+  rpc<number>('save_machine', { p_id: id, p: fields })
+
+export const addLifeEvent = (machineId: number, type: string, title: string, description: string, parts = '') =>
+  rpc<number>('add_life_event', {
+    p_machine_id: machineId, p_event_type: type, p_title: title, p_description: description, p_parts: parts,
+  })
+
 export interface FailureCategory {
   code: string
   name: string
