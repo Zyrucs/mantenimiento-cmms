@@ -210,13 +210,13 @@ function handleInitialRoute() {
     }
 
     if (state.role === 'TECNICO') {
-        if (['orders', 'machines', 'calendar', 'plans', 'report'].includes(hash)) {
+        if (['orders', 'machines', 'calendar', 'report'].includes(hash)) {
             navigateTo(hash);
         } else {
             navigateTo('orders');
         }
     } else if (state.role === 'JEFE') {
-        if (['dashboard', 'orders', 'machines', 'calendar', 'plans', 'categories', 'technicians', 'report'].includes(hash)) {
+        if (['dashboard', 'orders', 'machines', 'calendar', 'categories', 'technicians', 'report'].includes(hash)) {
             navigateTo(hash);
         } else {
             navigateTo('dashboard');
@@ -441,6 +441,8 @@ function applyRoleUI() {
 }
 
 function navigateTo(viewName) {
+    // The "Plan Preventivo 2027" page was removed; send old links to the calendar.
+    if (viewName === 'plans') viewName = 'calendar';
     const isAuthenticated = !!state.bossUser;
     const isBoss = isAuthenticated && state.bossUser.role === 'JEFE';
 
@@ -460,7 +462,7 @@ function navigateTo(viewName) {
         window.location.hash = viewName;
     }
 
-    const views = ['report', 'orders', 'machines', 'calendar', 'plans', 'categories', 'dashboard', 'technicians'];
+    const views = ['report', 'orders', 'machines', 'calendar', 'categories', 'dashboard', 'technicians'];
     views.forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.classList.toggle('hidden', v !== viewName);
@@ -477,7 +479,6 @@ function navigateTo(viewName) {
         orders: ['Máquinas Dañadas & Órdenes de Trabajo', 'Control de tiempos con cronómetro en vivo y estado de planta'],
         machines: ['Hojas de Vida de Máquinas & Códigos QR', 'Ficha técnica, bitácora histórica, alertas y etiquetas QR'],
         calendar: ['Calendario Principal de Mantenimiento', 'Día → máquinas con actividades → página de la máquina'],
-        plans: ['Planes de Mantenimiento & Preventivo 2027', 'Cronograma anual 2027 y rutinas preventivas/predictivas'],
         categories: ['Categorización de Fallas', 'Catálogo de tipos y subcategorías de fallas técnicas'],
         dashboard: ['Dashboard Ejecutivo de Planta (Jefe)', 'Métricas en tiempo real, MTTR, paros y distribución de fallas'],
         technicians: ['Equipo Técnico e Ingenieros', 'Administración del personal de mantenimiento']
@@ -495,7 +496,6 @@ function navigateTo(viewName) {
         loadOrdersList();
     } else if (viewName === 'machines') renderMachinesGrid();
     else if (viewName === 'calendar') renderCalendarView();
-    else if (viewName === 'plans') renderPlansView();
     else if (viewName === 'categories') renderCategoriesGrid();
     else if (viewName === 'technicians') renderTechniciansGrid();
     else if (viewName === 'report') {
@@ -1227,6 +1227,27 @@ function stopQrScanner() {
     }
 }
 
+const CLOSED_ORDER_STATUSES = ['FINALIZADO', 'CERRADA'];
+
+// Returns the open order for a machine (checked against Supabase so the
+// answer is fresh), or null when the machine has none.
+async function findOpenOrderForMachine(machineId) {
+    try {
+        const rows = await sbDirectGet(
+            `work_orders?machine_id=eq.${parseInt(machineId)}&status=not.in.(${CLOSED_ORDER_STATUSES.join(',')})&select=id,order_number&order=id.desc&limit=1`
+        );
+        if (Array.isArray(rows) && rows.length > 0) return rows[0];
+        return null;
+    } catch (e) {
+        return state.orders.find(o => o.machine_id == machineId && !CLOSED_ORDER_STATUSES.includes(o.status)) || null;
+    }
+}
+
+function rejectDuplicateOrder(orderId, orderNumber) {
+    showToast(`Esta máquina ya tiene la orden abierta ${orderNumber || ''}. Finalízala antes de reportar otra falla.`, 'warning');
+    if (state.bossUser && orderId) openOrderModal(orderId);
+}
+
 async function submitIncidentReport(e) {
     e.preventDefault();
     const machineId = document.getElementById('form-machine-id').value;
@@ -1265,6 +1286,14 @@ async function submitIncidentReport(e) {
     const btn = document.getElementById('btn-submit-report');
     if (btn) btn.disabled = true;
 
+    // A machine may only have one open order at a time.
+    const existing = await findOpenOrderForMachine(machineId);
+    if (existing) {
+        rejectDuplicateOrder(existing.id, existing.order_number);
+        if (btn) btn.disabled = false;
+        return;
+    }
+
     try {
         const res = await fetch('/api/orders', {
             method: 'POST',
@@ -1272,6 +1301,12 @@ async function submitIncidentReport(e) {
             body: JSON.stringify(payload)
         });
         const contentType = res.headers.get('content-type') || '';
+        if (res.status === 409 && contentType.includes('application/json')) {
+            const dup = await res.json();
+            rejectDuplicateOrder(dup.existing_order_id, dup.existing_order_number);
+            if (btn) btn.disabled = false;
+            return;
+        }
         if (res.ok && contentType.includes('application/json')) {
             const data = await res.json();
             showToast(`✅ Orden ${data.order_number} registrada en Supabase. Jefes y Técnicos notificados.`, 'success');
@@ -1554,9 +1589,11 @@ async function attendDamagedMachine(machineId) {
         await openOrderModal(activeOrder.id);
         return;
     }
-    const anyOrder = state.orders.find(o => o.machine_id == machineId);
-    if (anyOrder) {
-        await openOrderModal(anyOrder.id);
+    // No open order: do NOT reopen an old finished one (its "Finalizar" button is
+    // hidden, which left the machine stuck). Create a fresh order instead.
+    const freshOpen = await findOpenOrderForMachine(machineId);
+    if (freshOpen) {
+        await openOrderModal(freshOpen.id);
         return;
     }
     // Create an active maintenance order on the fly if none exists for this damaged machine
@@ -2205,13 +2242,18 @@ async function finishMaintenanceOrder() {
         }
     } catch (e) {}
 
-    // Direct Supabase finish
+    // Direct Supabase finish. Only send columns that exist in work_orders
+    // (there is no `diagnosis` or `solution_applied` column; sending them made
+    // Supabase reject the update, so orders could never be finalized).
+    const notesText = [
+        payload.diagnosis ? `Diagnóstico: ${payload.diagnosis}` : '',
+        payload.solution_notes ? `Solución: ${payload.solution_notes}` : ''
+    ].filter(Boolean).join(' | ');
     try {
         await sbDirectPatch('work_orders', `id=eq.${orderId}`, {
             status: 'FINALIZADO',
             completed_at: new Date().toISOString(),
-            diagnosis: payload.diagnosis,
-            solution_applied: payload.solution_notes,
+            solution_notes: notesText,
             spare_parts_used: payload.spare_parts_notes,
             repair_minutes: repairMin,
             downtime_minutes: repairMin
@@ -2229,8 +2271,9 @@ async function finishMaintenanceOrder() {
                 machine_id: parseInt(machineId),
                 event_type: 'REPARACION_CERRADA',
                 title: `Orden ${state.activeOrder.order_number} Finalizada`,
-                details: `Diagnóstico: ${payload.diagnosis || 'N/A'} | Solución: ${payload.solution_notes || 'N/A'} | Repuestos: ${payload.spare_parts_notes || 'N/A'} (${repairMin} min)`,
-                author: state.activeOrder.technician_name || state.bossUser?.full_name || 'Técnico'
+                description: `Diagnóstico: ${payload.diagnosis || 'N/A'} | Solución: ${payload.solution_notes || 'N/A'} | Repuestos: ${payload.spare_parts_notes || 'N/A'} (${repairMin} min)`,
+                technician_name: state.activeOrder.technician_name || null,
+                created_by: state.bossUser?.full_name || state.activeOrder.technician_name || 'Técnico'
             });
         } catch (err) {}
 
