@@ -6,6 +6,13 @@ import { AuthProvider } from './lib/auth'
 import App from './App'
 import './index.css'
 
+// Printed QR labels point to /?machine_id=..&machine_code=..#report.
+// Rewrite them to /reportar/<code> before the router starts.
+const legacyCode = new URLSearchParams(window.location.search).get('machine_code')
+if (legacyCode) {
+  window.history.replaceState(null, '', `/reportar/${encodeURIComponent(legacyCode)}`)
+}
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 15_000, refetchOnWindowFocus: true } },
 })
