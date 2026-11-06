@@ -195,7 +195,7 @@ export function useOrders() {
         .from('work_orders')
         .select('*')
         .order('reported_at', { ascending: false })
-        .limit(500)
+        .limit(5000)
       if (error) throw error
       return data ?? []
     },
@@ -290,6 +290,28 @@ export async function nextScheduledDate(from: string, machineId?: number) {
 
 export const setScheduleStatus = (id: number, done: boolean) =>
   rpc('set_schedule_status', { p_id: id, p_done: done })
+
+/* ---------- Admin (Jefe) ---------- */
+export interface TechnicianFull extends Technician { role: string | null; phone: string | null }
+
+export function useAllTechnicians() {
+  return useQuery({
+    queryKey: ['technicians', 'all'],
+    queryFn: async (): Promise<TechnicianFull[]> => {
+      const { data, error } = await supabase.from('technicians').select('id, name, role, specialty, phone, active').order('name')
+      if (error) throw error
+      return data ?? []
+    },
+  })
+}
+
+export const saveTechnician = (id: number | null, t: { name: string; role: string; specialty: string; phone: string; active: boolean }) =>
+  rpc<number>('save_technician', { p_id: id, p_name: t.name, p_role: t.role, p_specialty: t.specialty, p_phone: t.phone, p_active: t.active })
+
+export const saveCategory = (c: { code: string; name: string; color: string; subcategories: string[] }) =>
+  rpc('save_category', { p_code: c.code, p_name: c.name, p_color: c.color, p_subcategories: c.subcategories })
+
+export const deleteCategory = (code: string) => rpc('delete_category', { p_code: code })
 
 /* ---------- Mutations ---------- */
 export interface ReportFailureInput {

@@ -5,13 +5,15 @@ import { AppShell } from './components/AppShell'
 import { Spinner } from './components/ui'
 import { LoginPage } from './pages/LoginPage'
 import { PublicReportPage } from './pages/PublicReportPage'
-import { Placeholder } from './pages/Placeholder'
 import { ReportPage } from './pages/ReportPage'
 import { OrdersPage } from './pages/OrdersPage'
 import { MachinesPage } from './pages/MachinesPage'
 import { MachineDetailPage } from './pages/MachineDetailPage'
 import { LabelsPage } from './pages/LabelsPage'
 import { CalendarPage } from './pages/CalendarPage'
+import { DashboardPage } from './pages/DashboardPage'
+import { CategoriesPage } from './pages/CategoriesPage'
+import { TechniciansPage } from './pages/TechniciansPage'
 
 function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
   const { loading, profile } = useAuth()
@@ -37,7 +39,6 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<LoginPage />} />
-
       {/* Logged-out users get the public form; logged-in users get it inside the app shell. */}
       {!profile && <Route path="/reportar/:machineCode?" element={<PublicReportPage />} />}
 
@@ -49,9 +50,9 @@ export default function App() {
         <Route path="/maquinas" element={<MachinesPage />} />
         <Route path="/maquinas/:id" element={<MachineDetailPage />} />
         <Route path="/calendario" element={<CalendarPage />} />
-        <Route path="/dashboard" element={<RequireRole roles={JEFE}><Placeholder title="Dashboard" phase={6} /></RequireRole>} />
-        <Route path="/categorias" element={<RequireRole roles={JEFE}><Placeholder title="Categorías" phase={6} /></RequireRole>} />
-        <Route path="/tecnicos" element={<RequireRole roles={JEFE}><Placeholder title="Técnicos" phase={6} /></RequireRole>} />
+        <Route path="/dashboard" element={<RequireRole roles={JEFE}><DashboardPage /></RequireRole>} />
+        <Route path="/categorias" element={<RequireRole roles={JEFE}><CategoriesPage /></RequireRole>} />
+        <Route path="/tecnicos" element={<RequireRole roles={JEFE}><TechniciansPage /></RequireRole>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
