@@ -57,12 +57,12 @@ export function CalendarPage() {
       <PageHeader title="Calendario" subtitle="Plan de mantenimiento preventivo por día y máquina." />
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex flex-wrap gap-2">
-          <Select value={area} onChange={e => { setArea(e.target.value); setSelected(null) }} aria-label="Área" className="w-auto min-w-[170px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-[440px]">
+          <Select value={area} onChange={e => { setArea(e.target.value); setSelected(null) }} aria-label="Área">
             <option value="">Todas las áreas</option>
             {areas.map(a => <option key={a} value={a}>{a}</option>)}
           </Select>
-          <Select value={machineId} onChange={e => { setMachineId(e.target.value); setSelected(null) }} aria-label="Máquina" className="w-auto min-w-[190px]">
+          <Select value={machineId} onChange={e => { setMachineId(e.target.value); setSelected(null) }} aria-label="Máquina">
             <option value="">Todas las máquinas</option>
             {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
           </Select>
@@ -99,7 +99,7 @@ export function CalendarPage() {
           ) : dayGroups.length === 0 ? (
             <EmptyState title="Sin actividades" />
           ) : (
-            <ul className="divide-y divide-line-soft">
+            <ul className="divide-y divide-line-soft max-h-[70vh] overflow-y-auto">
               {dayGroups.map(g => {
                 const freqs = [...new Set(g.list.map(e => e.frequency))].sort((a, b) => freqRank(b) - freqRank(a))
                 const done = g.list.filter(e => e.status === 'REALIZADO').length
