@@ -126,15 +126,16 @@ export function Modal({ open, title, onClose, children, footer, wide }: {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-stone-900/30 p-0 sm:p-4" onMouseDown={onClose}>
       <div
         role="dialog" aria-modal="true" aria-label={title}
-        className={`bg-surface w-full ${wide ? 'sm:max-w-2xl' : 'sm:max-w-lg'} max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-xl shadow-xl`}
+        className={`bg-surface w-full ${wide ? 'sm:max-w-2xl' : 'sm:max-w-lg'} max-h-[92vh] flex flex-col rounded-t-2xl sm:rounded-xl shadow-xl`}
         onMouseDown={e => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between px-5 py-4 border-b border-line">
+        <header className="flex items-center justify-between px-5 py-4 border-b border-line shrink-0">
           <h2 className="text-base font-semibold">{title}</h2>
           <button onClick={onClose} aria-label="Cerrar" className="w-9 h-9 rounded-lg text-muted hover:bg-stone-100 text-lg cursor-pointer">×</button>
         </header>
-        <div className="p-5">{children}</div>
-        {footer && <footer className="flex justify-end gap-2 px-5 py-4 border-t border-line bg-stone-50/60">{footer}</footer>}
+        {/* Only the body scrolls, so the action buttons stay visible. */}
+        <div className="p-5 overflow-y-auto min-h-0">{children}</div>
+        {footer && <footer className="flex flex-wrap justify-end gap-2 px-5 py-4 border-t border-line bg-stone-50 shrink-0 rounded-b-xl">{footer}</footer>}
       </div>
     </div>
   )

@@ -121,7 +121,10 @@ export function OrdersPage() {
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3.5 mb-6">
           {attention.map(m => {
             const o = openByMachine.get(m.id)
-            const ms = machineStatus(m.status)
+            // A machine marked "Operativa" that still has an open order is being worked on.
+            const ms = o && m.status === 'OPERATIVA'
+              ? { label: 'Con orden abierta', tone: 'amber' as const }
+              : machineStatus(m.status)
             return (
               <div key={m.id} className="bg-surface border border-line rounded-[10px] p-4 flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-2">
