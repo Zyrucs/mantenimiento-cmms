@@ -8,6 +8,9 @@ import { PublicReportPage } from './pages/PublicReportPage'
 import { Placeholder } from './pages/Placeholder'
 import { ReportPage } from './pages/ReportPage'
 import { OrdersPage } from './pages/OrdersPage'
+import { MachinesPage } from './pages/MachinesPage'
+import { MachineDetailPage } from './pages/MachineDetailPage'
+import { LabelsPage } from './pages/LabelsPage'
 
 function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
   const { loading, profile } = useAuth()
@@ -37,10 +40,13 @@ export default function App() {
       {/* Logged-out users get the public form; logged-in users get it inside the app shell. */}
       {!profile && <Route path="/reportar/:machineCode?" element={<PublicReportPage />} />}
 
+      <Route path="/etiquetas" element={<RequireRole roles={BOTH}><LabelsPage /></RequireRole>} />
+
       <Route element={<RequireRole roles={BOTH}><AppShell /></RequireRole>}>
         <Route path="/reportar/:machineCode?" element={<ReportPage />} />
         <Route path="/ordenes" element={<OrdersPage />} />
-        <Route path="/maquinas" element={<Placeholder title="Máquinas" phase={4} />} />
+        <Route path="/maquinas" element={<MachinesPage />} />
+        <Route path="/maquinas/:id" element={<MachineDetailPage />} />
         <Route path="/calendario" element={<Placeholder title="Calendario" phase={5} />} />
         <Route path="/dashboard" element={<RequireRole roles={JEFE}><Placeholder title="Dashboard" phase={6} /></RequireRole>} />
         <Route path="/categorias" element={<RequireRole roles={JEFE}><Placeholder title="Categorías" phase={6} /></RequireRole>} />

@@ -69,6 +69,8 @@ export function OrderDetail({ order, machine, onClose }: {
       await fn()
       await qc.invalidateQueries({ queryKey: ['work_orders'] })
       await qc.invalidateQueries({ queryKey: ['machines'] })
+      await qc.invalidateQueries({ queryKey: ['machine'] })
+      await qc.invalidateQueries({ queryKey: ['life_events'] })
       if (ok) setMessage(ok)
       return true
     } catch (e) {
