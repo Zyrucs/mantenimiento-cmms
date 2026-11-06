@@ -65,7 +65,7 @@ export function CategoriesPage() {
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
           {categoriesQ.data!.map(c => (
             <button key={c.code} onClick={() => open(c)}
-              className="text-left bg-surface border border-line rounded-[10px] p-4 hover:border-stone-300 cursor-pointer">
+              className="text-left bg-surface rounded-xl ring-1 ring-line shadow-card p-4 hover:shadow-raised hover:ring-stone-300 transition-shadow cursor-pointer">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: c.color ?? '#78716c' }} />
                 <p className="font-semibold truncate">{c.name}</p>
