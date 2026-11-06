@@ -112,8 +112,8 @@ export function Table({ head, children }: { head: string[]; children: ReactNode 
 }
 
 /* ---------- Modal ---------- */
-export function Modal({ open, title, onClose, children, footer }: {
-  open: boolean; title: string; onClose: () => void; children: ReactNode; footer?: ReactNode
+export function Modal({ open, title, onClose, children, footer, wide }: {
+  open: boolean; title: string; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean
 }) {
   useEffect(() => {
     if (!open) return
@@ -126,7 +126,7 @@ export function Modal({ open, title, onClose, children, footer }: {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-stone-900/30 p-0 sm:p-4" onMouseDown={onClose}>
       <div
         role="dialog" aria-modal="true" aria-label={title}
-        className="bg-surface w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-xl shadow-xl"
+        className={`bg-surface w-full ${wide ? 'sm:max-w-2xl' : 'sm:max-w-lg'} max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-xl shadow-xl`}
         onMouseDown={e => e.stopPropagation()}
       >
         <header className="flex items-center justify-between px-5 py-4 border-b border-line">
