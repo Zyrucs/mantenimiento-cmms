@@ -86,6 +86,86 @@ export function useTechnicians(enabled = true) {
   })
 }
 
+/* ---------- Work orders ---------- */
+export const CLOSED_STATUSES = ['FINALIZADO', 'CERRADA']
+export const isOpen = (o: Pick<WorkOrder, 'status'>) => !CLOSED_STATUSES.includes(o.status)
+
+export interface WorkOrder {
+  id: number
+  order_number: string
+  machine_id: number
+  reporter_name: string
+  failure_type: string | null
+  failure_category: string | null
+  failure_subcategory: string | null
+  maintenance_type: string | null
+  priority: string
+  description: string
+  assigned_technician_id: number | null
+  status: string
+  reported_at: string
+  started_at: string | null
+  completed_at: string | null
+  downtime_minutes: number | null
+  repair_minutes: number | null
+  timer_started_at: string | null
+  diagnosis: string
+  solution_notes: string | null
+  spare_parts_used: string | null
+}
+
+export function useOrders() {
+  return useQuery({
+    queryKey: ['work_orders'],
+    queryFn: async (): Promise<WorkOrder[]> => {
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select('*')
+        .order('reported_at', { ascending: false })
+        .limit(500)
+      if (error) throw error
+      return data ?? []
+    },
+    refetchInterval: 20_000, // keep timers and statuses fresh across devices
+  })
+}
+
+/** Seconds worked on an order, including a running timer. */
+export function workedSeconds(o: WorkOrder, nowMs = Date.now()) {
+  const base = Math.round((Number(o.repair_minutes) || 0) * 60)
+  if (!o.timer_started_at) return base
+  return base + Math.max(0, Math.floor((nowMs - new Date(o.timer_started_at).getTime()) / 1000))
+}
+
+async function rpc<T = unknown>(fn: string, args: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.rpc(fn, args)
+  if (error) throw new Error(error.message)
+  return data as T
+}
+
+export const startOrderTimer = (orderId: number) => rpc('start_order_timer', { p_order_id: orderId })
+export const pauseOrderTimer = (orderId: number) => rpc('pause_order_timer', { p_order_id: orderId })
+export const finishOrder = (orderId: number, diagnosis: string, solution: string, parts: string) =>
+  rpc<{ repair_minutes: number; downtime_minutes: number; machine_operative: boolean }>(
+    'finish_order', { p_order_id: orderId, p_diagnosis: diagnosis, p_solution: solution, p_parts: parts })
+export const markMachineOperational = (machineId: number) =>
+  rpc('mark_machine_operational', { p_machine_id: machineId })
+
+/** Save notes without finishing the order. */
+export async function saveOrderNotes(orderId: number, fields: { diagnosis: string; solution_notes: string; spare_parts_used: string }) {
+  const { error } = await supabase.from('work_orders').update(fields).eq('id', orderId)
+  if (error) throw new Error(error.message)
+}
+
+/** Jefe: classify / assign an order. */
+export async function classifyOrder(orderId: number, fields: {
+  maintenance_type: string; priority: string; failure_type: string; failure_subcategory: string
+  failure_category: string; assigned_technician_id: number | null
+}) {
+  const { error } = await supabase.from('work_orders').update(fields).eq('id', orderId)
+  if (error) throw new Error(error.message)
+}
+
 /* ---------- Mutations ---------- */
 export interface ReportFailureInput {
   machineId: number
